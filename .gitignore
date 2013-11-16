@@ -1,6 +1,6 @@
 bin/
 *.class
-META-INFO/
+META-INF/
 CHANGES.txt
 # Binary Files #
 *.jar
