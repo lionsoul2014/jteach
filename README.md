@@ -1,3 +1,5 @@
+jteach完整版本(源码, jar文件)下载地址: http://code.google.com/p/jteach <br />
+
 <h3>一。关于Jteach</h3>
 jteach是使用java开发的一个小巧，跨平台的教学软件。
 
