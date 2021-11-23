@@ -60,12 +60,12 @@ public class GroupImageSendTask implements Runnable {
 				/*
 				 * first load the heart beat symbol from the client.
 				 * this is to make sure the client is still on line.
-				 * if we didn't recevice a symbol from in JCmdTools.SO_TIMEOUT millseconds.
+				 * if we didn't receive a symbol from in JCmdTools.SO_TIMEOUT milliseconds.
 				 * that mean is client is off line.
 				 */
 				b.getReader().readChar();
 				b.send(JCmdTools.SEND_DATA_SYMBOL, mouse.x, mouse.y, data.length, data);
-				System.out.println("sended");
+				// System.out.println("sended");
 			} catch (IOException e) {
 				it.remove();b.clear();
 				break;

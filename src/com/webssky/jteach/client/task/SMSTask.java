@@ -9,10 +9,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 
-import com.sun.image.codec.jpeg.ImageFormatException;
-import com.sun.image.codec.jpeg.JPEGCodec;
 import com.webssky.jteach.client.JCWriter;
 import com.webssky.jteach.client.JClient;
 import com.webssky.jteach.util.JCmdTools;
@@ -77,11 +76,10 @@ public class SMSTask implements JCTaskInterface {
 				 */
 				ByteArrayOutputStream ais = new ByteArrayOutputStream();
 				try {
-					JPEGCodec.createJPEGEncoder(ais).encode(S_IMG);
+					// JPEGCodec.createJPEGEncoder(ais).encode(S_IMG);
+					ImageIO.write(S_IMG, "jpeg", ais);
 					data = ais.toByteArray();
 					ais.flush();
-				} catch (ImageFormatException e) {
-					continue;
 				} catch (IOException e) {
 					continue;
 				}
@@ -90,6 +88,9 @@ public class SMSTask implements JCTaskInterface {
 				 * send the image byte data to server 
 				 */
 				writer.send(JCmdTools.SEND_DATA_SYMBOL, mouse.x, mouse.y, data.length, data);
+				
+				// reset the image
+				I_BAK = S_IMG;
 			} catch (IOException e) {
 				JClient.getInstance().offLineClear();
 				break;

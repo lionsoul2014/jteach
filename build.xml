@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="jteach" default="usage" basedir=".">
+	<target name="init">
+		<echo message="-----------------------------------------------------------" />
+		<echo message="-------------------BUILDING JTEACH PACKAGE-----------------" />
+		<echo message=""/>
+		<property name="bottom" value="jteach 2010-2012"/>
+		<property name="jars" value="${basedir}"/>
+		<property name="sources" value="${basedir}/src"/>
+		<property name="classes" value="${basedir}/classes"/>
+		<property name="version" value="1.3.0"/>
+		<property name="api" value="${basedir}/doc"/>
+		<property name="resource" value="res"/>
+		
+		<mkdir dir="${classes}"/>
+		<mkdir dir="${api}"/>
+		<mkdir dir="${classes}/${resource}"/>
+	</target>
+	
+	<!--build-->
+	<target name="build" depends="init">
+		<echo message="----------------------Compiling Application----------------"/>
+		<javac srcdir="${sources}" destdir="${classes}" includes="**/*"/>
+		<!--copy the resource image-->
+		<copy todir="${classes}/${resource}">
+			<fileset dir="${sources}/${resource}"/>
+		</copy>
+	</target>
+	
+	<!--Archive-->
+	<target name="dist" depends="build">
+		<jar jarfile="${jars}/jteach-server-${version}.jar" basedir="${classes}">
+			<include name="**/*"/>
+			<exclude name="com/webssky/jteach/client/**/*"/>
+			<!--manifest information setting-->
+			<manifest>
+				<attribute name="Main-Class" value="com.webssky.jteach.server.JServer"/>
+				<attribute name="Class-Path" value=""/>
+			</manifest>
+		</jar>
+		<jar jarfile="${jars}/jteach-client-${version}.jar" basedir="${classes}">
+			<include name="**/*"/>
+			<exclude name="com/webssky/jteach/server/**/*"/>
+			<!-- manifest information setting -->
+			<manifest>
+				<attribute name="Main-Class" value="com.webssky.jteach.client.JClient"/>
+				<attribute name="Class-Path" value=""/>
+			</manifest>
+		</jar>
+		<jar jarfile="${jars}/rmi-stub.jar" basedir="${classes}">
+			<include name="com/webssky/jteach/rmi/**/*"/>
+		</jar>
+	</target>
+	
+	<!--Java Document-->
+	<target name="all" depends="dist">
+		<echo message="------------------------Making Jteach Document------------------------"/>
+		<javadoc packagenames="com.webssky.jteach.*" sourcepath="${sources}"
+			destdir="${api}" bottom="${bottom}" charset="UTF-8" author="true">
+			<classpath>
+				<pathelement location="${classes}"/>
+			</classpath>
+		</javadoc>
+	</target>
+	
+	<target name="usage">
+		<echo message="*** Jteach ANT Build Script ***"/>
+		<echo message="Usage: "/>
+		<echo message="   ant [target]"/>
+		<echo message=""/>     
+		<echo message="   target : "/>
+		<echo message="            build : Build Application"/>     
+		<echo message="            dist  : Build Application + Archive (JAR)"/>     
+		<echo message="            all   : Build Application + Archive + JavaDoc"/>
+	</target>
+</project>

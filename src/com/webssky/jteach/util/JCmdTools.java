@@ -105,7 +105,7 @@ public class JCmdTools {
 		info.append(JCmdTools.getFormatLine(" -"+STOP+": stop the current working thread", _WIDTH)+"\n");
 		info.append(JCmdTools.getFormatLine(" -"+EXIT+": exit the program", _WIDTH)+"\n");
 		info.append(JCmdTools.getBaseLine(_WIDTH)+"\n");
-		System.out.println(info);
+		System.out.print(info);
 	}
 	
 	public static String getFormatLine(String str, int w) {
@@ -133,6 +133,7 @@ public class JCmdTools {
 		InputStream in = System.in;
 		Scanner reader = new Scanner(in);
 		String _input = reader.next();
+		reader.close();
 		return _input;
 	}
 	

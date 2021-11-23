@@ -93,12 +93,12 @@ public class JServer {
 			line = reader.nextLine().trim().toLowerCase();
 			arguments = JCmdTools.parseCMD(line);
 			_input = arguments.get(JCmdTools.CMD_KEY);
-			if ( _input == null ) continue; 
+			if ( _input == null ) continue;
 			/*
 			 * JSTask Working thread
 			 * call the _runCommand to look for the class
 			 * then start the thread, and it have to run ST to stop
-			 * before a nother same thread could start. 
+			 * before a another same thread could start. 
 			 */
 			if ( _input.equals(JCmdTools.SB) || _input.equals(JCmdTools.UF)
 					|| _input.equals(JCmdTools.SM) || _input.equals(JCmdTools.RC)) {
@@ -123,7 +123,9 @@ public class JServer {
 			} 
 			/*remove JBean*/
 			else if ( _input.equals(JCmdTools.DELE) ) delete();
-			else if ( _input.equals(JCmdTools.EXIT) ) exit();
+			else if ( _input.equals(JCmdTools.EXIT) ) {
+				exit();
+			}
 			else JServerLang.UNKNOW_COMMAND();
 		} while ( true);
 	}
@@ -199,7 +201,7 @@ public class JServer {
 					try {
 						bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_EXIT_CMD);
 					} catch (IOException e) {}
-				}	
+				}
 			}
 		}
 		JServerLang.PROGRAM_OVERED();

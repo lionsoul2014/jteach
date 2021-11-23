@@ -67,7 +67,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	private ArrayList<JBean> beanArr = null;
 	private DataInputStream reader = null;
 	private ImageJPanel map = null;
-	private BufferedImage B_IMG = null;
+	private volatile BufferedImage B_IMG = null;
 	private Dimension MAP_SIZE = null;
 	private RMIInterface RMIInstance = null;
 	private String control = null;
@@ -423,7 +423,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				 * get byte data
 				 * reader byte data to buffer
 				 * a loop may need cause cannot read all the byte by once
-				 * if the network is not goods enought 
+				 * if the network is not good enough
 				 */
 				byte buffer[] = new byte[imgsize];
 				int length = 0;

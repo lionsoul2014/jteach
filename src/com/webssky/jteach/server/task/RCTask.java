@@ -128,6 +128,8 @@ public class RCTask implements JSTaskInterface {
 			 */
 			else jbeans_cmd_sendAll(line);
 		}
+		
+		reader.close();
 	}
 	
 	
@@ -183,6 +185,8 @@ public class RCTask implements JSTaskInterface {
 				break;
 			} else bean_sendCMD(line);
 		}
+		
+		reader.close();
 	}
 	
 	public static void CMD_SEND_ERROR(String str) {

@@ -1,22 +1,21 @@
 package com.webssky.jteach.server.task;
 
-import java.awt.AWTException;
-import java.awt.Dimension;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
-import com.sun.image.codec.jpeg.ImageFormatException;
-import com.sun.image.codec.jpeg.JPEGCodec;
+import javax.imageio.ImageIO;
+
+import com.webssky.jteach.client.JCWriter;
 import com.webssky.jteach.server.JBean;
 import com.webssky.jteach.server.JServer;
 import com.webssky.jteach.util.JCmdTools;
@@ -25,7 +24,7 @@ import com.webssky.jteach.util.JCmdTools;
 /**
  * Broadcast Sender Task. <br />
  * @author chenxin - chenxin619315@gmail.com <br />
- * {@link http://www.webssky.com} 
+ * {@link <a href="http://www.webssky.com">http://www.webssky.com</a>}
  */
 public class SBTask implements JSTaskInterface,Runnable {
 	
@@ -34,36 +33,18 @@ public class SBTask implements JSTaskInterface,Runnable {
 	public static final String STOPED_TIP = "Broadcast Thread Is Stoped.";
 	public static final String THREAD_NUMBER_TIP = "Thread Numbers: ";
 	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
-	public static Object IMAGE_LOCK = new Object();
 	
 	private int TStatus = T_RUN;
+
+	private final BlockingQueue<MsgItem> msgQueue;
+	private final Robot robot;
+	private final ArrayList<JBean> beans;
+	private Thread imgSendT;
 	
-	private Thread imgSendT = null;
-	private LinkedList<BufferedImage> images = null;
-	private Robot robot = null;
-	private ArrayList<JBean> beans = null;
-	private ArrayList<GroupImageSendTask> groupArr = new ArrayList<GroupImageSendTask>();
-	
-	public SBTask() {
-		images = new LinkedList<BufferedImage>();
-		try {
-			robot = new Robot();
-		} catch (AWTException e) {
-			System.out.println("Create Robot Object Failed.");
-		}
+	public SBTask() throws AWTException {
+		robot = new Robot();
 		beans = JServer.makeJBeansCopy();
-		int g_numbers = (int) Math.ceil( (float) beans.size() / JServer.getInstance().getGroupOpacity());
-		/*group all the beans*/
-		for ( int j = 0; j < g_numbers; j++ ) {
-			ArrayList<JBean> list = new ArrayList<JBean>();
-			int start = j * JServer.getInstance().getGroupOpacity();
-			int end = ( j + 1 ) * JServer.getInstance().getGroupOpacity();
-			if ( end > beans.size() ) end = beans.size(); 
-			for ( int i = start; i < end; i++ ) 
-				list.add(beans.get(i));
-			GroupImageSendTask task = new GroupImageSendTask(list);
-			groupArr.add(task);
-		}
+		msgQueue = new LinkedBlockingDeque<>(10);
 	}
 	
 	/**
@@ -74,12 +55,14 @@ public class SBTask implements JSTaskInterface,Runnable {
 		System.out.println(START_TIP);
 		//send broadcast start cmd to all the beans;
 		JBeans_Cmd_Symbol(JCmdTools.SERVER_BROADCAST_START_CMD);
-		//start image geter thread
-		JServer.threadPool.execute(this);
+
 		//start image send thread
 		imgSendT = new Thread(new ImageSendTask());
-		//imgSendT.setDaemon(true);
+		// mgSendT.setDaemon(true);
 		imgSendT.start();
+
+		//start image catch thread
+		JServer.threadPool.execute(this);
 	}
 
 	/**
@@ -120,35 +103,67 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 	@Override
 	public void run() {
-		BufferedImage img = null;
+		byte[] data = null;
 		BufferedImage B_IMG = null;
 		while ( getTSTATUS() == T_RUN ) {
 			//load img
-			img = robot.createScreenCapture(new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height));
+			BufferedImage img = robot.createScreenCapture(new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height));
 			if ( B_IMG == null ) B_IMG = img;
 			/*
 			 * we need to check the image
 			 * if over 98% of the picture is the same
-			 * and there is no neccessay to send the picture 
+			 * and there is no necessary to send the picture 
 			 */
-			else if ( ImageEquals(B_IMG, img) ) continue;
-			AddImage(img);
+			else if ( ImageEquals(B_IMG, img) ) {
+				continue;
+			}
+			
+			
+			/*
+			 * turn the BufferedImage to Byte and compress the byte data
+			 * then send them to all the beans */
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			try {
+				// JPEGCodec.createJPEGEncoder(bos).encode(B_IMG);
+				ImageIO.write(img, "jpeg", bos);
+				data = bos.toByteArray();
+				bos.flush();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+				continue;
+			}
+			
+
+			/*Mouse Location Info */
+			final Point mouse = MouseInfo.getPointerInfo().getLocation();
+			msgQueue.offer(new MsgItem(data, mouse.x, mouse.y));
+			
+			// remember the current img as the last
+			// image the for the next round
+			B_IMG = img;
+
+			try {
+				Thread.sleep(30);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		if ( imgSendT != null ) imgSendT.interrupt();
 	}
 	
-	public void AddImage(BufferedImage img) {
-		synchronized ( IMAGE_LOCK ) {
-			images.addLast(img);
-		}
-	}
-	public BufferedImage removeImage() {
-		synchronized ( IMAGE_LOCK ) {
-			if (images.size() == 0) return null;
-			return images.removeFirst();
-		}
-	}
 	
+	private class MsgItem {
+		byte[] data;
+		int x;
+		int y;
+		
+		MsgItem(byte[] data, int x, int y) {
+			this.data = data;
+			this.x = x;
+			this.y = y;
+		}
+	}
+
+
 	/**
 	 * Screen Image send Thread. <br />
 	 * @author chenxin 
@@ -160,39 +175,42 @@ public class SBTask implements JSTaskInterface,Runnable {
 			Point mouse = null;
 			byte[] data = null;
 			while ( getTSTATUS() == T_RUN ) {
-				B_IMG = removeImage();
-				if ( B_IMG == null ) continue;
-				
-				/*Mouse Location Info */
-				mouse = MouseInfo.getPointerInfo().getLocation();
-				
-				/*
-				 * turn the BufferedImage to Byte and compress the byte data
-				 * 		then send them to all the beans
-				 */
-				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+				final MsgItem msg;
 				try {
-					JPEGCodec.createJPEGEncoder(bos).encode(B_IMG);
-					data = bos.toByteArray();
-					bos.flush();
-				} catch (ImageFormatException e1) {
-					continue;
-				} catch (IOException e1) {
+					msg = msgQueue.take();
+				} catch (InterruptedException e) {
 					continue;
 				}
-				
+
 				/*
 				 * send image data to all the beans.
-				 * 		if a new bean add the BeanDB and want make it work
-				 * 		you should stop the braodcast and restart the broadcast.
-				 */
-				synchronized ( IMAGE_LOCK ) {
-					Iterator<GroupImageSendTask> it = groupArr.iterator();
-					GroupImageSendTask task;
-					while ( it.hasNext() ) {
-						task = it.next();
-						task.refresh(mouse, data);
+				 * 	if a new bean add the BeanDB and want make it work
+				 * 	you should stop the broadcast and restart the broadcast.
+				*/
+				Iterator<JBean> it = beans.iterator();
+				while (it.hasNext()) {
+					JBean b = it.next();
+					try {
+						/*
+						 * first load the heart beat symbol from the client.
+						 * this is to make sure the client is still on line.
+						 * if we didn't receive a symbol from in JCmdTools.SO_TIMEOUT milliseconds.
+						 * that mean is client is off line.
+						 */
+						b.send(JCmdTools.SEND_DATA_SYMBOL, msg.x, msg.y, msg.data.length, msg.data);
+					} catch (IOException e) {
+						e.printStackTrace();
+						// it.remove();b.clear();
+						continue;
 					}
+				}
+
+
+				try {
+					Thread.sleep(5);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					continue;
 				}
 			}
 		}

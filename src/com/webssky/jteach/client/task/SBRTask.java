@@ -1,16 +1,12 @@
 package com.webssky.jteach.client.task;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Image;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -21,7 +17,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import com.webssky.jteach.client.JCWriter;
 import com.webssky.jteach.client.JClient;
 import com.webssky.jteach.util.JCmdTools;
 import com.webssky.jteach.util.JTeachIcon;
@@ -32,7 +27,7 @@ import com.webssky.jteach.util.JTeachIcon;
  * 		Broadcast Send Thread <br />
  * 
  * @author chenxin <br />
- * {@link http://www.webssky.com} 
+ * {@link <a href="http://www.webssky.com">http://www.webssky.com</a>}
  */
 public class SBRTask extends JFrame implements JCTaskInterface {
 
@@ -51,7 +46,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	
 	
 	private int TStatus = T_RUN;
-	private BufferedImage B_IMG = null;
+	private volatile BufferedImage B_IMG = null;
 	private ImageJPanel imgJPanel = null;
 	
 	public SBRTask() {
@@ -102,10 +97,10 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 				g.setColor(Color.WHITE);
 				g.setFont(IFONT);
 				FontMetrics m = getFontMetrics(IFONT);
-				g.drawString(EMTPY_INFO,
-						(getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
+				g.drawString(EMTPY_INFO, (getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
 				return;
-			} 
+			}
+			
 			if ( IMG_SIZE == null ) {
 				BIT = Math.max((float)B_IMG.getWidth()/JClient.SCREEN_SIZE.width,
 						(float)B_IMG.getHeight()/JClient.SCREEN_SIZE.height);
@@ -129,10 +124,12 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 			 * Draw the image from server
 			 * start from point IMG_POS with size IMG_SIZE 
 			 */
-			//g.drawImage(B_IMG, IMG_POS.x, IMG_POS.y,
-					//IMG_SIZE.width, IMG_SIZE.height, null);
-			g.drawImage(JTeachIcon.resize(B_IMG, getWidth(), getHeight()), 0, 0, null);
-			
+//			g.drawImage(B_IMG, IMG_POS.x, IMG_POS.y,
+//					IMG_SIZE.width, IMG_SIZE.height, null);
+			// g.drawImage(B_IMG, 0, 0, null);
+			final BufferedImage img = JTeachIcon.resize_2(B_IMG, getWidth(), getHeight());
+			g.drawImage(img, 0, 0, null);
+
 			/*Draw the Mouse*/
 			g.drawImage(MOUSE_CURSOR, (int) (MOUSE_POS.x / BIT),
 					(int) ( MOUSE_POS.y / BIT), null);
@@ -140,12 +137,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	}
 	
 	private void repaintImageJPanel() {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				imgJPanel.repaint();
-			}
-		});
+		SwingUtilities.invokeLater(() -> imgJPanel.repaint());
 	}
 	
 	/**
@@ -160,12 +152,9 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	public void startCTask(String...args) {
 		JClient.getInstance().setTipInfo("Broadcast Thread Is Working");
 		JClient.threadPool.execute(this);
-		SwingUtilities.invokeLater(new Runnable(){
-			@Override
-			public void run() {
-				setVisible(true);
-				requestFocus();
-			}
+		SwingUtilities.invokeLater(() -> {
+			setVisible(true);
+			requestFocus();
 		});
 	}
 
@@ -178,22 +167,25 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	@Override
 	public void run() {
 		DataInputStream reader = JClient.getInstance().getReader();
-		JCWriter writer = new JCWriter();
+		// JCWriter writer = new JCWriter();
 		while ( getTSTATUS() == T_RUN ) {
 			try {
-				writer.send(JCmdTools.SEND_HBT_SYMBOL);
+				// writer.send(JCmdTools.SEND_HBT_SYMBOL);
 				char symbol = reader.readChar();
 				/*
 				 * Check the symbol type
-				 * case SEND_CMD_SYMBOL, then stop the currrent thread
+				 * case SEND_CMD_SYMBOL, then stop the current thread
 				 * case SEND_IMG_SYMBOL, then receive the image data from server
 				 * 		get the image size then get the image 
 				 */
 				if ( symbol == JCmdTools.SEND_CMD_SYMBOL ) {
 					int cmd = reader.readInt();
-					if ( cmd == JCmdTools.SERVER_TASK_STOP_CMD ) break;
+					if ( cmd == JCmdTools.SERVER_TASK_STOP_CMD ) {
+						break;
+					}
+				} else if (symbol != JCmdTools.SEND_DATA_SYMBOL) {
+					continue;
 				}
-				else if ( symbol != JCmdTools.SEND_DATA_SYMBOL ) continue;
 				
 				/*load the mouse location information */
 				MOUSE_POS = new Point(reader.readInt(), reader.readInt());
@@ -227,6 +219,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 				break;
 			}
 		}
+		
 		//dispose the JFrame
 		_dispose();
 		JClient.getInstance().resetJCTask();

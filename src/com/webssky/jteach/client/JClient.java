@@ -54,7 +54,7 @@ import com.webssky.jteach.util.JTeachIcon;
  * JTeach Client <br />
  * 
  * @author chenxin - chenxin619315@gmail.com <br />
- * {@link http://www.webssky.com} <br />
+ * {@link <a href="http://www.webssky.com">http://www.webssky.com</a>} <br />
  */
 public class JClient extends JFrame {
 	
@@ -409,7 +409,6 @@ public class JClient extends JFrame {
 				}
 				
 				try {
-					socket.setSoTimeout(0);
 					/*Message symbol */
 					char symbol = in.readChar();
 					if ( symbol != JCmdTools.SEND_CMD_SYMBOL ) continue;
@@ -483,10 +482,11 @@ public class JClient extends JFrame {
 					else if ( _cmd == JCmdTools.SERVER_EXIT_CMD ) {
 						System.exit(0);
 					}
-				} catch ( SocketException e ) {
+				} catch (SocketException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
 					offLineClear();
+					e.printStackTrace();
 					break;
 				}
 			}

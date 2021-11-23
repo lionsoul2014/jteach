@@ -1,4 +1,7 @@
 bin/
+.idea/
+doc/
+classes/
 *.class
 META-INF/
 CHANGES.txt
@@ -10,3 +13,4 @@ CHANGES.txt
 .project
 # vim swp file #
 *.swp
+*.iml
