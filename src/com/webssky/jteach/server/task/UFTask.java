@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.JFileChooser;
 
@@ -20,7 +21,6 @@ import com.webssky.jteach.util.JServerLang;
 /**
  * list all the online JBeans
  * @author chenxin - chenxin619315@gmail.com
- * {@link http://www.webssky.com} 
  */
 public class UFTask implements JSTaskInterface,Runnable {
 	
@@ -34,10 +34,10 @@ public class UFTask implements JSTaskInterface,Runnable {
 	public static final int POINT_LENGTH = 60;
 	private File file = null;
 	private int TStatus = T_RUN;
-	private ArrayList<JBean> beans = null;
+	private final List<JBean> beans;
 	
-	public UFTask() {
-		beans = JServer.makeJBeansCopy();
+	public UFTask(JServer server) {
+		beans = server.copyBeanList();
 	}
 
 	@Override
@@ -49,18 +49,19 @@ public class UFTask implements JSTaskInterface,Runnable {
 	public void stopTask() {
 		System.out.println(STOPING_TIP);
 		setTSTATUS(T_STOP);
-		/**
-		 * send stop command to all the beans 
-		 */
-		Iterator<JBean> it = beans.iterator();
+
+		/* send stop command to all the beans */
+		final Iterator<JBean> it = beans.iterator();
 		while ( it.hasNext() ) {
 			JBean b = it.next();
 			try {
 				b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
 			} catch (IOException e) {
-				it.remove();b.clear();
+				it.remove();
+				b.clear();
 			}
 		}
+
 		System.out.println(STOPED_TIP);
 	}
 	

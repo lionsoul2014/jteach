@@ -8,9 +8,9 @@ import com.webssky.jteach.server.JServer;
 
 
 /**
- * language package for JTeach Server 
+ * language package for JTeach Server
+ *
  * @author chenxin - chenxin619315@gmail.com
- * {@link http://www.webssky.com}
  */
 public class JServerLang {
 	

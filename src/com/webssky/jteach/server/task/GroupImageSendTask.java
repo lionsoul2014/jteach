@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import com.webssky.jteach.server.JBean;
 import com.webssky.jteach.server.JServer;
@@ -14,7 +15,6 @@ import com.webssky.jteach.util.JCmdTools;
  * 		call by SBTask <br />
  * 
  * @author chenxin - chenxin619315@gmail.com <br />
- * {@link http://www.webssky.com} 
  */
 public class GroupImageSendTask implements Runnable {
 	
@@ -24,11 +24,11 @@ public class GroupImageSendTask implements Runnable {
 	private Object DLOCK = new Object();
 	private int d_val = D_OLD;
 	
-	private ArrayList<JBean> beans = null;
+	private final List<JBean> beans;
 	private Point mouse = null;
 	private byte[] data = null;
 	
-	public GroupImageSendTask(ArrayList<JBean> b) {
+	public GroupImageSendTask(List<JBean> b) {
 		beans = b;
 	}
 	
@@ -53,7 +53,7 @@ public class GroupImageSendTask implements Runnable {
 	 */
 	@Override
 	public void run() {
-		Iterator<JBean> it = beans.iterator();
+		final Iterator<JBean> it = beans.iterator();
 		while ( it.hasNext() ) {
 			JBean b = it.next();
 			try {
@@ -63,12 +63,11 @@ public class GroupImageSendTask implements Runnable {
 				 * if we didn't receive a symbol from in JCmdTools.SO_TIMEOUT milliseconds.
 				 * that mean is client is off line.
 				 */
-				b.getReader().readChar();
+				// b.getReader().readChar();
 				b.send(JCmdTools.SEND_DATA_SYMBOL, mouse.x, mouse.y, data.length, data);
 				// System.out.println("sended");
 			} catch (IOException e) {
 				it.remove();b.clear();
-				break;
 			}
 		}
 		setDValue(D_OLD);

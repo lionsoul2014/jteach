@@ -27,7 +27,6 @@ import com.webssky.jteach.util.JTeachIcon;
  * 		Broadcast Send Thread <br />
  * 
  * @author chenxin <br />
- * {@link <a href="http://www.webssky.com">http://www.webssky.com</a>}
  */
 public class SBRTask extends JFrame implements JCTaskInterface {
 

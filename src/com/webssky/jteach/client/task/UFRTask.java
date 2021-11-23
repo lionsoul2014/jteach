@@ -28,7 +28,6 @@ import com.webssky.jteach.util.JCmdTools;
  * File Receive When Server started the File Upload Thread. <br />
  * 
  * @author chenxin <br />
- * {@link http://www.webssky.com} 
  */
 public class UFRTask extends JFrame implements JCTaskInterface {
 	

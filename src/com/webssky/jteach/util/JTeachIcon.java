@@ -72,5 +72,26 @@ public class JTeachIcon {
 		g.dispose();
 		return _dst;
 	}
+
+
+	public static boolean ImageEquals(BufferedImage image1, BufferedImage image2) {
+		int w1 = image1.getWidth();
+		int h1 = image1.getHeight();
+		int w2 = image2.getWidth();
+		int h2 = image2.getHeight();
+		if (w1 != w2 || h1 != h2) {
+			return false;
+		}
+
+		for (int i = 0; i < w1; i += 4) {
+			for (int j = 0; j < h1; j += 4) {
+				if (image1.getRGB(i, j) != image2.getRGB(i, j)) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
 	
 }

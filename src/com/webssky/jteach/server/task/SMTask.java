@@ -32,6 +32,7 @@ import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
@@ -50,7 +51,6 @@ import com.webssky.jteach.util.JTeachIcon;
 /**
  * Image receive thread for Screen monitor
  * @author chenxin - chenxin619315@gmail.com
- * {@link http://www.webssky.com} 
  */
 public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 
@@ -63,17 +63,17 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	public static Dimension wSize = null;
 	
 	private int TStatus = T_RUN;
-	private JBean bean = null;		//monitor machine
-	private ArrayList<JBean> beanArr = null;
+	private JBean bean = null;		// monitor machine
+	private final List<JBean> beans;
 	private DataInputStream reader = null;
-	private ImageJPanel map = null;
+	private final ImageJPanel map;
 	private volatile BufferedImage B_IMG = null;
 	private Dimension MAP_SIZE = null;
 	private RMIInterface RMIInstance = null;
 	private String control = null;
 	private String broadcast = null;
 	
-	public SMTask() {
+	public SMTask(JServer server) {
 		this.setTitle(W_TITLE);
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
@@ -100,15 +100,13 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				map.requestFocus();
 			}
 			@Override
-			public void windowLostFocus(WindowEvent e) {
-				
-			}
+			public void windowLostFocus(WindowEvent e) {}
 		});
+
+		beans = server.copyBeanList();
 	}
 	
-	/**
-	 * screen image show JPanel 
-	 */
+	/** screen image show JPanel */
 	private class ImageJPanel extends JPanel implements 
 		MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
 		private static final long serialVersionUID = 1L;
@@ -137,14 +135,11 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				FontMetrics m = getFontMetrics(IFONT);
 				g.drawString(EMTPY_INFO,
 						(getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
-				return;
+			} else {
+				g.drawImage(B_IMG, 0, 0, null);
+				/* Draw the Mouse */
+				g.drawImage(MOUSE_CURSOR, MOUSE_POS.x, MOUSE_POS.y, null);
 			}
-			
-			g.drawImage(B_IMG, 0, 0, null);
-			/**
-			 * Draw the Mouse
-			 */
-			g.drawImage(MOUSE_CURSOR, MOUSE_POS.x, MOUSE_POS.y, null);
 		}
 		
 		/**
@@ -161,7 +156,10 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 
 		@Override
 		public void mousePressed(MouseEvent e) {
-			if ( RMIInstance == null ) return;
+			if ( RMIInstance == null ) {
+				return;
+			}
+
 			int button = -1;
 			switch ( e.getButton() ) {
 				/**Button 1*/
@@ -175,6 +173,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 					button = InputEvent.BUTTON3_MASK;
 					break;
 			}
+
 			try {
 				RMIInstance.mousePress(button);
 			} catch (RemoteException e1) {
@@ -185,7 +184,10 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 
 		@Override
 		public void mouseReleased(MouseEvent e) {
-			if ( RMIInstance == null ) return;
+			if ( RMIInstance == null ) {
+				return;
+			}
+
 			int button = -1;
 			switch ( e.getButton() ) {
 				/**Button 1*/
@@ -211,6 +213,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		@Override
 		public void mouseMoved(MouseEvent e) {
 			if ( RMIInstance == null ) return;
+
 			try {
 				RMIInstance.mouseMove( e.getX(),  e.getY());
 			} catch (RemoteException e1) {
@@ -303,30 +306,30 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			JServerLang.SCREEN_MONITOR_EMPTY_ARGUMENTS();
 			JServer.getInstance().resetJSTask();
 			return;
-		} 
+		}
+
 		if ( str.matches("^[0-9]{1,}$") == false ) {
 			System.out.println("Ilegal Index For Screen Monitor");
 			JServer.getInstance().resetJSTask();
 			return;
 		}
+
 		int index = Integer.parseInt(str);
-		if ( index < 0 || index >= JServer.getInstance().getJBeans().size() ) {
+		if ( index < 0 || index >= beans.size() ) {
 			System.out.println("Index out of bounds.");
 			JServer.getInstance().resetJSTask();
 			return;
 		}
 		
-		synchronized ( JServer.LOCK ) {
-			bean = JServer.getInstance().getJBeans().get(index);
-			reader = bean.getReader();
-			if ( bean == null || reader == null ) {
-				JServer.getInstance().getJBeans().remove(index);
-				JServer.getInstance().resetJSTask();
-				System.out.println("JBean is NULL or reader is NULL.");
-				return;
-			}
+		bean = beans.get(index);
+		reader = bean.getReader();
+		if ( bean == null || reader == null ) {
+			beans.remove(index);
+			JServer.getInstance().resetJSTask();
+			System.out.println("JBean is NULL or reader is NULL.");
+			return;
 		}
-		
+
 		//get the control arguments
 		control = JServer.getInstance().getArguments().get(JCmdTools.REMOTE_CONTROL_KEY);
 		if ( control != null && control.equals(JCmdTools.REMOTE_CONTROL_VAL) ) {
@@ -341,13 +344,11 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			}
 		}
 		
-		//get monitor broadcast arguments
+		// get monitor broadcast arguments
 		broadcast = JServer.getInstance().getArguments().get(JCmdTools.MONITOR_BROADCAST_KEY);
 		if ( broadcast != null && broadcast.equals(JCmdTools.MONITOR_BROADCAST_VAL) ) {
-			beanArr = JServer.makeJBeansCopy();
-			beanArr.remove(index);
-			
-			Iterator<JBean> it = beanArr.iterator();
+			beans.remove(index);
+			final Iterator<JBean> it = beans.iterator();
 			while ( it.hasNext() ) {
 				JBean b = it.next();
 				try {
@@ -358,13 +359,9 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			}
 		}
 		
-		/**
-		 * send start symbol
-		 * start the image data receive thread 
-		 */
+		/* send start symbol and the image data receive thread */
 		try {
 			bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_SCREEN_MONITOR_CMD);
-			
 			JServer.threadPool.execute(this);
 			SwingUtilities.invokeLater(new Runnable(){
 				@Override
@@ -375,7 +372,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			});
 		} catch (IOException e) {
 			System.out.println("Fail to send ScreenMonitor start symbol to JBean.");
-			JServer.getInstance().removeJBean(index);
+			beans.remove(index);
 			JServer.getInstance().resetJSTask();
 		}
 	}
@@ -383,6 +380,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	@Override
 	public void stopTask() {
 		setTStatus(T_STOP);
+
 		try {
 			bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
 		} catch (IOException e) {
@@ -390,17 +388,17 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		}
 		
 		//send stop symbol
-		if ( beanArr != null ) {
-			Iterator<JBean> it = beanArr.iterator();
-			while ( it.hasNext() ) {
-				JBean b = it.next();
-				try {
-					b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
-				} catch (IOException e) {
-					it.remove();b.clear();
-				}
+		final Iterator<JBean> it = beans.iterator();
+		while ( it.hasNext() ) {
+			JBean b = it.next();
+			try {
+				b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
+			} catch (IOException e) {
+				it.remove();
+				b.clear();
 			}
 		}
+
 		System.out.println("Screen Monitor Thread Is Stoped!");
 	}
 
@@ -444,17 +442,19 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				/*repaint the Image JPanel*/
 				repaintImageJPanel();
 				
-				/*send the received data all the other JBeans*/
+				/* send the received data all the other JBeans*/
 				if ( imgSend == null ) {
-					if ( beanArr == null || beanArr.size() == 0 ) continue; 
+					if ( beans.size() == 0 ) {
+						continue;
+					}
+
 					/*
 					 * create a new GroupImageSendTask object
 					 * and refresh the data 
 					 */
-					imgSend = new GroupImageSendTask(beanArr);
+					imgSend = new GroupImageSendTask(beans);
 					imgSend.refresh(MOUSE_POS, buffer);
-				}
-				else {
+				} else {
 					/*just refresh the data and send them to all the other JBeans */
 					//if ( imgSend.getDType() == GroupImageSendTask.D_NEW ) continue;
 					imgSend.refresh(MOUSE_POS, buffer);
@@ -463,6 +463,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				break;
 			}
 		}
+
 		_dispose();
 	}
 	

@@ -19,12 +19,12 @@ import com.webssky.jteach.client.JCWriter;
 import com.webssky.jteach.server.JBean;
 import com.webssky.jteach.server.JServer;
 import com.webssky.jteach.util.JCmdTools;
+import com.webssky.jteach.util.JTeachIcon;
 
 
 /**
  * Broadcast Sender Task. <br />
  * @author chenxin - chenxin619315@gmail.com <br />
- * {@link <a href="http://www.webssky.com">http://www.webssky.com</a>}
  */
 public class SBTask implements JSTaskInterface,Runnable {
 	
@@ -38,12 +38,12 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 	private final BlockingQueue<MsgItem> msgQueue;
 	private final Robot robot;
-	private final ArrayList<JBean> beans;
+	private final List<JBean> beans;
 	private Thread imgSendT;
 	
-	public SBTask() throws AWTException {
+	public SBTask(JServer server) throws AWTException {
 		robot = new Robot();
-		beans = JServer.makeJBeansCopy();
+		beans = server.copyBeanList();
 		msgQueue = new LinkedBlockingDeque<>(10);
 	}
 	
@@ -108,13 +108,15 @@ public class SBTask implements JSTaskInterface,Runnable {
 		while ( getTSTATUS() == T_RUN ) {
 			//load img
 			BufferedImage img = robot.createScreenCapture(new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height));
-			if ( B_IMG == null ) B_IMG = img;
+			if ( B_IMG == null ) {
+				B_IMG = img;
+			}
 			/*
 			 * we need to check the image
 			 * if over 98% of the picture is the same
 			 * and there is no necessary to send the picture 
 			 */
-			else if ( ImageEquals(B_IMG, img) ) {
+			else if (JTeachIcon.ImageEquals(B_IMG, img) ) {
 				continue;
 			}
 			
@@ -214,21 +216,6 @@ public class SBTask implements JSTaskInterface,Runnable {
 				}
 			}
 		}
-	}
-	
-	public static boolean ImageEquals(BufferedImage image1, BufferedImage image2) {
-		int w1 = image1.getWidth();
-		int h1 = image2.getHeight();
-		int w2 = image1.getWidth();
-		int h2 = image2.getHeight();
-		if (w1 != w2 || h1 != h2) return false;
-		for (int i = 0; i < w1; i += 4) {
-			for (int j = 0; j < h1; j += 4) {
-				if (image1.getRGB(i, j) != image2.getRGB(i, j))
-					return false;
-			}
-		}
-		return true;
 	}
 	
 	public synchronized int getTSTATUS() {

@@ -14,3 +14,4 @@ CHANGES.txt
 # vim swp file #
 *.swp
 *.iml
+out/

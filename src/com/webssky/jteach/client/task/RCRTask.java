@@ -14,7 +14,6 @@ import com.webssky.jteach.util.JCmdTools;
 /**
  * remote command execute handler class
  * @author chenxin - chenxin619315@gmail.com
- * {@link http://www.webssky.com} 
  */
 public class RCRTask implements JCTaskInterface {
 	

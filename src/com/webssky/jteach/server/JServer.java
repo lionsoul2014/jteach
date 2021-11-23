@@ -8,10 +8,7 @@ import java.lang.reflect.Constructor;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,7 +19,6 @@ import com.webssky.jteach.util.JServerLang;
 /**
  * JTeach Server <br />
  * @author chenxin - chenxin619315@gmail.com <br />
- * {@link www.webssky.com}
  */
 public class JServer {
 	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
@@ -43,17 +39,22 @@ public class JServer {
 	private int STATE = M_RUN;
 	
 	private JSTaskInterface JSTask = null;
-	private ArrayList<JBean> BeanDB = new ArrayList<JBean>();
+	private final List<JBean> beanList;
+	private HashMap<String, String> arguments = null;
+
 	public static ExecutorService threadPool = Executors.newCachedThreadPool();
 	private static JServer _instance = null;
-	private HashMap<String, String> arguments = null;
-	
+
 	public static JServer getInstance() {
-		if ( _instance == null ) _instance = new JServer();
+		if ( _instance == null ) {
+			_instance = new JServer();
+		}
 		return _instance;
 	}
 	
-	private JServer() {}
+	private JServer() {
+		beanList = Collections.synchronizedList(new ArrayList<>());
+	}
 	
 	/**
 	 * Initialize the JTeach Server 
@@ -67,6 +68,7 @@ public class JServer {
 			JServerLang.SERVER_INIT_FAILED();
 			System.exit(1);
 		}
+
 		try {
 			JServerLang.MONITOR_INFO();
 		} catch (UnknownHostException e) {
@@ -93,7 +95,10 @@ public class JServer {
 			line = reader.nextLine().trim().toLowerCase();
 			arguments = JCmdTools.parseCMD(line);
 			_input = arguments.get(JCmdTools.CMD_KEY);
-			if ( _input == null ) continue;
+			if ( _input == null ) {
+				continue;
+			}
+
 			/*
 			 * JSTask Working thread
 			 * call the _runCommand to look for the class
@@ -105,7 +110,7 @@ public class JServer {
 				_runJSTask(_input);
 			}
 			/*list all the online JBeans */
-			else if ( _input.equals(JCmdTools.LS) ) ListAllJBeans();
+			else if ( _input.equals(JCmdTools.LS) ) listBeans();
 			
 			/*show the function menu of JTeach */
 			else if ( _input.equals(JCmdTools.MENU) ) JCmdTools.showCmdMenu();
@@ -114,16 +119,17 @@ public class JServer {
 			 * and reset the JSTask 
 			 */
 			else if ( _input.equals(JCmdTools.STOP) ) {
-				if ( JSTask == null ) 
+				if ( JSTask == null ) {
 					JServerLang.STOP_NULL_THREAD();
-				else {
+				} else {
 					JSTask.stopTask();
 					JSTask = null;
 				}
 			} 
 			/*remove JBean*/
-			else if ( _input.equals(JCmdTools.DELE) ) delete();
-			else if ( _input.equals(JCmdTools.EXIT) ) {
+			else if ( _input.equals(JCmdTools.DELE) ) {
+				delete();
+			} else if ( _input.equals(JCmdTools.EXIT) ) {
 				exit();
 			}
 			else JServerLang.UNKNOW_COMMAND();
@@ -138,16 +144,18 @@ public class JServer {
 			JServerLang.START_THREAD_RUNNING();
 			return;
 		}
-		if ( size() == 0 ) {
+
+		if ( beanList.size() == 0 ) {
 			JServerLang.EMPTY_JBENAS();
 			return;
 		}
+
 		try {
 			String classname = "com.webssky.jteach.server.task."+cmd.toUpperCase()+"Task";
 			JServerLang.TASK_PATH_INFO(classname);
 			Class<?> _class = Class.forName(classname);
-			Constructor<?> con = _class.getConstructor();
-			JSTask = (JSTaskInterface) con.newInstance();
+			Constructor<?> con = _class.getConstructor(JServer.class);
+			JSTask = (JSTaskInterface) con.newInstance(this);
 			JSTask.startTask();
 		} catch (Exception e) {
 			//e.printStackTrace();
@@ -176,7 +184,7 @@ public class JServer {
 					 * get a Socket from the Socket Queue
 					 * and create new JBean Object to manager it 
 					 */
-					addJBean(new JBean(s));
+					beanList.add(new JBean(s));
 				} catch (IOException e) {
 					JServerLang.SERVER_ACCEPT_ERROR();
 					break;
@@ -195,15 +203,15 @@ public class JServer {
 		if ( arguments != null 
 				&& arguments.get(JCmdTools.EXIT_CLOSE_KEY) != null
 				&& arguments.get(JCmdTools.EXIT_CLOSE_KEY).equals(JCmdTools.EXIT_CLOSE_VAL) ) {
-			synchronized ( LOCK ) {
-				for ( int j = 0; j < BeanDB.size(); j++ ) {
-					JBean bean = BeanDB.get(j);
+			synchronized ( beanList ) {
+				for (JBean b : beanList) {
 					try {
-						bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_EXIT_CMD);
+						b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_EXIT_CMD);
 					} catch (IOException e) {}
 				}
 			}
 		}
+
 		JServerLang.PROGRAM_OVERED();
 		System.exit(0);
 	}
@@ -216,42 +224,42 @@ public class JServer {
 			JServerLang.START_THREAD_RUNNING();
 			return;
 		}
-		if ( arguments == null ) return;
-		synchronized ( LOCK ) {
-			if ( BeanDB.size() == 0 ) {
-				System.out.println("Empty Set.");
-				return;
-			} 
-			String v = arguments.get(JCmdTools.DELETE_KEY);
-			if ( v == null ) {
+
+		if ( arguments == null ) {
+			return;
+		}
+
+		String v = arguments.get(JCmdTools.DELETE_KEY);
+		if ( v == null ) {
+			JServerLang.DELETE_JBEAN_EMPTY_ARGUMENTS();
+			return;
+		}
+
+		/*remove all the JBean */
+		if ( v.equals(JCmdTools.DELETE_ALL_VAL) ) {
+			for (JBean b : beanList) {
+				try {
+					if ( b.getSocket() != null ) b.getSocket().close();
+					if ( b.getOutputStream() != null ) b.getOutputStream().close();
+				} catch (IOException e) {}
+			}
+
+			beanList.clear();
+			System.out.println("Clear Ok.");
+		}
+		/*remove the Specified JBean*/
+		else {
+			if ( v.matches("^[0-9]{1,}$") == false ) {
 				JServerLang.DELETE_JBEAN_EMPTY_ARGUMENTS();
 				return;
 			}
-			/*remove all the JBean */
-			if ( v.equals(JCmdTools.DELETE_ALL_VAL) ) {
-				for ( int j = 0; j < BeanDB.size(); j++ ) {
-					JBean b = BeanDB.get(j);
-					try {
-						if ( b.getSocket() != null ) b.getSocket().close();
-						if ( b.getOutputStream() != null ) b.getOutputStream().close(); 
-					} catch (IOException e) {}	
-				}
-				BeanDB = new ArrayList<JBean>();
-				System.out.println("Clear Ok.");
-			}
-			/*remove the Specified JBean*/
-			else {
-				if ( v.matches("^[0-9]{1,}$") == false ) {
-					JServerLang.DELETE_JBEAN_EMPTY_ARGUMENTS();
-					return;
-				} 
-				int index = Integer.parseInt(v);
-				if ( index < 0 || index >= BeanDB.size() ) {
-					System.out.println(index+" Index out of bounds");
-				} else {
-					removeJBean(index);
-					System.out.println("Remove Ok.");
-				}
+
+			int index = Integer.parseInt(v);
+			if ( index < 0 || index >= beanList.size() ) {
+				System.out.println(index+" Index out of bounds");
+			} else {
+				beanList.remove(index);
+				System.out.println("Remove Ok.");
 			}
 		}
 	}
@@ -265,51 +273,6 @@ public class JServer {
 		return arguments;
 	}
 	
-	/**
-	 * Add A New Bean To BeanDB. <br />
-	 * 
-	 * @param bean <br />
-	 */
-	public void addJBean(JBean bean) {
-		synchronized ( LOCK ) {
-			BeanDB.add(bean);
-		}
-	}
-	
-	/**
-	 * get the size of the BeanDB. <br />
-	 * 
-	 * @return int
-	 */
-	public int size() {
-		synchronized ( LOCK ) {
-			return BeanDB.size();
-		}
-	}
-	
-	/**
-	 * Remove a JBean 
-	 */
-	public void removeJBean(JBean bean) {
-		synchronized ( LOCK ) {
-			BeanDB.remove(bean);
-		}
-	}
-	public synchronized void removeJBean(int index) {
-		synchronized ( LOCK ) {
-			BeanDB.remove(index);
-		}
-	}
-	
-	/**
-	 * Get the JBean array. <br />
-	 * 
-	 * @return ArrayList<JBean>
-	 */
-	public ArrayList<JBean> getJBeans() {
-		return BeanDB;
-	}
-	
 	public synchronized int getRunState() {
 		return STATE;
 	}
@@ -321,26 +284,23 @@ public class JServer {
 	/**
 	 * list all the JBeans in BeanDB 
 	 */
-	public void ListAllJBeans() {
-		synchronized ( LOCK ) {
-			if ( BeanDB.size() == 0 ) {
-				JServerLang.EMPTY_JBENAS();
-			} else {
-				Iterator<JBean> it = BeanDB.iterator();
-				int j = 0;
-				while ( it.hasNext() ) {
-					JBean b = it.next();
-					String num = JCmdTools.formatString(j+"", 2, '0');
-					j++;
-					try {
-						b.getSocket().sendUrgentData(0xff);
-						b.send(JCmdTools.SEND_ARP_SYMBOL);
-					} catch (IOException e) {
-						it.remove();b.clear();
-						System.out.println("-+-index:"+num+", "+b+"(gc)---+-");
-						continue;
-					}
+	public void listBeans() {
+		synchronized (beanList) {
+			int j = 0;
+			final Iterator<JBean> it = beanList.iterator();
+			while ( it.hasNext() ) {
+				final JBean b = it.next();
+				String num = JCmdTools.formatString(j+"", 2, '0');
+				j++;
+
+				// send the ARP to the client
+				try {
+					b.getSocket().sendUrgentData(0xff);
+					b.send(JCmdTools.SEND_ARP_SYMBOL);
 					System.out.println("-+-index:"+num+", "+b+"---+-");
+				} catch (IOException e) {
+					it.remove();b.clear();
+					System.out.println("-+-index:"+num+", "+b+"(gc)---+-");
 				}
 			}
 		}
@@ -348,23 +308,21 @@ public class JServer {
 	
 	/**
 	 * make a copy for a array
-	 * @param ArrayList
-	 * @return ArrayList 
+	 * @return List
 	 */
-	public static ArrayList<JBean> makeJBeansCopy() {
-		synchronized ( LOCK ) {
-			ArrayList<JBean> _arr = JServer.getInstance().getJBeans();
-			ArrayList<JBean> copy = new ArrayList<JBean>(_arr.size());
-			for ( int j = 0; j < _arr.size(); j++ ) {
-				copy.add(_arr.get(j));
+	public List<JBean> copyBeanList() {
+		final List<JBean> list = new ArrayList<>();
+		synchronized (beanList) {
+			for (JBean b : beanList) {
+				list.add(b);
 			}
-			return copy;
 		}
+
+		return list;
 	}
 	
 	/**
 	 * set the default opacity of JBeans for one group
-	 * @param _number 
 	 */
 	public void setGroupOpacity( int opacity ) {
 		gOpacity = opacity;
@@ -386,10 +344,16 @@ public class JServer {
 			opacity = Integer.parseInt(args[0]);
 			if ( args.length > 1 ) {
 				int p = Integer.parseInt(args[1]);
-				if ( p >= 1024 && p <= 65535 ) PORT = p;	
+				if ( p >= 1024 && p <= 65535 ) {
+					PORT = p;
+				}
 			}
 		}
-		if ( opacity != 0 ) JServer.getInstance().setGroupOpacity(opacity); 
+
+		if ( opacity != 0 ) {
+			JServer.getInstance().setGroupOpacity(opacity);
+		}
+
 		JServer.getInstance().initServer();
 		JServer.getInstance().StartMonitorThread();
 		JCmdTools.showCmdMenu();
