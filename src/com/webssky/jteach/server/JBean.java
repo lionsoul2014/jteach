@@ -217,7 +217,7 @@ public class JBean {
 	}
 
 	public void reportSendError() {
-		System.err.printf("failed to send data to client %s[%s]", this.getName(), this.getIP());
+		System.err.printf("failed to send data to client %s\n", this.getIP());
 	}
 
 	public String toString() {

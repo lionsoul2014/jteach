@@ -434,6 +434,12 @@ public class JClient extends JFrame {
 				}
 				
 				try {
+					// check and break the socket if
+					// it were closed or cleared
+					if (socket == null) {
+						break;
+					}
+
 					/* Message symbol */
 					socket.setSoTimeout(0);
 					char symbol = in.readChar();
@@ -520,12 +526,7 @@ public class JClient extends JFrame {
 			}
 
 			System.out.println("client is now offline, try to re-connect in 3 seconds");
-			try {
-				Thread.sleep(3000);
-				connect();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			connect();
 		}
 	}
 	

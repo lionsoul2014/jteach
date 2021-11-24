@@ -116,7 +116,9 @@ public class SBTask implements JSTaskInterface,Runnable {
 		BufferedImage B_IMG = null;
 		while ( getTSTATUS() == T_RUN ) {
 			//load img
-			final BufferedImage img = robot.createScreenCapture(new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height));
+			final BufferedImage img = robot.createScreenCapture(
+				new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height)
+			);
 			if ( B_IMG == null ) {
 				B_IMG = img;
 			}
@@ -182,9 +184,6 @@ public class SBTask implements JSTaskInterface,Runnable {
 	private class ImageSendTask implements Runnable {
 		@Override
 		public void run() {
-			BufferedImage B_IMG = null;
-			Point mouse = null;
-			byte[] data = null;
 			while ( getTSTATUS() == T_RUN ) {
 				final MsgItem msg;
 				try {
@@ -207,11 +206,12 @@ public class SBTask implements JSTaskInterface,Runnable {
 						}
 					}
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					// e.printStackTrace();
+					System.out.println("queue.take were interrupted\n");
 				}
 
 				try {
-					Thread.sleep(10);
+					Thread.sleep(5);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
