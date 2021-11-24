@@ -54,7 +54,7 @@ public class RCTask implements JSTaskInterface {
 				return;
 			}
 
-			/** send the command to spesified one*/
+			/* send the command to spesified one*/
 			execute(beans.get(index));
 		}
 
@@ -100,8 +100,7 @@ public class RCTask implements JSTaskInterface {
 			}
 		}
 		
-		InputStream in = System.in;
-		Scanner reader = new Scanner(in);
+		final Scanner reader = new Scanner(System.in);
 		String line;
 		System.out.println("-+-All JBeans, Run "+EXIT_CMD_STR+" to exit.-+-");
 		while ( true ) {

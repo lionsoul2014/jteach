@@ -80,15 +80,14 @@ public class JServer {
 	
 	/** run command */
 	public void _CmdLoader() {
-		String line = null, _input = "";
-		InputStream in = System.in;
-		Scanner reader = new Scanner(in);
+		String line, _input = "";
+		final Scanner reader = new Scanner(System.in);
 		do {
 			JServerLang.INPUT_ASK();
 			line = reader.nextLine().trim().toLowerCase();
 			arguments = JCmdTools.parseCMD(line);
 			_input = arguments.get(JCmdTools.CMD_KEY);
-			if ( _input == null ) {
+			if (_input == null) {
 				continue;
 			}
 
@@ -103,10 +102,14 @@ public class JServer {
 				_runJSTask(_input);
 			}
 			/*list all the online JBeans */
-			else if ( _input.equals(JCmdTools.LS) ) listBeans();
+			else if ( _input.equals(JCmdTools.LS) ) {
+				listBeans();
+			}
 			
 			/*show the function menu of JTeach */
-			else if ( _input.equals(JCmdTools.MENU) ) JCmdTools.showCmdMenu();
+			else if ( _input.equals(JCmdTools.MENU) ) {
+				JCmdTools.showCmdMenu();
+			}
 			/*
 			 * stop the current JSTask working thread
 			 * and reset the JSTask 
@@ -124,8 +127,9 @@ public class JServer {
 				delete();
 			} else if ( _input.equals(JCmdTools.EXIT) ) {
 				exit();
+			} else {
+				JServerLang.UNKNOW_COMMAND();
 			}
-			else JServerLang.UNKNOW_COMMAND();
 		} while ( true);
 	}
 	
