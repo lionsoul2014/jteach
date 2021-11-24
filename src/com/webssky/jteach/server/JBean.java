@@ -1,5 +1,7 @@
 package com.webssky.jteach.server;
 
+import com.webssky.jteach.util.JCmdTools;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -71,7 +73,7 @@ public class JBean {
 		try {
 			socket = s;
 			//socket.setTcpNoDelay(true);
-			// socket.setSoTimeout(3 * 1000);
+			socket.setSoTimeout(JCmdTools.SO_TIMEOUT);
 			out = new DataOutputStream(socket.getOutputStream());
 			in  = new DataInputStream(socket.getInputStream());
 		} catch (IOException e) {
