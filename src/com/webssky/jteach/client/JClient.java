@@ -435,86 +435,83 @@ public class JClient extends JFrame {
 				
 				try {
 					/* Message symbol */
+					socket.setSoTimeout(0);
 					char symbol = in.readChar();
-					if ( symbol != JCmdTools.SEND_CMD_SYMBOL ) {
+					if (symbol != JCmdTools.SEND_CMD_SYMBOL) {
 						continue;
 					}
 
 					int _cmd = in.readInt();
-					setTipInfo("Command From Server, Code:"+_cmd);
+					setTipInfo("Command From Server, Code:" + _cmd);
 
 					/*
 					 * Screen Broadcast
-					 * wait the JClient's command monitor thread 
+					 * wait the JClient's command monitor thread
 					 * change the JCTask pointer to a new SBRTask Object
 					 * then start the Thread
 					 */
-					if ( _cmd == JCmdTools.SERVER_BROADCAST_START_CMD ) {
+					if (_cmd == JCmdTools.SERVER_BROADCAST_START_CMD) {
 						setTStatus(T_STOP);
 						socket.setSoTimeout(JCmdTools.SO_TIMEOUT);
 						JCTask = new SBRTask();
 						JCTask.startCTask();
 					}
-							
+
 					/*
 					 * File Upload
-					 * wait the JClient's command monitor thread 
+					 * wait the JClient's command monitor thread
 					 * change the JCTask pointer to a new UFRTask Object
-					 * then start the thread 
+					 * then start the thread
 					 */
-					else if ( _cmd == JCmdTools.SERVER_UPLOAD_START_CMD ) {
+					else if (_cmd == JCmdTools.SERVER_UPLOAD_START_CMD) {
 						setTStatus(T_STOP);
 						JCTask = new UFRTask();
 						JCTask.startCTask();
 					}
-					
+
 					/*
 					 * Screen Monitor
 					 * change the JCTask pointer to a new SMSTask Object
 					 * then start the thread
 					 */
-					else if ( _cmd == JCmdTools.SERVER_SCREEN_MONITOR_CMD ) {
+					else if (_cmd == JCmdTools.SERVER_SCREEN_MONITOR_CMD) {
 						//String isControl = in.readUTF();
 						JCTask = new SMSTask();
 						JCTask.startCTask();
 					}
-					
+
 					/*
 					 * remote command execute
-					 * wait the JClient's command monitor thread 
+					 * wait the JClient's command monitor thread
 					 * change the JCTask pointer to a new RCRTask Object
 					 * then start the thread
 					 */
-					else if ( _cmd == JCmdTools.SERVER_RCMD_EXECUTE_CMD ) {
+					else if (_cmd == JCmdTools.SERVER_RCMD_EXECUTE_CMD) {
 						setTStatus(T_STOP);
 						JCTask = new RCRTask();
 						JCTask.startCTask();
 					}
-					
+
 					/*
 					 * stop the working JCTask
 					 * if the working thread could load data from server
 					 * this is unnecessary cause this kind of thread will over in its own thread
-					 * so this one is for the thread that send data to the server 
+					 * so this one is for the thread that send data to the server
 					 */
-					else if ( _cmd == JCmdTools.SERVER_TASK_STOP_CMD ) {
-						if ( JCTask != null ) {
+					else if (_cmd == JCmdTools.SERVER_TASK_STOP_CMD) {
+						if (JCTask != null) {
 							JCTask.stopCTask();
 							JCTask = null;
 						}
 					}
-					
+
 					/*
 					 * the server is closed
-					 * and this command order the client to exit; 
+					 * and this command order the client to exit;
 					 */
-					else if ( _cmd == JCmdTools.SERVER_EXIT_CMD ) {
+					else if (_cmd == JCmdTools.SERVER_EXIT_CMD) {
 						System.exit(0);
 					}
-				} catch (SocketException e) {
-					// e.printStackTrace();
-					System.out.println("socket exception");
-					// break;
 				} catch (IOException e) {
 					offLineClear();
 					e.printStackTrace();
