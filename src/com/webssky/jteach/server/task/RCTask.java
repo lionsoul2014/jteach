@@ -99,9 +99,9 @@ public class RCTask implements JSTaskInterface {
 				b.clear();
 			}
 		}
-		
-		final Scanner reader = new Scanner(System.in);
+
 		String line;
+		final Scanner reader = new Scanner(System.in);
 		System.out.println("-+-All JBeans, Run "+EXIT_CMD_STR+" to exit.-+-");
 		while ( true ) {
 			JServerLang.RCMD_INPUT_ASK();
@@ -140,10 +140,13 @@ public class RCTask implements JSTaskInterface {
 		try {
 			bean.send(JCmdTools.SEND_DATA_SYMBOL, cmd);
 			/* command execute response */
-			DataInputStream dis = bean.getReader();
+			final DataInputStream dis = bean.getReader();
 			String line = dis.readUTF();
-			if ( line.equals(JCmdTools.RCMD_NOREPLY_VAL) ) return; 
-			System.out.println(line);
+			if ( line.equals(JCmdTools.RCMD_NOREPLY_VAL) ) {
+				System.out.println("execution failed or empty return");
+			} else {
+				System.out.println(line);
+			}
 		} catch (IOException e) {
 			CMD_SEND_ERROR("execute command");
 		}
@@ -160,10 +163,9 @@ public class RCTask implements JSTaskInterface {
 			CMD_SEND_ERROR("start command");
 			return;
 		}
-		
-		InputStream in = System.in;
-		Scanner reader = new Scanner(in);
+
 		String line;
+		final Scanner reader = new Scanner(System.in);
 		System.out.println("-+-Single JBean, Run "+EXIT_CMD_STR+" to exit.-+-");
 		while ( true ) {
 			JServerLang.RCMD_INPUT_ASK();
