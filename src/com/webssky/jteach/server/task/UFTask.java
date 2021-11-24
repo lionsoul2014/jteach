@@ -111,7 +111,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 				while ( it.hasNext() ) {
 					JBean bean = it.next();
 					try {
-						bean.send(b, 0, len);
+						bean.send(b, len);
 					} catch (IOException e) {
 						it.remove();bean.clear();
 					}
