@@ -508,11 +508,20 @@ public class JClient extends JFrame {
 					}
 				} catch (SocketException e) {
 					e.printStackTrace();
+					break;
 				} catch (IOException e) {
 					offLineClear();
 					e.printStackTrace();
 					break;
 				}
+			}
+
+			System.out.println("client is now offline, try to re-connect in 3 seconds");
+			try {
+				Thread.sleep(3000);
+				connect();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -582,11 +591,8 @@ public class JClient extends JFrame {
 			e.printStackTrace();
 		}
 
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				JClient.getInstance().setVisible(true);
-			}
+		SwingUtilities.invokeLater(() -> {
+			JClient.getInstance().setVisible(true);
 		});
 	}
 

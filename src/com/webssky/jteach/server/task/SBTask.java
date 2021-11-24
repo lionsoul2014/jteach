@@ -84,18 +84,26 @@ public class SBTask implements JSTaskInterface,Runnable {
 		Iterator<JBean> it = beans.iterator();
 		while ( it.hasNext() ) {
 			JBean b = it.next();
-			if ( b.getSocket() == null ) continue;
-			if ( b.getSocket().isClosed() ) continue;
+			if ( b.getSocket() == null ) {
+				continue;
+			}
+
+			if ( b.getSocket().isClosed() ) {
+				continue;
+			}
+
 			try {
-				if ( cmd == JCmdTools.SERVER_BROADCAST_START_CMD )
+				if ( cmd == JCmdTools.SERVER_BROADCAST_START_CMD ) {
 					b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
-				else 
+				} else {
 					b.getSocket().setSoTimeout(0);
+				}
 				b.send(JCmdTools.SEND_CMD_SYMBOL, cmd);
 			} catch ( SocketException e ) {
 				System.out.println("Fail to send the socket timeout->"+b);
 			} catch (IOException e) {
-				e.printStackTrace();
+				// e.printStackTrace();
+				b.reportSendError();
 				it.remove();b.clear();
 			}
 		}
@@ -107,7 +115,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 		BufferedImage B_IMG = null;
 		while ( getTSTATUS() == T_RUN ) {
 			//load img
-			BufferedImage img = robot.createScreenCapture(new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height));
+			final BufferedImage img = robot.createScreenCapture(new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height));
 			if ( B_IMG == null ) {
 				B_IMG = img;
 			}
@@ -124,7 +132,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 			/*
 			 * turn the BufferedImage to Byte and compress the byte data
 			 * then send them to all the beans */
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			try {
 				// JPEGCodec.createJPEGEncoder(bos).encode(B_IMG);
 				ImageIO.write(img, "jpeg", bos);
@@ -180,39 +188,31 @@ public class SBTask implements JSTaskInterface,Runnable {
 				final MsgItem msg;
 				try {
 					msg = msgQueue.take();
-				} catch (InterruptedException e) {
-					continue;
-				}
 
-				/*
-				 * send image data to all the beans.
-				 * 	if a new bean add the BeanDB and want make it work
-				 * 	you should stop the broadcast and restart the broadcast.
-				*/
-				Iterator<JBean> it = beans.iterator();
-				while (it.hasNext()) {
-					JBean b = it.next();
-					try {
-						/*
-						 * first load the heart beat symbol from the client.
-						 * this is to make sure the client is still on line.
-						 * if we didn't receive a symbol from in JCmdTools.SO_TIMEOUT milliseconds.
-						 * that mean is client is off line.
-						 */
-						b.send(JCmdTools.SEND_DATA_SYMBOL, msg.x, msg.y, msg.data.length, msg.data);
-					} catch (IOException e) {
-						e.printStackTrace();
-						// it.remove();b.clear();
-						continue;
+					/*
+					 * send image data to all the beans.
+					 * 	if a new bean add the BeanDB and want make it work
+					 * 	you should stop the broadcast and restart the broadcast.
+					 */
+					Iterator<JBean> it = beans.iterator();
+					while (it.hasNext()) {
+						JBean b = it.next();
+						try {
+							b.send(JCmdTools.SEND_DATA_SYMBOL, msg.x, msg.y, msg.data.length, msg.data);
+						} catch (IOException e) {
+							// e.printStackTrace();
+							b.reportSendError();
+							it.remove();b.clear();
+						}
 					}
-				}
-
-
-				try {
-					Thread.sleep(5);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
-					continue;
+				}
+
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
 		}

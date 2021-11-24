@@ -12,7 +12,7 @@ import java.net.Socket;
  */
 public class JBean {
 	
-	private Socket socket = null;
+	private volatile Socket socket = null;
 	private String name = null;
 	private DataOutputStream out = null;
 	private DataInputStream in = null;
@@ -41,8 +41,14 @@ public class JBean {
 	 * return the bean's host name 
 	 */
 	public String getName() {
-		if ( name != null ) return name; 
-		if ( socket == null ) return "Unknow Bean";
+		if ( name != null ) {
+			return name;
+		}
+
+		if ( socket == null ) {
+			return "Unknow Bean";
+		}
+
 		return socket.getInetAddress().getHostName();
 	}
 	
@@ -50,16 +56,21 @@ public class JBean {
 	 * return the bean's IP 
 	 */
 	public String getIP() {
-		if ( socket == null ) return "Unkown Bean";
+		if ( socket == null ) {
+			return "Unkown Bean";
+		}
+
 		return socket.getInetAddress().getHostAddress();
 	}
 	
 	private void setSocket(Socket s) {
-		socket = s;
-		if ( socket == null ) return;
-		
+		if (s == null) {
+			throw new NullPointerException();
+		}
+
 		try {
 			//socket.setTcpNoDelay(true);
+			socket.setSoTimeout(3 * 1000);
 			out = new DataOutputStream(socket.getOutputStream());
 			in  = new DataInputStream(socket.getInputStream());
 		} catch (IOException e) {
@@ -87,9 +98,10 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public void send(char symbol) throws IOException {
-		if ( out == null ) return;
-		out.writeChar(symbol);
-		out.flush();
+		if ( out != null ) {
+			out.writeChar(symbol);
+			out.flush();
+		}
 	}
 	
 	/**
@@ -97,10 +109,11 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public void send(char symbol, int cmd) throws IOException {
-		if ( out == null ) return;
-		out.writeChar(symbol);
-		out.writeInt(cmd);
-		out.flush();
+		if ( out != null ) {
+			out.writeChar(symbol);
+			out.writeInt(cmd);
+			out.flush();
+		}
 	}
 	
 	/**
@@ -108,10 +121,11 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public void send(char symbol, byte[] b) throws IOException {
-		if ( out == null ) return;
-		out.writeChar(symbol);
-		out.write(b);
-		out.flush();
+		if ( out != null ) {
+			out.writeChar(symbol);
+			out.write(b);
+			out.flush();
+		}
 	}
 	
 	/**
@@ -120,11 +134,12 @@ public class JBean {
 	 */
 	public void send(int symbol, int length,
 			byte[] data) throws IOException {
-		if ( out == null ) return; 
-		out.writeChar(symbol);
-		out.writeInt(length);
-		out.write(data);
-		out.flush();
+		if ( out != null ) {
+			out.writeChar(symbol);
+			out.writeInt(length);
+			out.write(data);
+			out.flush();
+		}
 	}
 	
 	/**
@@ -133,13 +148,14 @@ public class JBean {
 	 */
 	public void send(int symbol,int x, int y, int length,
 			byte[] data) throws IOException {
-		if ( out == null ) return; 
-		out.writeChar(symbol);
-		out.writeInt(x);
-		out.writeInt(y);
-		out.writeInt(length);
-		out.write(data);
-		out.flush();
+		if ( out != null ) {
+			out.writeChar(symbol);
+			out.writeInt(x);
+			out.writeInt(y);
+			out.writeInt(length);
+			out.write(data);
+			out.flush();
+		}
 	}
 	
 	/**
@@ -147,10 +163,11 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public void send(String str, long x) throws IOException {
-		if ( out == null ) return;
-		out.writeUTF(str);
-		out.writeLong(x);
-		out.flush();
+		if ( out != null ) {
+			out.writeUTF(str);
+			out.writeLong(x);
+			out.flush();
+		}
 	}
 	
 	/**
@@ -158,9 +175,10 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public void send(String str) throws IOException {
-		if ( out == null ) return;
-		out.writeUTF(str);
-		out.flush();
+		if ( out != null ) {
+			out.writeUTF(str);
+			out.flush();
+		}
 	}
 	
 	/**
@@ -168,10 +186,11 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public void send(char symbol, String str) throws IOException {
-		if ( out == null ) return;
-		out.writeChar(symbol);
-		out.writeUTF(str);
-		out.flush();
+		if ( out != null ) {
+			out.writeChar(symbol);
+			out.writeUTF(str);
+			out.flush();
+		}
 	}
 	
 	/**
@@ -179,9 +198,10 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public void send(int x) throws IOException {
-		if ( out == null ) return;
-		out.writeInt(x);
-		out.flush();
+		if ( out != null ) {
+			out.writeInt(x);
+			out.flush();
+		}
 	}
 	
 	/**
@@ -189,11 +209,16 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public void send(byte[] b, int start, int length) throws IOException {
-		if ( out == null ) return;
-		out.write(b, 0, length);
-		out.flush();
+		if ( out != null ) {
+			out.write(b, 0, length);
+			out.flush();
+		}
 	}
-	
+
+	public void reportSendError() {
+		System.err.printf("failed to send data to client %s[%s]", this.getName(), this.getIP());
+	}
+
 	public String toString() {
 		return "IP:"+getIP()+", HOST:"+getName();
 	}
