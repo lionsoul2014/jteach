@@ -69,8 +69,9 @@ public class JBean {
 		}
 
 		try {
+			socket = s;
 			//socket.setTcpNoDelay(true);
-			socket.setSoTimeout(3 * 1000);
+			// socket.setSoTimeout(3 * 1000);
 			out = new DataOutputStream(socket.getOutputStream());
 			in  = new DataInputStream(socket.getInputStream());
 		} catch (IOException e) {

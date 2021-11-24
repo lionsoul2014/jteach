@@ -512,8 +512,9 @@ public class JClient extends JFrame {
 						System.exit(0);
 					}
 				} catch (SocketException e) {
-					e.printStackTrace();
-					break;
+					// e.printStackTrace();
+					System.out.println("socket exception");
+					// break;
 				} catch (IOException e) {
 					offLineClear();
 					e.printStackTrace();

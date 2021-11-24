@@ -93,11 +93,12 @@ public class SBTask implements JSTaskInterface,Runnable {
 			}
 
 			try {
-				if ( cmd == JCmdTools.SERVER_BROADCAST_START_CMD ) {
-					b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
-				} else {
-					b.getSocket().setSoTimeout(0);
-				}
+				// if ( cmd == JCmdTools.SERVER_BROADCAST_START_CMD ) {
+				// 	b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
+				// } else {
+				// 	b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
+				// }
+				b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
 				b.send(JCmdTools.SEND_CMD_SYMBOL, cmd);
 			} catch ( SocketException e ) {
 				System.out.println("Fail to send the socket timeout->"+b);
