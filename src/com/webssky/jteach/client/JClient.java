@@ -394,8 +394,13 @@ public class JClient extends JFrame {
 	}
 	
 	/** initialize the Socket */
-	public void setSocket(Socket s) {
+	public void setSocket(Socket s) throws SocketException {
+		if (s == null) {
+			throw new NullPointerException();
+		}
+
 		socket = s;
+		socket.setSoTimeout(3 * 1000);
 	}
 	
 	/** start Server Input Monitor */
