@@ -9,7 +9,6 @@ import javax.swing.JOptionPane;
  * write method collection for JClient. <br />
  * 
  * @author chenxin - chenxin619315@gmail.com <br />
- * {@link http://www.webssky.com}
  */
 public class JCWriter {
 	

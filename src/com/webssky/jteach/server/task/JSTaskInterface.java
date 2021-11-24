@@ -3,7 +3,6 @@ package com.webssky.jteach.server.task;
 /**
  * Task Interface for JTeach Server
  * @author chenxin - chenxin619315@gmail.com
- * {@link http://www.webssky.com} 
  */
 public interface JSTaskInterface {
 	

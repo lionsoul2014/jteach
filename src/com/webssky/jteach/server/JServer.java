@@ -29,9 +29,8 @@ public class JServer {
 	public static int PORT = 55535;
 	public static ServerSocket server = null;
 	public static final String OS = System.getProperty("os.name").toUpperCase();
-	/**
-	 * default number of JBeans for one group 
-	 */
+
+	/* default number of JBeans for one group */
 	private int gOpacity = 7;
 	
 	public static final int M_RUN = 1;
@@ -56,9 +55,7 @@ public class JServer {
 		beanList = Collections.synchronizedList(new ArrayList<>());
 	}
 	
-	/**
-	 * Initialize the JTeach Server 
-	 */
+	/* Initialize the JTeach Server */
 	public void initServer() {
 		JServerLang.SERVER_INIT();
 		try {
@@ -76,16 +73,12 @@ public class JServer {
 		}
 	}
 	
-	/**
-	 * reset JSTask 
-	 */
+	/** reset JSTask */
 	public void resetJSTask() {
 		JSTask = null;
 	}
 	
-	/**
-	 * run command 
-	 */
+	/** run command */
 	public void _CmdLoader() {
 		String line = null, _input = "";
 		InputStream in = System.in;
@@ -136,9 +129,7 @@ public class JServer {
 		} while ( true);
 	}
 	
-	/**
-	 * Find And Load The Task Class 
-	 */
+	/* Find And Load The Task Class */
 	private void _runJSTask(String cmd) {
 		if ( JSTask != null ) {
 			JServerLang.START_THREAD_RUNNING();
@@ -163,17 +154,13 @@ public class JServer {
 		}
 	}
 	
-	/**
-	 * Start Listening Thread 
-	 */
+	/** Start Listening Thread */
 	public void StartMonitorThread() {
 		if (server == null) return;
 		threadPool.execute(new ConnectMonitor());
 	}
 	
-	/**
-	 * Listening Task inner class
-	 */
+	/** Listening Task inner class */
 	private class ConnectMonitor implements Runnable {
 		@Override
 		public void run() {
@@ -216,9 +203,7 @@ public class JServer {
 		System.exit(0);
 	}
 	
-	/**
-	 * remove all/ JBean 
-	 */
+	/** remove all/ JBean */
 	private void delete() {
 		if ( JSTask != null ) {
 			JServerLang.START_THREAD_RUNNING();
@@ -281,9 +266,7 @@ public class JServer {
 		STATE = s;
 	}
 	
-	/**
-	 * list all the JBeans in BeanDB 
-	 */
+	/** list all the JBeans in BeanDB */
 	public void listBeans() {
 		synchronized (beanList) {
 			int j = 0;
@@ -321,23 +304,16 @@ public class JServer {
 		return list;
 	}
 	
-	/**
-	 * set the default opacity of JBeans for one group
-	 */
+	/** set the default opacity of JBeans for one group */
 	public void setGroupOpacity( int opacity ) {
 		gOpacity = opacity;
 	}
 	
-	/**
-	 * get the default opacity for one group 
-	 */
+	/** get the default opacity for one group */
 	public int getGroupOpacity() {
 		return gOpacity;
 	}
 	
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
 		int opacity = 0;
 		if ( args.length > 0 ) {

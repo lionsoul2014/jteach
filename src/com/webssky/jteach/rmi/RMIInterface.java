@@ -9,56 +9,55 @@ import java.rmi.RemoteException;
 /**
  * remote interface
  * @author chenxin - chenxin619315@gmail.com
- * {@link http://www.webssky.com}
  */
 public interface RMIInterface extends Remote {
 	/**
 	 * get the Remote Screen shot
-	 * @param Rectangle 
+	 * @param screenRect
 	 */
 	public BufferedImage createScreenCapture(Rectangle screenRect) throws RemoteException;
 
 	/**
 	 * get the Color in the specified pixel
-	 * @param int
-	 * @param int 
+	 * @param x
+	 * @param y
 	 */
 	public Color getPixelColor(int x, int y) throws RemoteException;
 	
 	/**
 	 * handle the key press action
-	 * @param int
+	 * @param keyCode
 	 */
 	public void keyPress(int keyCode) throws RemoteException;
 	
 	/**
 	 * handle the key Release action
-	 * @param int 
+	 * @param keyCode
 	 */
 	public void keyRelease(int keyCode) throws RemoteException;
 	
 	/**
 	 * handle the mouse move action
-	 * @param int
-	 * @param int 
+	 * @param x
+	 * @param y
 	 */
 	public void mouseMove(int x, int y) throws RemoteException;
 	
 	/**
 	 * handle the mouse press action
-	 * @param int 
+	 * @param buttons
 	 */
 	public void mousePress(int buttons) throws RemoteException;
 	
 	/**
 	 * handle the mouse release action
-	 * @param int
+	 * @param buttons
 	 */
 	public void mouseRelease(int buttons) throws RemoteException;
 	
 	/**
 	 * handle the mouse wheel action
-	 * @param int 
+	 * @param wheelAmt
 	 */
 	public void mouseWheel(int wheelAmt) throws RemoteException;
 }

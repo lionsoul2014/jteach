@@ -15,7 +15,6 @@ import javax.swing.JOptionPane;
 /**
  * remote server object
  * @author chenxin - chenxin619315@gmail.com
- * {@link http://www.webssky.com} 
  */
 public class RMIServer extends UnicastRemoteObject implements RMIInterface {
 	

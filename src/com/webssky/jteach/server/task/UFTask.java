@@ -79,17 +79,14 @@ public class UFTask implements JSTaskInterface,Runnable {
 		BufferedInputStream bis = null;
 		try {
 			
-			/*
-			 * inform all the beans the information of the file
-			 * the file name and the file size 
-			 */
+			/* inform all the beans the information of the file name and size */
 			for ( int j = 0; j < beans.size(); j++ ) {
 				JBean bean = beans.get(j);
 				bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_UPLOAD_START_CMD);
 				bean.send(file.getName(), file.length());
 			}
 			
-			/*create a buffer InputStream */
+			/* create a buffer InputStream */
 			bis = new BufferedInputStream(new FileInputStream(file));
 			int len = 0;
 			float readLen = 0;
@@ -98,6 +95,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 			System.out.println("-+---size:"+file.length()/1024+"K - "+file.length());
 			System.out.println(FILE_TRASMIT_START);
 			DecimalFormat format = new DecimalFormat("0.00");
+
 			/*
 			 * read b.length byte from the buffer InputStream
 			 * then send the byte[] to all the JBeans

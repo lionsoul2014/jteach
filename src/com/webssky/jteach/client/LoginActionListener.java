@@ -8,7 +8,6 @@ import java.awt.event.ActionListener;
  * keyListener class for Login. <br />
  * 
  * @author chenxin - chenxin619315@gmail.com <br />
- * {@link http://www.webssky.com}
  */
 public class LoginActionListener implements ActionListener {
 	

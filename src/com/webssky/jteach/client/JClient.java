@@ -54,7 +54,6 @@ import com.webssky.jteach.util.JTeachIcon;
  * JTeach Client <br />
  * 
  * @author chenxin - chenxin619315@gmail.com <br />
- * {@link <a href="http://www.webssky.com">http://www.webssky.com</a>} <br />
  */
 public class JClient extends JFrame {
 	
@@ -154,51 +153,7 @@ public class JClient extends JFrame {
 		connectButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if ( socket != null ) {
-					int _result = JOptionPane.showConfirmDialog(null, 
-							"You are still onlien, Are you sure to reconnect?",
-							"JTeach", JOptionPane.OK_CANCEL_OPTION);
-					if ( _result == JOptionPane.CANCEL_OPTION ) return;
-					try {
-						if ( reader != null ) reader.close(); 
-						socket.close();
-					} catch (IOException e1) {}
-				}
-				
-				String ip = serverTextField.getText().trim();
-				if ( ip.equals("") ) {
-					JOptionPane.showMessageDialog(null, "Ask The Boss For Server IP First.");
-					return;
-				} 
-				try {
-					InetAddress.getByName(ip);
-				} catch (UnknownHostException e2) {
-					JOptionPane.showMessageDialog(null, "Invalid Server IP.");
-					return;
-				}
-				
-				String port = portTextField.getText().trim();
-				if ( ! port.equals("") && port.matches("/[0-9]+/") ) PORT = Integer.parseInt(port);
-				try {
-					Socket s = new Socket(ip, PORT);
-					JClient.getInstance().setSocket(s);
-					JClient.getInstance().starCMDMonitor();
-					/*
-					 * resgistry a RMI Server:
-					 * watch out the reconnection here.
-					 * so register the rmi server when the RMIInstance is not null
-					 */
-					if ( RMIInstance == null ) regRMI();
-					setTipInfo("Connected, Wait Symbol From Server.");
-				} catch (UnknownHostException e1) {
-					JOptionPane.showMessageDialog(null, "invalid Server IP.");
-					return;
-				} catch (RemoteException e1 ) {
-					JOptionPane.showMessageDialog(null, "rmi register error, but it doesn't matter!");
-				} catch (IOException e1) {
-					JOptionPane.showMessageDialog(null, "fail To Create Socket");
-					return;
-				}
+				connect();
 			}
 		});
 		
@@ -217,17 +172,72 @@ public class JClient extends JFrame {
 	public JButton getConnectionJButton() {
 		return connectButton;
 	}
-	
+
+	/* check and reconnect to the server */
+	public void connect() {
+		if (socket != null) {
+			return;
+		}
+
+		// try {
+		// 	if (reader != null) {
+		// 		reader.close();
+		// 	}
+		// 	socket.close();
+		// } catch (IOException e1) {
+		// 	e1.printStackTrace();
+		// }
+
+		String ip = serverTextField.getText().trim();
+		if (ip.equals("")) {
+			JOptionPane.showMessageDialog(null, "Ask The Boss For Server IP First.");
+		}
+
+		try {
+			InetAddress.getByName(ip);
+		} catch (UnknownHostException e2) {
+			JOptionPane.showMessageDialog(null, "Invalid Server IP.");
+		}
+
+		String port = portTextField.getText().trim();
+		if ( ! port.equals("") && port.matches("/[0-9]+/") ) {
+			PORT = Integer.parseInt(port);
+		}
+
+		try {
+			Socket s = new Socket(ip, PORT);
+			JClient.getInstance().setSocket(s);
+			JClient.getInstance().starCMDMonitor();
+
+			/*
+			 * register a RMI Server:
+			 * watch out the reconnection here.
+			 * so register the rmi server when the RMIInstance is not null
+			 */
+			if (RMIInstance == null) {
+				regRMI();
+			}
+
+			setTipInfo("Connected, Wait Symbol From Server.");
+		} catch (UnknownHostException e1) {
+			JOptionPane.showMessageDialog(null, "invalid Server IP.");
+		} catch (RemoteException e1 ) {
+			JOptionPane.showMessageDialog(null, "rmi register error, but it doesn't matter!");
+		} catch (IOException e1) {
+			JOptionPane.showMessageDialog(null, "fail To Create Socket");
+		}
+	}
+
 	/**
 	 * registry RMI instance
-	 * @throws RemoteException 
-	 * @throws MalformedURLException 
+	 * @throws RemoteException
+	 * @throws MalformedURLException
 	 * @throws UnknownHostException 
 	 */
 	public void regRMI() throws RemoteException,
 		MalformedURLException, UnknownHostException {
+		/* get the linux's remote host */
 		String host = InetAddress.getLocalHost().getHostAddress();
-		/**get the linux's remote host*/
 		if ( OS.equals("LINUX") ) {
 			HashMap<String, String> ips = JCmdTools.getNetInterface();
 			String remote = ips.get(JCmdTools.HOST_REMOTE_KEY);
@@ -239,12 +249,13 @@ public class JClient extends JFrame {
 		System.setProperty("java.rmi.server.codebase", "file://" + codebase + "/rmi-stub.jar");
 		System.setProperty("java.security.policy", "file://" + codebase + "security.policy");
 		LocateRegistry.createRegistry(JCmdTools.RMI_PORT);
-		/**create a RMIServer instance*/
+
+		/* create a RMIServer instance */
 		RMIInstance = RMIServer.getInstance();
 		Naming.rebind("rmi://" + host +
 				":" + JCmdTools.RMI_PORT + "/" +JCmdTools.RMI_OBJ, RMIInstance);
 		
-		//update the JFrame's title
+		// update the JFrame's title
 		final String hostaddress = host;
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
@@ -254,9 +265,7 @@ public class JClient extends JFrame {
 		});
 	}
 	
-	/**
-	 * call when use try to exit the program 
-	 */
+	/** call when use try to exit the program */
 	public void close() {
 		if ( socket != null ) {
 			/*
@@ -264,17 +273,23 @@ public class JClient extends JFrame {
 			 * show a confirm dialog and exit the program only when the
 			 * user mean it 
 			 */
-			int _result = JOptionPane.showConfirmDialog(null, JClientCfg.EXIT_ONLINE_TEXT,
-					"JTeach:",
-					JOptionPane.OK_CANCEL_OPTION);
+			int _result = JOptionPane.showConfirmDialog(
+				null, JClientCfg.EXIT_ONLINE_TEXT,
+				"JTeach:",
+				JOptionPane.OK_CANCEL_OPTION
+			);
 			if ( _result == JOptionPane.OK_OPTION ) {
 				try {
 					if ( reader != null ) reader.close(); 
 					if ( socket != null ) socket.close();
-				} catch (IOException e1) {} 
-				System.exit(0);
+					socket = null;
+				} catch (IOException e1) {
+
+				}
 			}
-		} else System.exit(0);
+		}
+
+		System.exit(0);
 	}
 	
 	/**
@@ -282,7 +297,6 @@ public class JClient extends JFrame {
 	 * close the socket, reader, writer. 
 	 */
 	public void offLineClear() {
-		setTipInfo("You are now offline.");
 		try {
 			if ( reader != null ) reader.close();
 			if ( writer != null ) writer.close(); 
@@ -292,7 +306,11 @@ public class JClient extends JFrame {
 			socket = null;
 			//Naming.unbind(JCmdTools.RMI_OBJ);
 			//RMIInstance = null;
-		} catch (Exception e1) {}
+		} catch (Exception e1) {
+
+		}
+
+		setTipInfo("You are now offline.");
 	}
 	
 	/**
@@ -303,6 +321,7 @@ public class JClient extends JFrame {
 			getInstance().setVisible(false);
 			return;
 		}
+
 		SystemTray systemTray = SystemTray.getSystemTray();
 		tray = new TrayIcon(TRAY_ICON.getImage(), "JTeach - webssky");
 		tray.addActionListener(new ActionListener() {
@@ -312,8 +331,8 @@ public class JClient extends JFrame {
 			}
 		});
 		tray.setImageAutoSize(true);
+
 		PopupMenu popupMenu = new PopupMenu();
-		
 		MenuItem about = new MenuItem("About JTeach");
 		about.addActionListener(new ActionListener() {
 			@Override
@@ -359,9 +378,7 @@ public class JClient extends JFrame {
 		}
 	}
 	
-	/**
-	 * set tip message 
-	 */
+	/** set tip message */
 	public void setTipInfo(final String str) {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
@@ -371,33 +388,28 @@ public class JClient extends JFrame {
 		});
 	}
 	
-	/**
-	 * initialize the Socket 
-	 */
+	/** initialize the Socket */
 	public void setSocket(Socket s) {
 		socket = s;
 	}
 	
-	/**
-	 * start Server Input Monitor 
-	 */
+	/** start Server Input Monitor */
 	public void starCMDMonitor() {
 		threadPool.execute(new CmdMonitor());
 	}
 	
 	/**
 	 * wait for the server's cmd
-	 * and run the Specified the Thread according to the cmd
-	 */
+	 * and run the Specified the Thread according to the cmd */
 	private class CmdMonitor implements Runnable {
 		@Override
 		public void run() {
 			DataInputStream in = getReader();
 			if ( in == null ) return; 
 			while ( true ) {
-				/*stop the thread */
+				/* stop the thread */
 				if ( getTStatus() == T_OVER ) break;
-				/*wait the thread when any JCTask is start */
+				/* wait the thread when any JCTask is start */
 				if ( getTStatus() == T_STOP ) {
 					synchronized (Lock) {
 						try {
@@ -414,11 +426,12 @@ public class JClient extends JFrame {
 					if ( symbol != JCmdTools.SEND_CMD_SYMBOL ) continue;
 					int _cmd = in.readInt();
 					setTipInfo("Command From Server, Code:"+_cmd);
+
 					/*
 					 * Screen Broadcast
 					 * wait the JClient's command monitor thread 
 					 * change the JCTask pointer to a new SBRTask Object
-					 * then start the Thread 
+					 * then start the Thread
 					 */
 					if ( _cmd == JCmdTools.SERVER_BROADCAST_START_CMD ) {
 						setTStatus(T_STOP);
@@ -532,11 +545,14 @@ public class JClient extends JFrame {
 	}
 	
 	/**
-	 * return the Socket DataOuputStream 
+	 * return the Socket DataOutputStream
 	 * @throws IOException 
 	 */
 	public DataOutputStream getWriter() throws IOException {
-		if ( socket == null ) return null;
+		if ( socket == null ) {
+			return null;
+		}
+
 		writer = new DataOutputStream(socket.getOutputStream());
 		return writer;
 	}
@@ -548,13 +564,13 @@ public class JClient extends JFrame {
 		T_STATUS = s;
 	}
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception e) {}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {

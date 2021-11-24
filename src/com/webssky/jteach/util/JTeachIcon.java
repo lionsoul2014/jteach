@@ -13,7 +13,6 @@ import javax.swing.ImageIcon;
 /**
  * quick util. <br />
  * @author  chenxin - chenxin619315@gmail.com <br />
- * {@link <a href="http://www.webssky.com">http://www.webssky.com</a>}
  */
 public class JTeachIcon {
 	

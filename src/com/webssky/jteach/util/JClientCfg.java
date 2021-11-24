@@ -7,7 +7,6 @@ import java.awt.Font;
 /**
  * configuration for JClient
  * @author chenxin - chenxin619315@gmail.com
- * {@link http://www.webssky.com} 
  */
 public class JClientCfg {
 	

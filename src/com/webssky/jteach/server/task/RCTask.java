@@ -112,9 +112,7 @@ public class RCTask implements JSTaskInterface {
 				continue;
 			} 
 			
-			/**
-			 * exit the remote command execute thread 
-			 */
+			/* exit the remote command execute thread */
 			if ( line.equals(EXIT_CMD_STR) ) {
 				final Iterator<JBean> _it = beans.iterator();
 				while ( _it.hasNext() ) {
@@ -128,16 +126,14 @@ public class RCTask implements JSTaskInterface {
 				}
 				break;
 			}
-			/**
-			 * valid command
-			 * send the command to all the JBeans
-			 */
+			/* send the command to all the JBeans */
 			else {
 				_sendToAll(line);
 			}
 		}
-		
-		reader.close();
+
+		// Do not close the reader
+		// reader.close();
 	}
 	
 	
@@ -190,8 +186,9 @@ public class RCTask implements JSTaskInterface {
 				_send(line, bean);
 			}
 		}
-		
-		reader.close();
+
+		// Do not close the reader
+		// reader.close();
 	}
 	
 	public static void CMD_SEND_ERROR(String str) {

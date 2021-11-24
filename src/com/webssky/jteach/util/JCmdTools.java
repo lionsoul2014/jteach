@@ -12,7 +12,6 @@ import java.util.Scanner;
 /**
  * Offer Some Interface to show message in the console
  * @author chenxin - chenxin619315@gmail.com
- * {@link http://www.webssky.com}
  */
 public class JCmdTools {
 	
