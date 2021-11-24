@@ -66,7 +66,7 @@ public class RCRTask implements JCTaskInterface {
 				p.destroy();
 
 				/*
-				 * if there is ne response
+				 * if there is no response
 				 * send the empty tip
 				 * else send the execution output
 				 */

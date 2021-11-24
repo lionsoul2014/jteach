@@ -196,8 +196,11 @@ public class SBTask implements JSTaskInterface,Runnable {
 					 */
 					Iterator<JBean> it = beans.iterator();
 					while (it.hasNext()) {
-						JBean b = it.next();
+						final JBean b = it.next();
 						try {
+							/* receive the heartbeat from the client
+							* to make sure the client is now still alive */
+							b.getReader().readChar();
 							b.send(JCmdTools.SEND_DATA_SYMBOL, msg.x, msg.y, msg.data.length, msg.data);
 						} catch (IOException e) {
 							// e.printStackTrace();

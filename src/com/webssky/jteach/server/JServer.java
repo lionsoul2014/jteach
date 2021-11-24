@@ -3,7 +3,6 @@ package com.webssky.jteach.server;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -22,10 +21,8 @@ import com.webssky.jteach.util.JServerLang;
  */
 public class JServer {
 	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
-	public static Object LOCK = new Object();
-	/**
-	 * Server port 
-	 */
+
+	/* Server port */
 	public static int PORT = 55535;
 	public static ServerSocket server = null;
 	public static final String OS = System.getProperty("os.name").toUpperCase();
@@ -34,7 +31,7 @@ public class JServer {
 	private int gOpacity = 7;
 	
 	public static final int M_RUN = 1;
-	public static final int M_OVER = 0;
+	// public static final int M_OVER = 0;
 	private int STATE = M_RUN;
 	
 	private JSTaskInterface JSTask = null;
@@ -80,7 +77,7 @@ public class JServer {
 	
 	/** run command */
 	public void _CmdLoader() {
-		String line, _input = "";
+		String line, _input;
 		final Scanner reader = new Scanner(System.in);
 		do {
 			JServerLang.INPUT_ASK();
@@ -94,8 +91,8 @@ public class JServer {
 			/*
 			 * JSTask Working thread
 			 * call the _runCommand to look for the class
-			 * then start the thread, and it have to run ST to stop
-			 * before a another same thread could start. 
+			 * then start the thread, and we have to run ST to stop
+			 * before another same thread could start.
 			 */
 			if ( _input.equals(JCmdTools.SB) || _input.equals(JCmdTools.UF)
 					|| _input.equals(JCmdTools.SM) || _input.equals(JCmdTools.RC)) {
@@ -171,7 +168,7 @@ public class JServer {
 			while ( getRunState() == M_RUN ) {
 				try {
 					Socket s = server.accept();
-					/**
+					/*
 					 * get a Socket from the Socket Queue
 					 * and create new JBean Object to manager it 
 					 */
@@ -187,7 +184,7 @@ public class JServer {
 	/**
 	 * exit the program 
 	 * if EXIT_CLOSE_KEY is pass. <br />
-	 * A symbol will be send to all the JBeans to
+	 * A symbol will send to all the JBeans to
 	 * order them to stop the client program. <br />
 	 */
 	public void exit() {
@@ -238,7 +235,7 @@ public class JServer {
 		}
 		/*remove the Specified JBean*/
 		else {
-			if ( v.matches("^[0-9]{1,}$") == false ) {
+			if ( !v.matches("^[0-9]{1,}$") ) {
 				JServerLang.DELETE_JBEAN_EMPTY_ARGUMENTS();
 				return;
 			}
@@ -277,6 +274,13 @@ public class JServer {
 			final Iterator<JBean> it = beanList.iterator();
 			while ( it.hasNext() ) {
 				final JBean b = it.next();
+
+				// check and remove the cleared bean
+				if (b.getSocket() == null) {
+					it.remove();
+					continue;
+				}
+
 				String num = JCmdTools.formatString(j+"", 2, '0');
 				j++;
 
@@ -292,17 +296,38 @@ public class JServer {
 			}
 		}
 	}
+
+	/* remove the specified bean */
+	public void removeBean(int index) {
+		beanList.remove(index);
+	}
+
+	/* return the bean size */
+	public int beanCount() {
+		return beanList.size();
+	}
+
+	/* get the bean list */
+	public List<JBean> getBeanList() {
+		return beanList;
+	}
+
+	/* get the specified bean */
+	public JBean getBean(int index) {
+		return beanList.get(index);
+	}
 	
 	/**
-	 * make a copy for a array
+	 * make a copy for an array
 	 * @return List
 	 */
 	public List<JBean> copyBeanList() {
 		final List<JBean> list = new ArrayList<>();
 		synchronized (beanList) {
-			for (JBean b : beanList) {
-				list.add(b);
-			}
+			// for (JBean b : beanList) {
+			// 	list.add(b);
+			// }
+			list.addAll(beanList);
 		}
 
 		return list;

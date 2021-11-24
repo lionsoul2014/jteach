@@ -21,11 +21,10 @@ import com.webssky.jteach.util.JServerLang;
 public class RCTask implements JSTaskInterface {
 	
 	public static final String EXIT_CMD_STR = ":exit";
-	
-	private final List<JBean> beans;
+	private final JServer server;
 
 	public RCTask(JServer server) {
-		beans = server.copyBeanList();
+		this.server = server;
 	}
 
 	@Override
@@ -48,14 +47,14 @@ public class RCTask implements JSTaskInterface {
 			}
 
 			int index = Integer.parseInt(str);
-			if ( index < 0 || index >= beans.size() ) {
+			if ( index < 0 || index >= server.beanCount() ) {
 				System.out.println("index out of bounds.");
 				JServer.getInstance().resetJSTask();
 				return;
 			}
 
 			/* send the command to spesified one*/
-			execute(beans.get(index));
+			execute(index);
 		}
 
 		JServer.getInstance().resetJSTask();
@@ -68,13 +67,16 @@ public class RCTask implements JSTaskInterface {
 	}
 	
 	private void _sendToAll(String cmd) {
-		final Iterator<JBean> it = beans.iterator();
-		while ( it.hasNext() ) {
-			JBean b = it.next();
-			try {
-				b.send(JCmdTools.SEND_DATA_SYMBOL, cmd);
-			} catch (IOException e) {
-				it.remove();b.clear();
+		final List<JBean> beanList = server.getBeanList();
+		synchronized (beanList) {
+			final Iterator<JBean> it = beanList.iterator();
+			while ( it.hasNext() ) {
+				final JBean b = it.next();
+				try {
+					b.send(JCmdTools.SEND_DATA_SYMBOL, cmd);
+				} catch (IOException e) {
+					it.remove();b.clear();
+				}
 			}
 		}
 	}
@@ -83,20 +85,22 @@ public class RCTask implements JSTaskInterface {
 	 * run command to all the online machine 
 	 */
 	private void executeToAll() {
-		if ( beans.size() == 0 ) {
+		if ( server.beanCount() == 0 ) {
 			return;
 		}
 
 		// send start symbol
-		final Iterator<JBean> it = beans.iterator();
-		while ( it.hasNext() ) {
-			JBean b = it.next();
-			try {
-				b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_RCMD_EXECUTE_CMD);
-				b.send(JCmdTools.SERVER_RCMD_ALL);
-			} catch (IOException e) {
-				it.remove();
-				b.clear();
+		final List<JBean> beanList = server.getBeanList();
+		synchronized (beanList) {
+			final Iterator<JBean> it = beanList.iterator();
+			while ( it.hasNext() ) {
+				final JBean b = it.next();
+				try {
+					b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_RCMD_EXECUTE_CMD);
+					b.send(JCmdTools.SERVER_RCMD_ALL);
+				} catch (IOException e) {
+					it.remove();b.clear();
+				}
 			}
 		}
 
@@ -113,14 +117,16 @@ public class RCTask implements JSTaskInterface {
 			
 			/* exit the remote command execute thread */
 			if ( line.equals(EXIT_CMD_STR) ) {
-				final Iterator<JBean> _it = beans.iterator();
-				while ( _it.hasNext() ) {
-					JBean b = _it.next();
-					try {
-						b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
-					} catch (IOException e) {
-						_it.remove();
-						b.clear();
+				synchronized (beanList) {
+					final Iterator<JBean> _it = beanList.iterator();
+					while ( _it.hasNext() ) {
+						final JBean b = _it.next();
+						try {
+							b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
+						} catch (IOException e) {
+							_it.remove();
+							b.clear();
+						}
 					}
 				}
 				break;
@@ -136,10 +142,12 @@ public class RCTask implements JSTaskInterface {
 	}
 	
 	
-	private void _send(String cmd, JBean bean) {
+	private void _send(String cmd, int index) {
+		final JBean bean = server.getBean(index);
 		try {
 			bean.send(JCmdTools.SEND_DATA_SYMBOL, cmd);
-			/* command execute response */
+
+			/* get and print the execution response */
 			final DataInputStream dis = bean.getReader();
 			String line = dis.readUTF();
 			if ( line.equals(JCmdTools.RCMD_NOREPLY_VAL) ) {
@@ -148,6 +156,7 @@ public class RCTask implements JSTaskInterface {
 				System.out.println(line);
 			}
 		} catch (IOException e) {
+			server.removeBean(index);
 			CMD_SEND_ERROR("execute command");
 		}
 	}
@@ -155,7 +164,9 @@ public class RCTask implements JSTaskInterface {
 	/**
 	 * run command to the specified mathine 
 	 */
-	private void execute(JBean bean) {
+	private void execute(int index) {
+		final JBean bean = server.getBean(index);
+
 		try {
 			bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_RCMD_EXECUTE_CMD);
 			bean.send(JCmdTools.SERVER_RMCD_SINGLE);
@@ -184,7 +195,7 @@ public class RCTask implements JSTaskInterface {
 				}
 				break;
 			} else {
-				_send(line, bean);
+				_send(line, index);
 			}
 		}
 

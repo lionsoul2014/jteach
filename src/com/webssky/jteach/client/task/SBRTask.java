@@ -17,6 +17,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import com.webssky.jteach.client.JCWriter;
 import com.webssky.jteach.client.JClient;
 import com.webssky.jteach.util.JCmdTools;
 import com.webssky.jteach.util.JTeachIcon;
@@ -31,22 +32,19 @@ import com.webssky.jteach.util.JTeachIcon;
 public class SBRTask extends JFrame implements JCTaskInterface {
 
 	private static final long serialVersionUID = 1L;
-	/**
-	 * Lang package 
-	 */
+
+	/* Lang package */
 	public static final String title = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From Server";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
 	public static Image MOUSE_CURSOR = JTeachIcon.Create("m_pen.png").getImage();
 	public static float BIT = 1;
 	public static Dimension IMG_SIZE = null;
-	public static Point IMG_POS = null;
-	public static Point MOUSE_POS = null;
-	
-	
+
 	private int TStatus = T_RUN;
+	private volatile Point MOUSE_POS = null;
 	private volatile BufferedImage B_IMG = null;
-	private ImageJPanel imgJPanel = null;
+	private final ImageJPanel imgJPanel;
 	
 	public SBRTask() {
 		this.setTitle(title);
@@ -166,11 +164,13 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	@Override
 	public void run() {
 		DataInputStream reader = JClient.getInstance().getReader();
-		// JCWriter writer = new JCWriter();
+		final JCWriter writer = new JCWriter();
 		while ( getTSTATUS() == T_RUN ) {
 			try {
-				// writer.send(JCmdTools.SEND_HBT_SYMBOL);
+				// send the heartbeat packet
+				writer.send(JCmdTools.SEND_HBT_SYMBOL);
 				char symbol = reader.readChar();
+
 				/*
 				 * Check the symbol type
 				 * case SEND_CMD_SYMBOL, then stop the current thread

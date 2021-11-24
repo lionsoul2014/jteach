@@ -15,17 +15,13 @@ import java.net.Socket;
 public class JBean {
 	
 	private volatile Socket socket = null;
+
 	private String name = null;
 	private DataOutputStream out = null;
 	private DataInputStream in = null;
 	
 	public JBean(Socket s) {
 		setSocket(s);
-	}
-	
-	public JBean(Socket s, String name) {
-		setSocket(s);
-		this.name = name;
 	}
 	
 	public OutputStream getOutputStream() throws IOException {
@@ -48,18 +44,18 @@ public class JBean {
 		}
 
 		if ( socket == null ) {
-			return "Unknow Bean";
+			return "Unknown Bean";
 		}
 
 		return socket.getInetAddress().getHostName();
 	}
-	
+
 	/**
 	 * return the bean's IP 
 	 */
 	public String getIP() {
 		if ( socket == null ) {
-			return "Unkown Bean";
+			return "Unknown Bean";
 		}
 
 		return socket.getInetAddress().getHostAddress();
@@ -88,12 +84,26 @@ public class JBean {
 	
 	public void clear() {
 		try {
-			if ( in != null ) in.close();
-			if ( out != null ) out.close();
-			if ( socket != null ) socket.close();
+			if ( in != null ) {
+				in.close();
+			}
+
+			if ( out != null ) {
+				out.close();
+			}
+
+			if ( socket != null ) {
+				socket.close();
+			}
 			System.out.println("GC:: ["+getIP()+"] was removed!");
 			//JServerLang.INPUT_ASK();
-		} catch ( IOException e ) {}
+		} catch ( IOException e ) {
+			System.out.println("client cleared");
+		}
+
+		in = null;
+		out = null;
+		socket = null;
 	}
 	
 	/**
@@ -211,7 +221,7 @@ public class JBean {
 	 * send byte[] 
 	 * @throws IOException 
 	 */
-	public void send(byte[] b, int start, int length) throws IOException {
+	public void send(byte[] b, int length) throws IOException {
 		if ( out != null ) {
 			out.write(b, 0, length);
 			out.flush();
@@ -219,7 +229,7 @@ public class JBean {
 	}
 
 	public void reportSendError() {
-		System.err.printf("failed to send data to client %s\n", this.getIP());
+		System.out.printf("failed to send data to client %s\n", this.getIP());
 	}
 
 	public String toString() {
