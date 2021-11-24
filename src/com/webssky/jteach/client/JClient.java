@@ -68,11 +68,6 @@ public class JClient extends JFrame {
 	public static TrayIcon tray = null;
 	public static final String OS = System.getProperty("os.name").toUpperCase();
 	
-	private int T_STATUS = T_RUN;
-	private Socket socket = null;
-	private DataInputStream reader = null;
-	private DataOutputStream writer = null;
-	private JCTaskInterface JCTask = null;
 	public static int PORT = 55535;
 	private static RMIServer RMIInstance = null;
 	private static JClient _instance = null;
@@ -84,9 +79,17 @@ public class JClient extends JFrame {
 	private JTextField serverTextField = null;
 	private JTextField portTextField = null;
 	private JButton connectButton = null;
-	
+
+	private int T_STATUS = T_RUN;
+	private Socket socket = null;
+	private DataInputStream reader = null;
+	private DataOutputStream writer = null;
+	private volatile JCTaskInterface JCTask = null;
+
 	public static JClient getInstance() {
-		if ( _instance == null ) _instance = new JClient();
+		if ( _instance == null ) {
+			_instance = new JClient();
+		}
 		return _instance;
 	}
 	
@@ -98,7 +101,7 @@ public class JClient extends JFrame {
 				close();
 			}
 			public void windowIconified(WindowEvent e) {
-				JClient.tray();
+				// JClient.tray();
 			}
 		});
 		setSize(JClientCfg.W_SIZE);
@@ -241,7 +244,9 @@ public class JClient extends JFrame {
 		if ( OS.equals("LINUX") ) {
 			HashMap<String, String> ips = JCmdTools.getNetInterface();
 			String remote = ips.get(JCmdTools.HOST_REMOTE_KEY);
-			if ( remote != null ) host = remote;
+			if ( remote != null ) {
+				host = remote;
+			}
 		}
 		
 		System.setProperty("java.rmi.server.hostname", host);
@@ -404,8 +409,11 @@ public class JClient extends JFrame {
 	private class CmdMonitor implements Runnable {
 		@Override
 		public void run() {
-			DataInputStream in = getReader();
-			if ( in == null ) return; 
+			final DataInputStream in = getReader();
+			if ( in == null ) {
+				return;
+			}
+
 			while ( true ) {
 				/* stop the thread */
 				if ( getTStatus() == T_OVER ) break;
@@ -421,9 +429,12 @@ public class JClient extends JFrame {
 				}
 				
 				try {
-					/*Message symbol */
+					/* Message symbol */
 					char symbol = in.readChar();
-					if ( symbol != JCmdTools.SEND_CMD_SYMBOL ) continue;
+					if ( symbol != JCmdTools.SEND_CMD_SYMBOL ) {
+						continue;
+					}
+
 					int _cmd = in.readInt();
 					setTipInfo("Command From Server, Code:"+_cmd);
 
@@ -466,7 +477,7 @@ public class JClient extends JFrame {
 					/*
 					 * remote command execute
 					 * wait the JClient's command monitor thread 
-					 * change the JCTask pointer to a new SMSTask Object
+					 * change the JCTask pointer to a new RCRTask Object
 					 * then start the thread
 					 */
 					else if ( _cmd == JCmdTools.SERVER_RCMD_EXECUTE_CMD ) {
@@ -477,7 +488,7 @@ public class JClient extends JFrame {
 					
 					/*
 					 * stop the working JCTask
-					 * if the working thread could loading data from server
+					 * if the working thread could load data from server
 					 * this is unnecessary cause this kind of thread will over in its own thread
 					 * so this one is for the thread that send data to the server 
 					 */

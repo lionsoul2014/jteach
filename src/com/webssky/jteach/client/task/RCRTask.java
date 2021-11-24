@@ -31,50 +31,56 @@ public class RCRTask implements JCTaskInterface {
 		if ( reader == null ) return; 
 		while ( getTStatus() == T_RUN ) {
 			try {
-				/**load symbol*/
-				char symbol = reader.readChar();
+				/* load symbol */
+				final char symbol = reader.readChar();
 				
-				/**
-				 * Command execute symbol 
-				 */
+				/* Command execute symbol */
 				if ( symbol == JCmdTools.SEND_CMD_SYMBOL ) {
 					int cmd = reader.readInt();
-					if ( cmd == JCmdTools.SERVER_TASK_STOP_CMD ) break;
+					if ( cmd == JCmdTools.SERVER_TASK_STOP_CMD ) {
+						break;
+					}
+				} else if ( symbol != JCmdTools.SEND_DATA_SYMBOL ) {
+					continue;
 				}
-				else if ( symbol != JCmdTools.SEND_DATA_SYMBOL ) continue;
 				
-				/**
+				/*
 				 * get the command string
 				 * and execute the command 
 				 */
 				String command = reader.readUTF();
 				p = run.exec(command); 
-				BufferedInputStream in = new BufferedInputStream(p.getInputStream());
-				BufferedReader br = new BufferedReader(new InputStreamReader(in));
-				
-				StringBuffer buff = new StringBuffer();
-				String line = null;
+				final BufferedInputStream in = new BufferedInputStream(p.getInputStream());
+				final BufferedReader br = new BufferedReader(new InputStreamReader(in));
+
 				int counter = 0;
+				String line;
+				final StringBuffer buff = new StringBuffer();
 				while ( (line = br.readLine()) != null ) {
 					buff.append(line+"\n");
 					counter++;
 				}
+
 				in.close();
 				br.close();
 				p.destroy();
 				
-				/**
+				/*
 				 * if there is ne response
 				 * send the empty tip
-				 * else send the execute output 
+				 * else send the execution output
 				 */
-				if ( counter == 0 ) writer.send(JCmdTools.RCMD_NOREPLY_VAL);
-				else writer.send(buff.toString());
+				if ( counter == 0 ) {
+					writer.send(JCmdTools.RCMD_NOREPLY_VAL);
+				} else {
+					writer.send(buff.toString());
+				}
 			} catch (IOException e) {
 				JClient.getInstance().offLineClear();
 				break;
 			}
 		}
+
 		JClient.getInstance().resetJCTask();
 		JClient.getInstance().notifyCmdMonitor();
 		JClient.getInstance().setTipInfo("RCMD Execute Thread Is Overed!");
@@ -83,7 +89,10 @@ public class RCRTask implements JCTaskInterface {
 	@Override
 	public void startCTask(String...args) {
 		reader = JClient.getInstance().getReader();
-		if ( reader == null ) return;
+		if ( reader == null ) {
+			return;
+		}
+
 		try {
 			type = reader.readUTF().trim().toLowerCase();
 			if ( type.equals(JCmdTools.SERVER_RMCD_SINGLE) ) writer = new JCWriter(); 
@@ -91,6 +100,7 @@ public class RCRTask implements JCTaskInterface {
 			/*JOptionPane.showMessageDialog(null, "Fail To Load Data From Server",
 					"JTeach", JOptionPane.INFORMATION_MESSAGE);*/
 		}
+
 		JClient.getInstance().setTipInfo("RCMD Execute Thread Is Working.");
 		JClient.threadPool.execute(this);
 	}
