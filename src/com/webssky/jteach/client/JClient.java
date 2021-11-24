@@ -261,11 +261,11 @@ public class JClient extends JFrame {
 				":" + JCmdTools.RMI_PORT + "/" +JCmdTools.RMI_OBJ, RMIInstance);
 		
 		// update the JFrame's title
-		final String hostaddress = host;
+		final String hostAddr = host;
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				setTitle(JClientCfg.W_TITLE + " - " + hostaddress);
+				setTitle(JClientCfg.W_TITLE + " - " + hostAddr);
 			}
 		});
 	}

