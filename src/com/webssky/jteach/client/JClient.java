@@ -225,7 +225,7 @@ public class JClient extends JFrame {
 				JOptionPane.showMessageDialog(null, "rmi register error, but it doesn't matter!");
 				break;
 			} catch (IOException e1) {
-				System.out.printf("%2d th trying: failed to connect server by %s:%d\n", counter, ip, port);
+				System.out.printf("%-2dth trying: failed to connect to server by %s:%d\n", counter, ip, PORT);
 			}
 
 			if (++counter > 30) {
@@ -245,7 +245,7 @@ public class JClient extends JFrame {
 		if (timeOut) {
 			JOptionPane.showMessageDialog(null, "fail To Create Socket");
 		} else {
-			System.out.printf("%2dth trying: successfully connected to the server by %s:%d\n", counter, ip, PORT);
+			System.out.printf("%-2dth trying: successfully connected to the server by %s:%d\n", counter, ip, PORT);
 		}
 	}
 
