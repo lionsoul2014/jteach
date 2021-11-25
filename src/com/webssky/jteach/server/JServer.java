@@ -55,6 +55,7 @@ public class JServer {
 	/* Initialize the JTeach Server */
 	public void initServer() {
 		JServerLang.SERVER_INIT();
+
 		try {
 			server = new ServerSocket(PORT);
 			System.out.println("user.dir: "+System.getProperty("user.dir"));

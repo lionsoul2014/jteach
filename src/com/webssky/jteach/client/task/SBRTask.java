@@ -9,6 +9,7 @@ import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 //import java.util.zip.ZipInputStream;
 
@@ -175,44 +176,46 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 				 * Check the symbol type
 				 * case SEND_CMD_SYMBOL, then stop the current thread
 				 * case SEND_IMG_SYMBOL, then receive the image data from server
-				 * 		get the image size then get the image 
+				 * 		get the image size then get the image
 				 */
-				if ( symbol == JCmdTools.SEND_CMD_SYMBOL ) {
+				if (symbol == JCmdTools.SEND_CMD_SYMBOL) {
 					int cmd = reader.readInt();
-					if ( cmd == JCmdTools.SERVER_TASK_STOP_CMD ) {
+					if (cmd == JCmdTools.SERVER_TASK_STOP_CMD) {
 						break;
 					}
 				} else if (symbol != JCmdTools.SEND_DATA_SYMBOL) {
 					continue;
 				}
-				
+
 				/*load the mouse location information */
 				MOUSE_POS = new Point(reader.readInt(), reader.readInt());
-				
+
 				/* the size of the BufferedImage */
 				int imgsize = reader.readInt();
-				
+
 				/*
 				 * the BufferedImage byte data
 				 * read the byte data into the buffer
-				 * cause cannot read all the data by once when the image is large 
+				 * cause cannot read all the data by once when the image is large
 				 */
 				byte buffer[] = new byte[imgsize];
 				int length = 0;
-				while ( length < imgsize ) {
+				while (length < imgsize) {
 					int readsize = reader.read(buffer, length, imgsize - length);
-					if ( readsize > 0 ) length += readsize;
+					if (readsize > 0) length += readsize;
 					else break;
 				}
-				
+
 				/*turn the byte data to a BufferedImage */
 				ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
 				//ZipInputStream zis = new ZipInputStream(bis);
 				//zis.getNextEntry();
 				B_IMG = ImageIO.read(bis);
-				
-				/*repaint the ImageJPanel */
+
+				/* repaint the ImageJPanel */
 				repaintImageJPanel();
+			} catch (EOFException e) {
+				// do nothing right now
 			} catch (IOException e) {
 				JClient.getInstance().offLineClear();
 				break;

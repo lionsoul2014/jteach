@@ -104,7 +104,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 			/*
 			 * read b.length byte from the buffer InputStream
 			 * then send the byte[] to all the JBeans
-			 * till all the byte is send 
+			 * till all the bytes were sent out
 			 */
 			byte b[] = new byte[1024*JCmdTools.FILE_UPLOAD_ONCE_SIZE];
 			int counter = 0;
@@ -121,16 +121,21 @@ public class UFTask implements JSTaskInterface,Runnable {
 						it.remove();bean.clear();
 					}
 				}
-				/*file transmifer progress show */
+
+				/* file transmifer progress show */
 				if ( counter % POINT_LENGTH == 0 ) {
 					System.out.println( (int) (readLen/1024)+"K - "
 							+format.format(readLen/file.length()*100)+"%");
 					counter = 0;
+				} else if ( readLen == file.length() ) {
+					System.out.println((int) (readLen / 1024) + "K - 100%");
+				} else {
+					System.out.print(".");
 				}
-				else if ( readLen == file.length() ) 
-					System.out.println( (int) (readLen/1024)+"K - 100%"); 
-				else System.out.print(".");
-				if ( getTSTATUS() != T_RUN ) break;
+
+				if ( getTSTATUS() != T_RUN ) {
+					break;
+				}
 			}
 			System.out.println("File transmit completed.");
 			bis.close();
@@ -143,6 +148,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 				try {bis.close();} catch (IOException e) {}
 			}
 		}
+
 		JServer.getInstance().resetJSTask();
 		JServerLang.INPUT_ASK();
 	}
