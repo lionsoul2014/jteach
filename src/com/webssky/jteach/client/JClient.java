@@ -437,9 +437,13 @@ public class JClient extends JFrame {
 				return;
 			}
 
+			boolean reConnect = false;
 			while ( true ) {
 				/* stop the thread */
-				if ( getTStatus() == T_OVER ) break;
+				if ( getTStatus() == T_OVER ) {
+					break;
+				}
+
 				/* wait the thread when any JCTask is start */
 				if ( getTStatus() == T_STOP ) {
 					synchronized (Lock) {
@@ -537,14 +541,17 @@ public class JClient extends JFrame {
 						System.exit(0);
 					}
 				} catch (IOException e) {
-					offLineClear();
 					e.printStackTrace();
+					offLineClear();
+					reConnect = true;
 					break;
 				}
 			}
 
-			System.out.println("client is now offline, try to reconnecting ... ");
-			connect();
+			if (reConnect) {
+				System.out.println("client is now offline cus of error, try to reconnecting ... ");
+				connect();
+			}
 		}
 	}
 	
