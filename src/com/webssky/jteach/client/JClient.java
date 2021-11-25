@@ -182,15 +182,6 @@ public class JClient extends JFrame {
 			return;
 		}
 
-		// try {
-		// 	if (reader != null) {
-		// 		reader.close();
-		// 	}
-		// 	socket.close();
-		// } catch (IOException e1) {
-		// 	e1.printStackTrace();
-		// }
-
 		String ip = serverTextField.getText().trim();
 		if (ip.equals("")) {
 			JOptionPane.showMessageDialog(null, "Ask The Boss For Server IP First.");
@@ -207,26 +198,51 @@ public class JClient extends JFrame {
 			PORT = Integer.parseInt(port);
 		}
 
-		try {
-			Socket s = new Socket(ip, PORT);
-			JClient.getInstance().setSocket(s);
-			JClient.getInstance().starCMDMonitor();
+		/* keep trying for server times */
+		boolean timeOut = false;
+		int counter = 0;
+		while (true) {
+			try {
+				final Socket s = new Socket(ip, PORT);
+				JClient.getInstance().setSocket(s);
+				JClient.getInstance().starCMDMonitor();
 
-			/*
-			 * register a RMI Server:
-			 * watch out the reconnection here.
-			 * so register the rmi server when the RMIInstance is not null
-			 */
-			if (RMIInstance == null) {
-				regRMI();
+				/*
+				 * register a RMI Server:
+				 * watch out the reconnection here.
+				 * so register the rmi server when the RMIInstance is not null
+				 */
+				if (RMIInstance == null) {
+					regRMI();
+				}
+
+				setTipInfo("Connected, Wait Symbol From Server.");
+				break;
+			} catch (UnknownHostException e1) {
+				JOptionPane.showMessageDialog(null, "invalid Server IP.");
+				break;
+			} catch (RemoteException e1 ) {
+				JOptionPane.showMessageDialog(null, "rmi register error, but it doesn't matter!");
+				break;
+			} catch (IOException e1) {
+				System.out.printf("%2dth trying: failed to create socket for %s:%d\n", counter, ip, port);
 			}
 
-			setTipInfo("Connected, Wait Symbol From Server.");
-		} catch (UnknownHostException e1) {
-			JOptionPane.showMessageDialog(null, "invalid Server IP.");
-		} catch (RemoteException e1 ) {
-			JOptionPane.showMessageDialog(null, "rmi register error, but it doesn't matter!");
-		} catch (IOException e1) {
+			if (++counter > 30) {
+				timeOut = true;
+				break;
+			}
+
+			// Wait for a second
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+
+		// check and display the timeout message
+		if (timeOut) {
 			JOptionPane.showMessageDialog(null, "fail To Create Socket");
 		}
 	}

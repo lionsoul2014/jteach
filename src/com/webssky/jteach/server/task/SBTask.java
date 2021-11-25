@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -211,10 +212,16 @@ public class SBTask implements JSTaskInterface,Runnable {
 								 * to make sure the client is now still alive */
 								b.getReader().readChar();
 								b.send(JCmdTools.SEND_DATA_SYMBOL, msg.x, msg.y, msg.data.length, msg.data);
+							} catch (SocketTimeoutException e) {
+								e.printStackTrace();
+								System.out.printf("client %s read timeout\n", b.getIP());
+								it.remove();b.clear();
+								System.out.printf("%s beans left\n", beans.size());
 							} catch (IOException e) {
-								// e.printStackTrace();
+								e.printStackTrace();
 								b.reportSendError();
 								it.remove();b.clear();
+								System.out.printf("%s beans left\n", beans.size());
 							}
 						}
 					}

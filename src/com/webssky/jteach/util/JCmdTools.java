@@ -30,16 +30,16 @@ public class JCmdTools {
 	public static final int SERVER_TASK_STOP_CMD = 0;
 	public static final int SERVER_EXIT_CMD = -1;
 	//public static final int HEART_BEAT_DATA = 0xff;
-	public static final int SO_TIMEOUT = 5000;
+	public static final int SO_TIMEOUT = 10000;
 	
-	/**screen monitor and remote control key*/
+	/* screen monitor and remote control key */
 	public static final String MONITOR_AND_CONTROL = "MAC";
 	public static final String MONITOR_NOT_CONTROL = "MNC";
 	public static final String RMI_SERVER_READY = "RSR";
 	public static final String RMI_OBJ = "RMI_OBJ";
 	public static final int RMI_PORT = 55568;
 	
-	/**remote command execute key*/
+	/* remote command execute key */
 	public static final String SERVER_RCMD_ALL = "a";
 	public static final String SERVER_RMCD_SINGLE = "o";
 	public static final String RCMD_NOREPLY_VAL = "NULL";
@@ -63,7 +63,7 @@ public class JCmdTools {
 	public static final String EXIT_CLOSE_KEY = "s";
 	public static final String EXIT_CLOSE_VAL = "true";
 	
-	/**if i=a all the JBeans will be remove, if i is an integer, the ith one will be remove*/
+	/* if i=a all the JBeans will remove, if var i is an integer, the ith one will remove*/
 	public static final String DELETE_KEY = "i";
 	public static final String DELETE_ALL_VAL = "a";
 	

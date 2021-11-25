@@ -110,7 +110,7 @@ public class JBean {
 	 * just send symbol 
 	 * @throws IOException 
 	 */
-	public void send(char symbol) throws IOException {
+	public synchronized void send(char symbol) throws IOException {
 		if ( out != null ) {
 			out.writeChar(symbol);
 			out.flush();
@@ -121,7 +121,7 @@ public class JBean {
 	 * Send symbol and Command 
 	 * @throws IOException 
 	 */
-	public void send(char symbol, int cmd) throws IOException {
+	public synchronized void send(char symbol, int cmd) throws IOException {
 		if ( out != null ) {
 			out.writeChar(symbol);
 			out.writeInt(cmd);
@@ -133,7 +133,7 @@ public class JBean {
 	 * Send symbol and byte[] 
 	 * @throws IOException 
 	 */
-	public void send(char symbol, byte[] b) throws IOException {
+	public synchronized void send(char symbol, byte[] b) throws IOException {
 		if ( out != null ) {
 			out.writeChar(symbol);
 			out.write(b);
@@ -145,7 +145,7 @@ public class JBean {
 	 * Send symbol and Byte Data 
 	 * @throws IOException 
 	 */
-	public void send(int symbol, int length,
+	public synchronized void send(int symbol, int length,
 			byte[] data) throws IOException {
 		if ( out != null ) {
 			out.writeChar(symbol);
@@ -159,7 +159,7 @@ public class JBean {
 	 * send symbol and Mouse position and byte data
 	 * @throws IOException 
 	 */
-	public void send(int symbol,int x, int y, int length,
+	public synchronized void send(int symbol,int x, int y, int length,
 			byte[] data) throws IOException {
 		if ( out != null ) {
 			out.writeChar(symbol);
@@ -175,7 +175,7 @@ public class JBean {
 	 * send String and long
 	 * @throws IOException 
 	 */
-	public void send(String str, long x) throws IOException {
+	public synchronized void send(String str, long x) throws IOException {
 		if ( out != null ) {
 			out.writeUTF(str);
 			out.writeLong(x);
@@ -187,7 +187,7 @@ public class JBean {
 	 * send string 
 	 * @throws IOException 
 	 */
-	public void send(String str) throws IOException {
+	public synchronized void send(String str) throws IOException {
 		if ( out != null ) {
 			out.writeUTF(str);
 			out.flush();
@@ -198,7 +198,7 @@ public class JBean {
 	 * send symbol and string 
 	 * @throws IOException 
 	 */
-	public void send(char symbol, String str) throws IOException {
+	public synchronized void send(char symbol, String str) throws IOException {
 		if ( out != null ) {
 			out.writeChar(symbol);
 			out.writeUTF(str);
@@ -210,7 +210,7 @@ public class JBean {
 	 * send integer 
 	 * @throws IOException 
 	 */
-	public void send(int x) throws IOException {
+	public synchronized void send(int x) throws IOException {
 		if ( out != null ) {
 			out.writeInt(x);
 			out.flush();
@@ -221,7 +221,7 @@ public class JBean {
 	 * send byte[] 
 	 * @throws IOException 
 	 */
-	public void send(byte[] b, int length) throws IOException {
+	public synchronized void send(byte[] b, int length) throws IOException {
 		if ( out != null ) {
 			out.write(b, 0, length);
 			out.flush();
