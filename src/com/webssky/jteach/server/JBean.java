@@ -101,7 +101,7 @@ public class JBean {
 			System.out.println("client cleared");
 		}
 
-		in = null;
+		// in = null;
 		out = null;
 		socket = null;
 	}

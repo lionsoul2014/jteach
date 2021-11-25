@@ -298,6 +298,11 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		String address = "rmi://" + host + ":" + JCmdTools.RMI_PORT + "/" + JCmdTools.RMI_OBJ;
 		RMIInstance = (RMIInterface) Naming.lookup(address);
 	}
+
+	@Override
+	public void addClient(JBean bean) {
+
+	}
 	
 	@Override
 	public void startTask() {

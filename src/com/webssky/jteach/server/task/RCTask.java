@@ -28,6 +28,11 @@ public class RCTask implements JSTaskInterface {
 	}
 
 	@Override
+	public void addClient(JBean bean) {
+
+	}
+
+	@Override
 	public void startTask() {
 		String str = JServer.getInstance().getArguments().get(JCmdTools.RCMD_EXECUTE_KEY);
 		if ( str == null ) {

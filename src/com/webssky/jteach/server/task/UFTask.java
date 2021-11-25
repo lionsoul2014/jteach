@@ -41,6 +41,11 @@ public class UFTask implements JSTaskInterface,Runnable {
 	}
 
 	@Override
+	public void addClient(JBean bean) {
+
+	}
+
+	@Override
 	public void startTask() {
 		JServer.threadPool.execute(this);
 	}

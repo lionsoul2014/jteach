@@ -43,47 +43,64 @@ public class SBTask implements JSTaskInterface,Runnable {
 	
 	public SBTask(JServer server) throws AWTException {
 		robot = new Robot();
-		beans = server.copyBeanList();
+		beans = Collections.synchronizedList(server.copyBeanList());
 		msgQueue = new LinkedBlockingDeque<>(10);
 	}
+
+	@Override
+	public void addClient(JBean bean) {
+		try {
+			cmdSend(bean, JCmdTools.SERVER_BROADCAST_START_CMD);
+			beans.add(bean);
+			System.out.printf("add a new client %s\n", bean.getIP());
+		} catch (IOException e) {
+			System.out.printf("failed to add new client %s\n", bean.getIP());
+		}
+	}
 	
-	/**
-	 * @see JSTaskInterface#startTask() 
-	 */
 	@Override
 	public void startTask() {
 		System.out.println(START_TIP);
-		//send broadcast start cmd to all the beans;
-		JBeans_Cmd_Symbol(JCmdTools.SERVER_BROADCAST_START_CMD);
 
-		//start image send thread
+		// send broadcast start cmd to all the beans;
+		cmdSendAll(JCmdTools.SERVER_BROADCAST_START_CMD);
+
+		// start image send thread
 		imgSendT = new Thread(new ImageSendTask());
 		// mgSendT.setDaemon(true);
 		imgSendT.start();
 
-		//start image catch thread
+		// start image catch thread
 		JServer.threadPool.execute(this);
 	}
 
-	/**
-	 * @see JSTaskInterface#stopTask()
-	 */
 	@Override
 	public void stopTask() {
 		System.out.println(STOPING_TIP);
 		setTSTATUS(T_STOP);
 		//send broadcast stop cmd to all the beans;
-		JBeans_Cmd_Symbol(JCmdTools.SERVER_TASK_STOP_CMD);
+		cmdSendAll(JCmdTools.SERVER_TASK_STOP_CMD);
 		System.out.println(STOPED_TIP);
 	}
-	
+
+	/* start the broadcast task for the specified bean */
+	public void cmdSend(final JBean bean, final int cmd) throws IOException {
+		// if ( cmd == JCmdTools.SERVER_BROADCAST_START_CMD ) {
+		// 	b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
+		// } else {
+		// 	b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
+		// }
+		bean.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
+		bean.send(JCmdTools.SEND_CMD_SYMBOL, cmd);
+	}
+
 	/**
 	 * send symbol to all beans 
 	 */
-	private void JBeans_Cmd_Symbol(int cmd) {
+	private void cmdSendAll(int cmd) {
 		Iterator<JBean> it = beans.iterator();
 		while ( it.hasNext() ) {
-			JBean b = it.next();
+			final JBean b = it.next();
 			if ( b.getSocket() == null ) {
 				continue;
 			}
@@ -93,17 +110,8 @@ public class SBTask implements JSTaskInterface,Runnable {
 			}
 
 			try {
-				// if ( cmd == JCmdTools.SERVER_BROADCAST_START_CMD ) {
-				// 	b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
-				// } else {
-				// 	b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
-				// }
-				b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
-				b.send(JCmdTools.SEND_CMD_SYMBOL, cmd);
-			} catch ( SocketException e ) {
-				System.out.println("Fail to send the socket timeout->"+b);
+				cmdSend(b, cmd);
 			} catch (IOException e) {
-				// e.printStackTrace();
 				b.reportSendError();
 				it.remove();b.clear();
 			}
@@ -119,15 +127,15 @@ public class SBTask implements JSTaskInterface,Runnable {
 			final BufferedImage img = robot.createScreenCapture(
 				new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height)
 			);
-			if ( B_IMG == null ) {
-				B_IMG = img;
-			}
+
 			/*
 			 * we need to check the image
 			 * if over 98% of the picture is the same
-			 * and there is no necessary to send the picture 
+			 * and there is no necessary to send the picture
 			 */
-			else if (JTeachIcon.ImageEquals(B_IMG, img) ) {
+			if ( B_IMG == null ) {
+				B_IMG = img;
+			} else if (JTeachIcon.ImageEquals(B_IMG, img) ) {
 				continue;
 			}
 			
@@ -194,29 +202,25 @@ public class SBTask implements JSTaskInterface,Runnable {
 					 * 	if a new bean add the BeanDB and want make it work
 					 * 	you should stop the broadcast and restart the broadcast.
 					 */
-					Iterator<JBean> it = beans.iterator();
-					while (it.hasNext()) {
-						final JBean b = it.next();
-						try {
-							/* receive the heartbeat from the client
-							* to make sure the client is now still alive */
-							b.getReader().readChar();
-							b.send(JCmdTools.SEND_DATA_SYMBOL, msg.x, msg.y, msg.data.length, msg.data);
-						} catch (IOException e) {
-							// e.printStackTrace();
-							b.reportSendError();
-							it.remove();b.clear();
+					synchronized (beans) {
+						final Iterator<JBean> it = beans.iterator();
+						while (it.hasNext()) {
+							final JBean b = it.next();
+							try {
+								/* receive the heartbeat from the client
+								 * to make sure the client is now still alive */
+								b.getReader().readChar();
+								b.send(JCmdTools.SEND_DATA_SYMBOL, msg.x, msg.y, msg.data.length, msg.data);
+							} catch (IOException e) {
+								// e.printStackTrace();
+								b.reportSendError();
+								it.remove();b.clear();
+							}
 						}
 					}
 				} catch (InterruptedException e) {
 					// e.printStackTrace();
 					System.out.println("queue.take were interrupted\n");
-				}
-
-				try {
-					Thread.sleep(5);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
 				}
 			}
 		}
