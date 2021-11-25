@@ -525,7 +525,7 @@ public class JClient extends JFrame {
 				}
 			}
 
-			System.out.println("client is now offline, try to re-connect in 3 seconds");
+			System.out.println("client is now offline, try to reconnecting ... ");
 			connect();
 		}
 	}
