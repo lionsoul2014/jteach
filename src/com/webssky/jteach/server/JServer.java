@@ -34,7 +34,7 @@ public class JServer {
 	// public static final int M_OVER = 0;
 	private int STATE = M_RUN;
 	
-	private JSTaskInterface JSTask = null;
+	private volatile JSTaskInterface JSTask = null;
 	private final List<JBean> beanList;
 	private HashMap<String, String> arguments = null;
 
@@ -172,7 +172,13 @@ public class JServer {
 					 * get a Socket from the Socket Queue
 					 * and create new JBean Object to manager it 
 					 */
-					beanList.add(new JBean(s));
+					final JBean bean = new JBean(s);
+					beanList.add(bean);
+
+					/* check and add the new client to the running task */
+					if (JSTask != null) {
+						JSTask.addClient(bean);
+					}
 				} catch (IOException e) {
 					JServerLang.SERVER_ACCEPT_ERROR();
 					break;
