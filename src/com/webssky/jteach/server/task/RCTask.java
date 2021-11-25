@@ -3,10 +3,7 @@ package com.webssky.jteach.server.task;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 import com.webssky.jteach.server.JBean;
 import com.webssky.jteach.server.JServer;
@@ -22,9 +19,11 @@ public class RCTask implements JSTaskInterface {
 	
 	public static final String EXIT_CMD_STR = ":exit";
 	private final JServer server;
+	private final List<JBean> beanList;
 
 	public RCTask(JServer server) {
 		this.server = server;
+		beanList = Collections.synchronizedList(server.copyBeanList());
 	}
 
 	@Override
@@ -43,9 +42,21 @@ public class RCTask implements JSTaskInterface {
 		
 		/* send command to all the JBeans */
 		if ( str.equals(JCmdTools.RCMD_EXECUTE_VAL) ) {
+			// send start symbol
+			final Iterator<JBean> it = beanList.iterator();
+			while (it.hasNext()) {
+				final JBean b = it.next();
+				try {
+					b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_RCMD_EXECUTE_CMD);
+					b.send(JCmdTools.SERVER_RCMD_ALL);
+				} catch (IOException e) {
+					it.remove();b.clear();
+				}
+			}
+
 			executeToAll();
 		} else {
-			if ( str.matches("^[0-9]{1,}$") == false ) {
+			if (str.matches("^[0-9]{1,}$") == false) {
 				System.out.println("Invalid index for rc command.");
 				JServer.getInstance().resetJSTask();
 				return;
@@ -58,8 +69,15 @@ public class RCTask implements JSTaskInterface {
 				return;
 			}
 
-			/* send the command to spesified one*/
-			execute(index);
+			try {
+				final JBean bean = beanList.get(index);
+				bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_RCMD_EXECUTE_CMD);
+				bean.send(JCmdTools.SERVER_RMCD_SINGLE);
+				/* send the command to specified bean */
+				execute(bean);
+			} catch (IOException e) {
+				CMD_SEND_ERROR("start command");
+			}
 		}
 
 		JServer.getInstance().resetJSTask();
@@ -71,141 +89,82 @@ public class RCTask implements JSTaskInterface {
 		
 	}
 	
-	private void _sendToAll(String cmd) {
-		final List<JBean> beanList = server.getBeanList();
-		synchronized (beanList) {
-			final Iterator<JBean> it = beanList.iterator();
-			while ( it.hasNext() ) {
-				final JBean b = it.next();
-				try {
-					b.send(JCmdTools.SEND_DATA_SYMBOL, cmd);
-				} catch (IOException e) {
-					it.remove();b.clear();
-				}
-			}
-		}
-	}
-	
 	/**
 	 * run command to all the online machine 
 	 */
 	private void executeToAll() {
-		if ( server.beanCount() == 0 ) {
-			return;
-		}
+		String line;
+		final Scanner reader = new Scanner(System.in);
+		System.out.println("-+-All JBeans, Run "+EXIT_CMD_STR+" to exit.-+-");
 
-		// send start symbol
-		final List<JBean> beanList = server.getBeanList();
-		synchronized (beanList) {
+		while (true) {
+			JServerLang.RCMD_INPUT_ASK();
+			line = reader.nextLine().trim().toLowerCase();
+			if ( line.equals("") ) {
+				System.out.println("enter the command, or run "+EXIT_CMD_STR+" to exit.");
+				continue;
+			}
+
+			boolean exit = false;
+			if (line.equals(EXIT_CMD_STR)) {
+				exit = true;
+			}
+
 			final Iterator<JBean> it = beanList.iterator();
 			while ( it.hasNext() ) {
 				final JBean b = it.next();
 				try {
-					b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_RCMD_EXECUTE_CMD);
-					b.send(JCmdTools.SERVER_RCMD_ALL);
+					if (exit) {
+						b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
+					} else {
+						b.send(JCmdTools.SEND_DATA_SYMBOL, line);
+					}
 				} catch (IOException e) {
 					it.remove();b.clear();
 				}
 			}
-		}
 
-		String line;
-		final Scanner reader = new Scanner(System.in);
-		System.out.println("-+-All JBeans, Run "+EXIT_CMD_STR+" to exit.-+-");
-		while ( true ) {
-			JServerLang.RCMD_INPUT_ASK();
-			line = reader.nextLine().trim().toLowerCase();
-			if ( line.equals("") ) {
-				System.out.println("enter the command, or run "+EXIT_CMD_STR+" to exit.");
-				continue;
-			} 
-			
-			/* exit the remote command execute thread */
-			if ( line.equals(EXIT_CMD_STR) ) {
-				synchronized (beanList) {
-					final Iterator<JBean> _it = beanList.iterator();
-					while ( _it.hasNext() ) {
-						final JBean b = _it.next();
-						try {
-							b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
-						} catch (IOException e) {
-							_it.remove();
-							b.clear();
-						}
-					}
-				}
+			// check and exit the current task
+			if (exit) {
 				break;
 			}
-			/* send the command to all the JBeans */
-			else {
-				_sendToAll(line);
-			}
-		}
-
-		// Do not close the reader
-		// reader.close();
-	}
-	
-	
-	private void _send(String cmd, int index) {
-		final JBean bean = server.getBean(index);
-		try {
-			bean.send(JCmdTools.SEND_DATA_SYMBOL, cmd);
-
-			/* get and print the execution response */
-			final DataInputStream dis = bean.getReader();
-			String line = dis.readUTF();
-			if ( line.equals(JCmdTools.RCMD_NOREPLY_VAL) ) {
-				System.out.println("execution failed or empty return");
-			} else {
-				System.out.println(line);
-			}
-		} catch (IOException e) {
-			server.removeBean(index);
-			CMD_SEND_ERROR("execute command");
 		}
 	}
+	
 	
 	/**
 	 * run command to the specified mathine 
 	 */
-	private void execute(int index) {
-		final JBean bean = server.getBean(index);
-
-		try {
-			bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_RCMD_EXECUTE_CMD);
-			bean.send(JCmdTools.SERVER_RMCD_SINGLE);
-		} catch (IOException e) {
-			CMD_SEND_ERROR("start command");
-			return;
-		}
-
+	private void execute(final JBean bean) throws IOException {
 		String line;
 		final Scanner reader = new Scanner(System.in);
 		System.out.println("-+-Single JBean, Run "+EXIT_CMD_STR+" to exit.-+-");
+
 		while ( true ) {
 			JServerLang.RCMD_INPUT_ASK();
 			line = reader.nextLine().trim().toLowerCase();
-			if ( line.equals("") ) {
+			if (line.equals("")) {
 				System.out.println("enter the command, or run "+EXIT_CMD_STR+" to exit.");
 				continue;
 			}
 			
 			/* exit the remote command execute thread */
-			if ( line.equals(EXIT_CMD_STR) ) {
-				try {
-					bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
-				} catch (IOException e) {
-					CMD_SEND_ERROR("stop command");
-				}
+			if (line.equals(EXIT_CMD_STR)) {
+				bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
 				break;
 			} else {
-				_send(line, index);
+				bean.send(JCmdTools.SEND_DATA_SYMBOL, line);
+
+				/* get and print the execution response */
+				final DataInputStream dis = bean.getReader();
+				final String resLine = dis.readUTF();
+				if (resLine.equals(JCmdTools.RCMD_NOREPLY_VAL)) {
+					System.out.println("execution failed or empty return");
+				} else {
+					System.out.println(resLine);
+				}
 			}
 		}
-
-		// Do not close the reader
-		// reader.close();
 	}
 	
 	public static void CMD_SEND_ERROR(String str) {

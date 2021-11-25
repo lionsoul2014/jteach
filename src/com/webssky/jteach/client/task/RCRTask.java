@@ -27,7 +27,10 @@ public class RCRTask implements JCTaskInterface {
 
 	@Override
 	public void run() {
-		if ( reader == null ) return; 
+		if ( reader == null ) {
+			return;
+		}
+
 		while ( getTStatus() == T_RUN ) {
 			try {
 				/* load symbol */
@@ -64,6 +67,10 @@ public class RCRTask implements JCTaskInterface {
 				in.close();
 				br.close();
 				p.destroy();
+
+				if (writer == null) {
+					continue;
+				}
 
 				/*
 				 * if there is no response
@@ -103,7 +110,9 @@ public class RCRTask implements JCTaskInterface {
 
 		try {
 			type = reader.readUTF().trim().toLowerCase();
-			if ( type.equals(JCmdTools.SERVER_RMCD_SINGLE) ) writer = new JCWriter(); 
+			if ( type.equals(JCmdTools.SERVER_RMCD_SINGLE) ) {
+				writer = new JCWriter();
+			}
 		} catch (IOException e) {
 			/*JOptionPane.showMessageDialog(null, "Fail To Load Data From Server",
 					"JTeach", JOptionPane.INFORMATION_MESSAGE);*/
