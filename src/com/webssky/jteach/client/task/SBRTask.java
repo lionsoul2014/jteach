@@ -113,8 +113,8 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 //					IMG_SIZE.width, IMG_SIZE.height, null);
 			// g.drawImage(B_IMG, 0, 0, null);
 			final int w = getWidth(), h = getHeight();
-			final int dst_w = (int) Math.ceil(w * 0.96);
-			final int dst_h = (int) Math.ceil(h * 0.96);
+			final int dst_w = (int) Math.ceil(w * 0.98);
+			final int dst_h = (int) Math.ceil(h * 0.98);
 			final BufferedImage img = JTeachIcon.resize_2(B_IMG, dst_w, dst_h);
 			g.drawImage(img, Math.max(0, (w - dst_w)/2), Math.max(0, (h - dst_h)/2), null);
 
