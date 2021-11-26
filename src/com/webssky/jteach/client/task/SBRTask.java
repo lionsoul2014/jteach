@@ -81,14 +81,9 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 		
 		private static final long serialVersionUID = 1L;
 		private final Point winSize;
-		private final Point visibleSize;
-		
+
 		public ImageJPanel() {
 			winSize = new Point(getWidth(), getHeight());
-			visibleSize = new Point(
-				(int)getVisibleRect().getWidth(),
-				(int)getVisibleRect().getHeight()
-			);
 		}
 		
 		@Override
@@ -110,21 +105,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 			
 			if ( IMG_SIZE == null ) {
 				BIT = Math.max((float)B_IMG.getWidth()/JClient.SCREEN_SIZE.width,
-						(float)B_IMG.getHeight()/JClient.SCREEN_SIZE.height);
-				/*
-				 * the server'screen size is larger then the client's 
-				 */
-				/*
-				int h = (int) Math.ceil((B_IMG.getHeight() / BIT));
-				if ( h > getHeight() ) h = (int) (B_IMG.getHeight() / BIT);
-				int w = (int) Math.ceil(B_IMG.getWidth() / BIT);
-				if ( w > getWidth() ) w = (int) (B_IMG.getWidth() / BIT); 
-				IMG_SIZE = new Dimension(w, h);
-				
-				int x = 0, y = 0;
-				if ( IMG_SIZE.width < getWidth() ) x = (getWidth() - IMG_SIZE.width) / 2;
-				if ( IMG_SIZE.height < getHeight() ) y = ( getHeight() - IMG_SIZE.height ) / 2; 
-				IMG_POS = new Point(x, y);*/
+					(float)B_IMG.getHeight()/JClient.SCREEN_SIZE.height);
 			}
 			
 			/*
@@ -134,8 +115,8 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 //			g.drawImage(B_IMG, IMG_POS.x, IMG_POS.y,
 //					IMG_SIZE.width, IMG_SIZE.height, null);
 			// g.drawImage(B_IMG, 0, 0, null);
-			final int dst_w = visibleSize.x;
-			final int dst_h = visibleSize.y;
+			final int dst_w = (int) Math.ceil(winSize.x * 0.96);
+			final int dst_h = (int) Math.ceil(winSize.y * 0.96);
 			final BufferedImage img = JTeachIcon.resize_2(B_IMG, dst_w, dst_h);
 			g.drawImage(img, Math.max(0, (winSize.x - dst_w)/2), Math.max(0, (winSize.y - dst_h)/2), null);
 
