@@ -109,12 +109,11 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 			 * Draw the image from server
 			 * start from point IMG_POS with size IMG_SIZE 
 			 */
-//			g.drawImage(B_IMG, IMG_POS.x, IMG_POS.y,
-//					IMG_SIZE.width, IMG_SIZE.height, null);
-			// g.drawImage(B_IMG, 0, 0, null);
-			final int w = getWidth(), h = getHeight();
-			final int dst_w = (int) Math.ceil(w * 0.96);
-			final int dst_h = (int) Math.ceil(h * 0.96);
+			// final int w = getWidth(), h = getHeight();
+			// final int dst_w = (int) Math.ceil(w * 0.96);
+			// final int dst_h = (int) Math.ceil(h * 0.96);
+			final int dst_w = getWidth();
+			final int dst_h = getHeight();
 			final BufferedImage img = JTeachIcon.resize_2(B_IMG, dst_w, dst_h);
 			g.drawImage(img, 0, 0, dst_w, dst_h, null);
 
@@ -160,7 +159,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 			try {
 				// send the heartbeat packet
 				writer.send(JCmdTools.SEND_HBT_SYMBOL);
-				char symbol = reader.readChar();
+				final char symbol = reader.readChar();
 
 				/*
 				 * Check the symbol type
@@ -212,11 +211,9 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 			} catch (SocketTimeoutException e) {
 				System.out.printf("Task %s read timeout\n", this.getClass().getName());
 			} catch (EOFException e) {
-				// do nothing right now
-				System.out.printf("Ignore EOFException of task %s\n", this.getClass().getName());
-			} catch (IOException e) {
+			} catch (Exception e) {
 				JClient.getInstance().offLineClear();
-				System.out.printf("Task %s is overed by IOException\n", this.getClass().getName());
+				System.out.printf("Task %s is overed by %s\n", getClass().getName(), e.getClass().getName());
 				break;
 			}
 		}
