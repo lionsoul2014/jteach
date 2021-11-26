@@ -47,7 +47,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	private volatile Point MOUSE_POS = null;
 	private volatile BufferedImage B_IMG = null;
 	private final ImageJPanel imgJPanel;
-	
+
 	public SBRTask() {
 		this.setTitle(title);
 		this.setUndecorated(true);
@@ -80,8 +80,16 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	private class ImageJPanel extends JPanel {
 		
 		private static final long serialVersionUID = 1L;
+		private final Point winSize;
+		private final Point visibleSize;
 		
-		public ImageJPanel() {}
+		public ImageJPanel() {
+			winSize = new Point(getWidth(), getHeight());
+			visibleSize = new Point(
+				(int)getVisibleRect().getWidth(),
+				(int)getVisibleRect().getHeight()
+			);
+		}
 		
 		@Override
 		public void update(Graphics g) {
@@ -126,8 +134,10 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 //			g.drawImage(B_IMG, IMG_POS.x, IMG_POS.y,
 //					IMG_SIZE.width, IMG_SIZE.height, null);
 			// g.drawImage(B_IMG, 0, 0, null);
-			final BufferedImage img = JTeachIcon.resize_2(B_IMG, getWidth(), getHeight());
-			g.drawImage(img, 0, 0, null);
+			final int dst_w = visibleSize.x;
+			final int dst_h = visibleSize.y;
+			final BufferedImage img = JTeachIcon.resize_2(B_IMG, dst_w, dst_h);
+			g.drawImage(img, Math.max(0, (winSize.x - dst_w)/2), Math.max(0, (winSize.y - dst_h)/2), null);
 
 			/*Draw the Mouse*/
 			g.drawImage(MOUSE_CURSOR, (int) (MOUSE_POS.x / BIT),
