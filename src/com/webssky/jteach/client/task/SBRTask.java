@@ -11,6 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 //import java.util.zip.ZipInputStream;
 
 import javax.imageio.ImageIO;
@@ -181,9 +182,11 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 				if (symbol == JCmdTools.SEND_CMD_SYMBOL) {
 					int cmd = reader.readInt();
 					if (cmd == JCmdTools.SERVER_TASK_STOP_CMD) {
+						System.out.printf("Task %s is overed by stop command\n", this.getClass().getName());
 						break;
 					}
 				} else if (symbol != JCmdTools.SEND_DATA_SYMBOL) {
+					System.out.printf("Ignore %s symbol\n", symbol);
 					continue;
 				}
 
@@ -191,33 +194,40 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 				MOUSE_POS = new Point(reader.readInt(), reader.readInt());
 
 				/* the size of the BufferedImage */
-				int imgsize = reader.readInt();
+				int imgSize = reader.readInt();
 
 				/*
 				 * the BufferedImage byte data
 				 * read the byte data into the buffer
 				 * cause cannot read all the data by once when the image is large
 				 */
-				byte buffer[] = new byte[imgsize];
+				byte buffer[] = new byte[imgSize];
 				int length = 0;
-				while (length < imgsize) {
-					int readsize = reader.read(buffer, length, imgsize - length);
-					if (readsize > 0) length += readsize;
-					else break;
+				while (length < imgSize) {
+					final int rSize = reader.read(buffer, length, imgSize - length);
+					if (rSize > 0) {
+						length += rSize;
+					} else {
+						break;
+					}
 				}
 
 				/*turn the byte data to a BufferedImage */
-				ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
+				final ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
 				//ZipInputStream zis = new ZipInputStream(bis);
 				//zis.getNextEntry();
 				B_IMG = ImageIO.read(bis);
 
 				/* repaint the ImageJPanel */
 				repaintImageJPanel();
+			} catch (SocketTimeoutException e) {
+				System.out.printf("Task %s read timeout\n", this.getClass().getName());
 			} catch (EOFException e) {
 				// do nothing right now
+				System.out.printf("Ignore EOFException of task %s\n", this.getClass().getName());
 			} catch (IOException e) {
 				JClient.getInstance().offLineClear();
+				System.out.printf("Task %s is overed by IOException\n", this.getClass().getName());
 				break;
 			}
 		}

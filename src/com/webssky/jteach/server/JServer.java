@@ -168,7 +168,7 @@ public class JServer {
 		public void run() {
 			while ( getRunState() == M_RUN ) {
 				try {
-					Socket s = server.accept();
+					final Socket s = server.accept();
 					/*
 					 * get a Socket from the Socket Queue
 					 * and create new JBean Object to manager it 
@@ -293,7 +293,7 @@ public class JServer {
 
 				// send the ARP to the client
 				try {
-					b.getSocket().sendUrgentData(0xff);
+					// b.getSocket().sendUrgentData(0xff);
 					b.send(JCmdTools.SEND_ARP_SYMBOL);
 					System.out.println("-+-index:"+num+", "+b+"---+-");
 				} catch (IOException e) {

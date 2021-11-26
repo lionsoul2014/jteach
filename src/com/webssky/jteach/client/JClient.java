@@ -206,7 +206,7 @@ public class JClient extends JFrame {
 			try {
 				final Socket s = new Socket(ip, PORT);
 				JClient.getInstance().setSocket(s);
-				JClient.getInstance().starCMDMonitor();
+				JClient.getInstance().startCMDMonitor();
 
 				/*
 				 * register a RMI Server:
@@ -322,18 +322,27 @@ public class JClient extends JFrame {
 	 */
 	public void offLineClear() {
 		try {
-			if ( reader != null ) reader.close();
-			if ( writer != null ) writer.close(); 
-			if ( socket != null ) socket.close();
-			reader = null;
-			writer = null;
-			socket = null;
+			if ( reader != null ) {
+				reader.close();
+			}
+
+			if ( writer != null ) {
+				writer.close();
+			}
+
+			if ( socket != null ) {
+				socket.close();
+			}
+
 			//Naming.unbind(JCmdTools.RMI_OBJ);
 			//RMIInstance = null;
 		} catch (Exception e1) {
 
 		}
 
+		reader = null;
+		writer = null;
+		socket = null;
 		setTipInfo("You are now offline.");
 	}
 	
@@ -423,7 +432,7 @@ public class JClient extends JFrame {
 	}
 	
 	/** start Server Input Monitor */
-	public void starCMDMonitor() {
+	public void startCMDMonitor() {
 		threadPool.execute(new CmdMonitor());
 	}
 	
@@ -460,6 +469,7 @@ public class JClient extends JFrame {
 					// check and break the socket if
 					// it were closed or cleared
 					if (socket == null) {
+						System.out.printf("cmd monitor is overed by null socket\n");
 						break;
 					}
 
@@ -542,9 +552,10 @@ public class JClient extends JFrame {
 						System.exit(0);
 					}
 				} catch (IOException e) {
-					e.printStackTrace();
+					// e.printStackTrace();
 					offLineClear();
 					reConnect = true;
+					System.out.printf("cmd monitor is overed by exception %s\n", e.getClass().getName());
 					break;
 				}
 			}
@@ -603,8 +614,7 @@ public class JClient extends JFrame {
 			return null;
 		}
 
-		writer = new DataOutputStream(socket.getOutputStream());
-		return writer;
+		return new DataOutputStream(socket.getOutputStream());
 	}
 	
 	public synchronized int getTStatus() {
@@ -615,11 +625,11 @@ public class JClient extends JFrame {
 	}
 
 	public static void main(String[] args) {
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		// try {
+		// 	UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		// } catch (Exception e) {
+		// 	e.printStackTrace();
+		// }
 
 		SwingUtilities.invokeLater(() -> {
 			JClient.getInstance().setVisible(true);
