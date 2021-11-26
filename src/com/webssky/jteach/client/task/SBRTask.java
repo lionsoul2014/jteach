@@ -116,7 +116,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 			final int dst_w = (int) Math.ceil(w * 0.98);
 			final int dst_h = (int) Math.ceil(h * 0.98);
 			final BufferedImage img = JTeachIcon.resize_2(B_IMG, dst_w, dst_h);
-			g.drawImage(img, Math.max(0, (w - dst_w)/2), Math.max(0, (h - dst_h)/2), dst_w, dst_h, null);
+			g.drawImage(img, 0, 0, dst_w, dst_h, null);
 
 			/*Draw the Mouse*/
 			g.drawImage(MOUSE_CURSOR, (int) (MOUSE_POS.x / BIT),
