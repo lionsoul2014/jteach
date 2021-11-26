@@ -1,5 +1,5 @@
 package com.webssky.jteach.msg;
 
-public interface Message {
+public interface Packet {
     public byte[] encode();
 }

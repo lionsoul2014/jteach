@@ -1,16 +1,13 @@
 package com.webssky.jteach.server;
 
-import com.webssky.jteach.msg.Message;
+import com.webssky.jteach.msg.Packet;
 import com.webssky.jteach.util.JCmdTools;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Date;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -19,24 +16,96 @@ import java.util.concurrent.LinkedBlockingDeque;
  * @author chenxin 
  */
 public class JBean {
-	
-	private Socket socket = null;
-	private DataOutputStream out = null;
-	private DataInputStream in = null;
 
-	private String name = null;
-	private String addr = null;
+	private final Socket socket;
+	private volatile boolean closed;
+	private final DataOutputStream output;
+	private final DataInputStream input;
+
+	private String name;
+	private String addr;
 
 	private long lastReadAt = 0;
 
 	/* message read/send blocking queue */
-	private final BlockingDeque<Message> sendPool;
-	private final BlockingDeque<Message> readPool;
+	private final BlockingDeque<Packet> sendPool;
+	private final BlockingDeque<Packet> readPool;
 
-	public JBean(Socket s) {
-		setSocket(s);
+	public JBean(Socket s) throws IOException {
+		if (s == null) {
+			throw new NullPointerException();
+		}
+
+		this.socket = s;
+		// this.socket.setTcpNoDelay(true);
+		this.socket.setSoTimeout(JCmdTools.SO_TIMEOUT);
+		this.name = socket.getInetAddress().getHostName();
+		this.addr = socket.getInetAddress().getHostAddress();
+		this.output = new DataOutputStream(socket.getOutputStream());
+		this.input  = new DataInputStream(socket.getInputStream());
+
+		/* create the message pool */
 		this.sendPool = new LinkedBlockingDeque(12);
 		this.readPool = new LinkedBlockingDeque(12);
+	}
+
+	public void start() {
+		JServer.threadPool.execute(new ReadTask());
+		JServer.threadPool.execute(new SendTask());
+	}
+
+	public void stop() {
+		clear();
+		sendPool.notify();
+	}
+
+	public long getLastReadAt() {
+		return lastReadAt;
+	}
+
+	public long getLastReadFromNow() {
+		final long now = System.currentTimeMillis();
+		return now - lastReadAt;
+	}
+
+	public boolean isClosed() {
+		return closed;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getAddr() {
+		return addr;
+	}
+
+	public Socket getSocket() {
+		return socket;
+	}
+
+	/* wait until the message push to the queue */
+	public void put(Packet msg) {
+		try {
+			sendPool.put(msg);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/* offer or throw an exception for the message */
+	public void offer(Packet msg) {
+		sendPool.offer(msg);
+	}
+
+	/* read the first message */
+	public Packet poll() {
+		return readPool.poll();
+	}
+
+	/* take or wait for the first message */
+	public Packet take() throws InterruptedException {
+		return readPool.take();
 	}
 
 	/* Message read thread */
@@ -45,13 +114,13 @@ public class JBean {
 		public void run() {
 			int offlineCount = 0;
 			while (true) {
-				if (socket == null) {
-					System.out.printf("client %s stop cuz of empty socket\n");
+				if (closed) {
+					System.out.printf("client %s read thread closed\n");
 					break;
 				}
 
 				try {
-					final char symbol = in.readChar();
+					final char symbol = input.readChar();
 
 					// update the last read at
 					lastReadAt = System.currentTimeMillis();
@@ -71,7 +140,7 @@ public class JBean {
 						}
 					}
 				} catch (SocketTimeoutException e) {
-					System.out.printf("client %s read timeout count %d\n", name, offlineCount);
+					System.out.printf("client %s read timeoutput count %d\n", name, offlineCount);
 					offlineCount++;
 					if (offlineCount > 100) {
 						System.out.printf("client %s went offline due to too many read timeout\n", name);
@@ -91,10 +160,15 @@ public class JBean {
 		@Override
 		public void run() {
 			while (true) {
+				if (closed) {
+					System.out.printf("client %s send thread closed\n");
+					break;
+				}
+
 				try {
-					final Message msg = sendPool.take();
-					out.write(msg.encode());
-					out.flush();
+					final Packet msg = sendPool.take();
+					output.write(msg.encode());
+					output.flush();
 				} catch (InterruptedException e) {
 					System.out.printf("client %s send pool take were interrupted\n", name);
 				} catch (IOException e) {
@@ -106,88 +180,14 @@ public class JBean {
 		}
 	}
 
-	public long getLastReadAt() {
-		return lastReadAt;
-	}
-
-	public long getLastReadFromNow() {
-		final long now = System.currentTimeMillis();
-		return now - lastReadAt;
-	}
-	
-	public OutputStream getOutputStream() throws IOException {
-		return socket.getOutputStream();
-	}
-	
-	/**
-	 * return DataInputStream Object 
-	 */
-	public DataInputStream getReader() {
-		return in;
-	}
-	
-	/**
-	 * return the bean's host name 
-	 */
-	public String getName() {
-		return name;
-	}
-
-	/**
-	 * return the bean's IP 
-	 */
-	public String getIP() {
-		return addr;
-	}
-	
-	private void setSocket(Socket s) {
-		if (s == null) {
-			throw new NullPointerException();
-		}
-
-		try {
-			socket = s;
-			// socket.setTcpNoDelay(true);
-			socket.setSoTimeout(JCmdTools.SO_TIMEOUT);
-			name = socket.getInetAddress().getHostName();
-			addr = socket.getInetAddress().getHostAddress();
-			out = new DataOutputStream(socket.getOutputStream());
-			in  = new DataInputStream(socket.getInputStream());
-		} catch (IOException e) {
-			System.out.println("Failed To Create DataOutputStream Object.");
-			name = "Unknown";
-			addr = "UnKnown";
-			clear();
-		}
-	}
-	
-	public Socket getSocket() {
-		return socket;
-	}
-	
 	public void clear() {
 		try {
-			if ( in != null ) {
-				in.close();
-			}
+			input.close();
+			output.close();
+			socket.close();
+		} catch (IOException e) {}
 
-			if ( out != null ) {
-				out.close();
-			}
-
-			if ( socket != null ) {
-				socket.close();
-			}
-
-			System.out.println("GC:: ["+getIP()+"] was removed!");
-			//JServerLang.INPUT_ASK();
-		} catch ( IOException e ) {
-			System.out.println("client cleared");
-		}
-
-		in = null;
-		out = null;
-		socket = null;
+		closed = true;
 		readPool.clear();
 		sendPool.clear();
 	}
@@ -197,9 +197,9 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public synchronized void send(char symbol) throws IOException {
-		if ( out != null ) {
-			out.writeChar(symbol);
-			out.flush();
+		if ( output != null ) {
+			output.writeChar(symbol);
+			output.flush();
 		}
 	}
 	
@@ -208,10 +208,10 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public synchronized void send(char symbol, int cmd) throws IOException {
-		if ( out != null ) {
-			out.writeChar(symbol);
-			out.writeInt(cmd);
-			out.flush();
+		if ( output != null ) {
+			output.writeChar(symbol);
+			output.writeInt(cmd);
+			output.flush();
 		}
 	}
 	
@@ -220,10 +220,10 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public synchronized void send(char symbol, byte[] b) throws IOException {
-		if ( out != null ) {
-			out.writeChar(symbol);
-			out.write(b);
-			out.flush();
+		if ( output != null ) {
+			output.writeChar(symbol);
+			output.write(b);
+			output.flush();
 		}
 	}
 	
@@ -233,11 +233,11 @@ public class JBean {
 	 */
 	public synchronized void send(int symbol, int length,
 			byte[] data) throws IOException {
-		if ( out != null ) {
-			out.writeChar(symbol);
-			out.writeInt(length);
-			out.write(data);
-			out.flush();
+		if ( output != null ) {
+			output.writeChar(symbol);
+			output.writeInt(length);
+			output.write(data);
+			output.flush();
 		}
 	}
 	
@@ -247,13 +247,13 @@ public class JBean {
 	 */
 	public synchronized void send(int symbol,int x, int y, int length,
 			byte[] data) throws IOException {
-		if ( out != null ) {
-			out.writeChar(symbol);
-			out.writeInt(x);
-			out.writeInt(y);
-			out.writeInt(length);
-			out.write(data);
-			out.flush();
+		if ( output != null ) {
+			output.writeChar(symbol);
+			output.writeInt(x);
+			output.writeInt(y);
+			output.writeInt(length);
+			output.write(data);
+			output.flush();
 		}
 	}
 	
@@ -262,10 +262,10 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public synchronized void send(String str, long x) throws IOException {
-		if ( out != null ) {
-			out.writeUTF(str);
-			out.writeLong(x);
-			out.flush();
+		if ( output != null ) {
+			output.writeUTF(str);
+			output.writeLong(x);
+			output.flush();
 		}
 	}
 	
@@ -274,9 +274,9 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public synchronized void send(String str) throws IOException {
-		if ( out != null ) {
-			out.writeUTF(str);
-			out.flush();
+		if ( output != null ) {
+			output.writeUTF(str);
+			output.flush();
 		}
 	}
 	
@@ -285,10 +285,10 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public synchronized void send(char symbol, String str) throws IOException {
-		if ( out != null ) {
-			out.writeChar(symbol);
-			out.writeUTF(str);
-			out.flush();
+		if ( output != null ) {
+			output.writeChar(symbol);
+			output.writeUTF(str);
+			output.flush();
 		}
 	}
 	
@@ -297,9 +297,9 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public synchronized void send(int x) throws IOException {
-		if ( out != null ) {
-			out.writeInt(x);
-			out.flush();
+		if ( output != null ) {
+			output.writeInt(x);
+			output.flush();
 		}
 	}
 	
@@ -308,17 +308,14 @@ public class JBean {
 	 * @throws IOException 
 	 */
 	public synchronized void send(byte[] b, int length) throws IOException {
-		if ( out != null ) {
-			out.write(b, 0, length);
-			out.flush();
+		if ( output != null ) {
+			output.write(b, 0, length);
+			output.flush();
 		}
 	}
 
-	public void reportSendError() {
-		System.out.printf("failed to send data to client %s\n", this.getIP());
+	public String toString() {
+		return "IP:" + addr + ", HOST:" + name;
 	}
 
-	public String toString() {
-		return "IP:"+getIP()+", HOST:"+getName();
-	}
 }

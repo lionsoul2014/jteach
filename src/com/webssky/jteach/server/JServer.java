@@ -11,6 +11,9 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.sun.xml.internal.bind.v2.runtime.output.Pcdata;
+import com.webssky.jteach.msg.CommandPacket;
+import com.webssky.jteach.msg.SymbolPacket;
 import com.webssky.jteach.server.task.JSTaskInterface;
 import com.webssky.jteach.util.JCmdTools;
 import com.webssky.jteach.util.JServerLang;
@@ -27,9 +30,6 @@ public class JServer {
 	public static ServerSocket server = null;
 	public static final String OS = System.getProperty("os.name").toUpperCase();
 
-	/* default number of JBeans for one group */
-	private int gOpacity = 7;
-	
 	public static final int M_RUN = 1;
 	// public static final int M_OVER = 0;
 	private int STATE = M_RUN;
@@ -169,12 +169,13 @@ public class JServer {
 			while ( getRunState() == M_RUN ) {
 				try {
 					final Socket s = server.accept();
+
 					/*
 					 * get a Socket from the Socket Queue
-					 * and create new JBean Object to manager it 
-					 */
+					 * and create new JBean Object to manager it */
 					final JBean bean = new JBean(s);
 					beanList.add(bean);
+					bean.start();
 
 					/* check and add the new client to the running task */
 					if (JSTask != null) {
@@ -198,11 +199,13 @@ public class JServer {
 		if ( arguments != null 
 				&& arguments.get(JCmdTools.EXIT_CLOSE_KEY) != null
 				&& arguments.get(JCmdTools.EXIT_CLOSE_KEY).equals(JCmdTools.EXIT_CLOSE_VAL) ) {
-			synchronized ( beanList ) {
+			synchronized (beanList) {
 				for (JBean b : beanList) {
 					try {
-						b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_EXIT_CMD);
-					} catch (IOException e) {}
+						b.put(new CommandPacket(JCmdTools.SERVER_EXIT_CMD));
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}
@@ -228,19 +231,16 @@ public class JServer {
 			return;
 		}
 
-		/*remove all the JBean */
+		/* remove all the JBean */
 		if ( v.equals(JCmdTools.DELETE_ALL_VAL) ) {
 			for (JBean b : beanList) {
-				try {
-					if ( b.getSocket() != null ) b.getSocket().close();
-					if ( b.getOutputStream() != null ) b.getOutputStream().close();
-				} catch (IOException e) {}
+				b.clear();
 			}
 
 			beanList.clear();
 			System.out.println("Clear Ok.");
 		}
-		/*remove the Specified JBean*/
+		/* remove the Specified JBean */
 		else {
 			if ( !v.matches("^[0-9]{1,}$") ) {
 				JServerLang.DELETE_JBEAN_EMPTY_ARGUMENTS();
@@ -283,7 +283,7 @@ public class JServer {
 				final JBean b = it.next();
 
 				// check and remove the cleared bean
-				if (b.getSocket() == null) {
+				if (b.isClosed()) {
 					it.remove();
 					continue;
 				}
@@ -293,10 +293,9 @@ public class JServer {
 
 				// send the ARP to the client
 				try {
-					// b.getSocket().sendUrgentData(0xff);
-					b.send(JCmdTools.SEND_ARP_SYMBOL);
+					b.put(new SymbolPacket(JCmdTools.SEND_ARP_SYMBOL));
 					System.out.println("-+-index:"+num+", "+b+"---+-");
-				} catch (IOException e) {
+				} catch (InterruptedException e) {
 					it.remove();b.clear();
 					System.out.println("-+-index:"+num+", "+b+"(gc)---+-");
 				}
@@ -340,16 +339,6 @@ public class JServer {
 		return list;
 	}
 	
-	/** set the default opacity of JBeans for one group */
-	public void setGroupOpacity( int opacity ) {
-		gOpacity = opacity;
-	}
-	
-	/** get the default opacity for one group */
-	public int getGroupOpacity() {
-		return gOpacity;
-	}
-	
 	public static void main(String[] args) {
 		int opacity = 0;
 		if ( args.length > 0 ) {
@@ -360,10 +349,6 @@ public class JServer {
 					PORT = p;
 				}
 			}
-		}
-
-		if ( opacity != 0 ) {
-			JServer.getInstance().setGroupOpacity(opacity);
 		}
 
 		JServer.getInstance().initServer();

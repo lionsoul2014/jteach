@@ -16,6 +16,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import javax.imageio.ImageIO;
 
 import com.sun.imageio.plugins.wbmp.WBMPImageReader;
+import com.webssky.jteach.msg.CommandPacket;
+import com.webssky.jteach.msg.DataPacket;
 import com.webssky.jteach.server.JBean;
 import com.webssky.jteach.server.JServer;
 import com.webssky.jteach.util.JCmdTools;
@@ -38,43 +40,40 @@ public class SBTask implements JSTaskInterface,Runnable {
 	private volatile int TStatus = T_RUN;
 
 	private final Robot robot;
-	private final List<TaskBean> beanList;
+	private final List<JBean> beanList;
 
 	public SBTask(JServer server) throws AWTException {
 		robot = new Robot();
-		beanList = Collections.synchronizedList(new ArrayList<>());
-		for (JBean b : server.copyBeanList()) {
-			beanList.add(new TaskBean(b));
-		}
+		beanList = Collections.synchronizedList(server.copyBeanList());
 	}
 
 	@Override
 	public void addClient(JBean bean) {
-		try {
-			cmdSend(bean, JCmdTools.SERVER_BROADCAST_START_CMD);
-			final TaskBean tBean = new TaskBean(bean);
-			beanList.add(tBean);
-			tBean.start();
-			System.out.printf("add a new client %s\n", bean.getIP());
-		} catch (IOException e) {
-			System.out.printf("failed to add new client %s\n", bean.getIP());
+		bean.put(new CommandPacket(JCmdTools.SERVER_BROADCAST_START_CMD));
+		beanList.add(bean);
+		System.out.printf("add a new client %s\n", bean.getAddr());
+	}
+
+	/* send symbol to all beans */
+	private void cmdSendAll(int cmd) {
+		Iterator<JBean> it = beanList.iterator();
+		while ( it.hasNext() ) {
+			final JBean bean = it.next();
+			if (bean.isClosed()) {
+				it.remove();
+				continue;
+			}
+
+			bean.put(new CommandPacket(cmd));
 		}
 	}
-	
+
 	@Override
 	public void startTask() {
 		System.out.println(START_TIP);
 
 		// send broadcast start cmd to all the beans;
 		cmdSendAll(JCmdTools.SERVER_BROADCAST_START_CMD);
-
-		// start all the task beans
-		synchronized (beanList) {
-			final Iterator<TaskBean> it = beanList.iterator();
-			while (it.hasNext()) {
-				it.next().start();
-			}
-		}
 
 		// start image catch thread
 		JServer.threadPool.execute(this);
@@ -85,49 +84,9 @@ public class SBTask implements JSTaskInterface,Runnable {
 		System.out.println(STOPING_TIP);
 		setTSTATUS(T_STOP);
 
-		/* stop all the task beans */
-		synchronized (beanList) {
-			final Iterator<TaskBean> it = beanList.iterator();
-			while (it.hasNext()) {
-				it.next().stop();
-			}
-		}
-
 		// send broadcast stop cmd to all the beans;
 		cmdSendAll(JCmdTools.SERVER_TASK_STOP_CMD);
 		System.out.println(STOPED_TIP);
-	}
-
-	/* start the broadcast task for the specified bean */
-	public void cmdSend(final JBean bean, final int cmd) throws IOException {
-		// if ( cmd == JCmdTools.SERVER_BROADCAST_START_CMD ) {
-		// 	b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
-		// } else {
-		// 	b.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
-		// }
-		bean.getSocket().setSoTimeout(JCmdTools.SO_TIMEOUT);
-		bean.send(JCmdTools.SEND_CMD_SYMBOL, cmd);
-	}
-
-	/* send symbol to all beans */
-	private void cmdSendAll(int cmd) {
-		Iterator<TaskBean> it = beanList.iterator();
-		while ( it.hasNext() ) {
-			final TaskBean tBean = it.next();
-			if ( tBean.bean.getSocket() == null
-					|| tBean.bean.getSocket().isClosed() ) {
-				tBean.stop();
-				it.remove();
-				continue;
-			}
-
-			try {
-				cmdSend(tBean.bean, cmd);
-			} catch (IOException e) {
-				tBean.bean.reportSendError();
-				it.remove();tBean.bean.clear();
-			}
-		}
 	}
 
 	@Override
@@ -178,19 +137,17 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 			/* send the image data to the clients */
 			synchronized (beanList) {
-				final Iterator<TaskBean> it = beanList.iterator();
+				final Iterator<JBean> it = beanList.iterator();
 				while (it.hasNext()) {
-					final TaskBean tBean = it.next();
-					if (tBean.bean.getSocket() == null
-							|| tBean.bean.getSocket().isClosed()) {
-						tBean.stop();
+					final JBean bean = it.next();
+					if (bean.isClosed()) {
 						it.remove();
 						continue;
 					}
 
 					// append the Message
 					// to the current bean
-					tBean.addMsg(msg);
+					bean.put(new DataPacket(msg.encode()));
 				}
 			}
 
@@ -202,7 +159,6 @@ public class SBTask implements JSTaskInterface,Runnable {
 		}
 	}
 	
-	
 	private class MsgItem {
 		byte[] data;
 		int x;
@@ -213,71 +169,9 @@ public class SBTask implements JSTaskInterface,Runnable {
 			this.x = x;
 			this.y = y;
 		}
-	}
 
-	/* ImageSendTask class */
-	private class TaskBean implements Runnable {
-		final JBean bean;
-		private volatile int status = T_STOP;
-		private volatile int counter;
-		private final String ip;
-		private final BlockingQueue<MsgItem> msgQueue;
-
-		public TaskBean(final JBean bean) {
-			this.bean = bean;
-			this.counter = 0;
-			this.ip = bean.getIP();
-			msgQueue = new LinkedBlockingDeque<>(10);
-		}
-
-		public void addMsg(MsgItem msg) {
-			msgQueue.offer(msg);
-		}
-
-		public void start() {
-			if (status != T_RUN) {
-				status = T_RUN;
-				JServer.threadPool.execute(this);
-			}
-		}
-
-		public void stop() {
-			status = T_STOP;
-		}
-
-		@Override
-		public void run() {
-			boolean clearBean = false;
-			while (status == T_RUN) {
-				try {
-					final MsgItem msg = msgQueue.take();
-
-					/* receive the heartbeat from the client
-					 * to make sure the client is now still alive */
-					bean.getReader().readChar();
-					bean.send(JCmdTools.SEND_DATA_SYMBOL, msg.x, msg.y, msg.data.length, msg.data);
-				} catch (SocketTimeoutException e) {
-					System.out.printf("client %s read timeout count %d\n", ip, counter);
-					counter++;
-					if (counter > 3) {
-						clearBean = true;
-						break;
-					}
-				} catch (EOFException e) {
-					continue;
-				} catch (IOException e) {
-					clearBean = true;
-					break;
-				} catch (InterruptedException e) {
-					System.out.println("queue.take were interrupted\n");
-				}
-			}
-
-			/* clear the bean */
-			status = T_STOP;
-			if (clearBean) {
-				bean.clear();
-			}
+		byte[] encode() {
+			return new byte[0];
 		}
 	}
 
