@@ -59,7 +59,7 @@ public class JCmdTools {
 	//arguments name and value
 	public static final String CMD_KEY = "cmd";
 	
-	/**if s=true the server will send a exit symbol to all the JBeans*/
+	/**if s=true the server will send an exit symbol to all the JBeans*/
 	public static final String EXIT_CLOSE_KEY = "s";
 	public static final String EXIT_CLOSE_VAL = "true";
 	
@@ -73,8 +73,8 @@ public class JCmdTools {
 	public static final String MONITOR_BROADCAST_KEY = "b";
 	public static final String MONITOR_BROADCAST_VAL = "true";
 	
-	/**if i = a, the command to send to all the JBeans, if i is an integer
-	 *the command will be send to the ith one*/
+	/**if i = a, the command to send to all the JBeans, if var i is an integer
+	 * the command will sent to the ith one */
 	public static final String RCMD_EXECUTE_KEY = "i";
 	public static final String RCMD_EXECUTE_VAL = "a";
 	
