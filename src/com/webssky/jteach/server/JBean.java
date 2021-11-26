@@ -93,6 +93,14 @@ public class JBean {
 		}
 	}
 
+	/* send a message immediately */
+	public void send(Packet msg) throws IOException {
+		synchronized (output) {
+			output.write(msg.encode());
+			output.flush();
+		}
+	}
+
 	/* offer or throw an exception for the message */
 	public void offer(Packet msg) {
 		sendPool.offer(msg);
@@ -167,8 +175,11 @@ public class JBean {
 
 				try {
 					final Packet msg = sendPool.take();
-					output.write(msg.encode());
-					output.flush();
+					/* lock the socket and send the message data */
+					synchronized (output) {
+						output.write(msg.encode());
+						output.flush();
+					}
 				} catch (InterruptedException e) {
 					System.out.printf("client %s send pool take were interrupted\n", name);
 				} catch (IOException e) {
