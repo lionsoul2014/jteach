@@ -147,7 +147,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 					// append the Message
 					// to the current bean
-					bean.put(new DataPacket(msg.encode()));
+					bean.offer(new DataPacket(msg.encode()));
 				}
 			}
 

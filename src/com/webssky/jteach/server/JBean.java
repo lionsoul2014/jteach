@@ -102,8 +102,8 @@ public class JBean {
 	}
 
 	/* offer or throw an exception for the message */
-	public void offer(Packet msg) {
-		sendPool.offer(msg);
+	public boolean offer(Packet msg) {
+		return sendPool.offer(msg);
 	}
 
 	/* read the first message */
