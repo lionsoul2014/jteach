@@ -2,12 +2,12 @@ package com.webssky.jteach.msg;
 
 import com.webssky.jteach.util.JCmdTools;
 
-public class DataPacket implements Packet {
+public class DataMessage implements Message {
 
     public final char symbol;
     public final byte[] data;
 
-    public DataPacket(byte[] data) {
+    public DataMessage(byte[] data) {
         this.symbol = JCmdTools.SEND_DATA_SYMBOL;
         this.data = data;
     }

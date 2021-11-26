@@ -1,10 +1,10 @@
 package com.webssky.jteach.msg;
 
-public class SymbolPacket implements Packet {
+public class SymbolMessage implements Message {
 
     public final char symbol;
 
-    public SymbolPacket(char symbol) {
+    public SymbolMessage(char symbol) {
         this.symbol = symbol;
     }
 

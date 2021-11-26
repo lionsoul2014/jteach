@@ -1,6 +1,6 @@
 package com.webssky.jteach.server;
 
-import com.webssky.jteach.msg.Packet;
+import com.webssky.jteach.msg.Message;
 import com.webssky.jteach.util.JCmdTools;
 
 import java.io.DataInputStream;
@@ -28,8 +28,8 @@ public class JBean {
 	private long lastReadAt = 0;
 
 	/* message read/send blocking queue */
-	private final BlockingDeque<Packet> sendPool;
-	private final BlockingDeque<Packet> readPool;
+	private final BlockingDeque<Message> sendPool;
+	private final BlockingDeque<Message> readPool;
 
 	public JBean(Socket s) throws IOException {
 		if (s == null) {
@@ -85,7 +85,7 @@ public class JBean {
 	}
 
 	/* wait until the message push to the queue */
-	public void put(Packet msg) {
+	public void put(Message msg) {
 		try {
 			sendPool.put(msg);
 		} catch (InterruptedException e) {
@@ -94,7 +94,7 @@ public class JBean {
 	}
 
 	/* send a message immediately */
-	public void send(Packet msg) throws IOException {
+	public void send(Message msg) throws IOException {
 		synchronized (output) {
 			output.write(msg.encode());
 			output.flush();
@@ -102,17 +102,17 @@ public class JBean {
 	}
 
 	/* offer or throw an exception for the message */
-	public boolean offer(Packet msg) {
+	public boolean offer(Message msg) {
 		return sendPool.offer(msg);
 	}
 
 	/* read the first message */
-	public Packet poll() {
+	public Message poll() {
 		return readPool.poll();
 	}
 
 	/* take or wait for the first message */
-	public Packet take() throws InterruptedException {
+	public Message take() throws InterruptedException {
 		return readPool.take();
 	}
 
@@ -174,7 +174,7 @@ public class JBean {
 				}
 
 				try {
-					final Packet msg = sendPool.take();
+					final Message msg = sendPool.take();
 					/* lock the socket and send the message data */
 					synchronized (output) {
 						output.write(msg.encode());

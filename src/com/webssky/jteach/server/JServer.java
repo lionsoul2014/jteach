@@ -11,9 +11,8 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.sun.xml.internal.bind.v2.runtime.output.Pcdata;
-import com.webssky.jteach.msg.CommandPacket;
-import com.webssky.jteach.msg.SymbolPacket;
+import com.webssky.jteach.msg.CommandMessage;
+import com.webssky.jteach.msg.SymbolMessage;
 import com.webssky.jteach.server.task.JSTaskInterface;
 import com.webssky.jteach.util.JCmdTools;
 import com.webssky.jteach.util.JServerLang;
@@ -202,7 +201,7 @@ public class JServer {
 			synchronized (beanList) {
 				for (JBean b : beanList) {
 					try {
-						b.put(new CommandPacket(JCmdTools.SERVER_EXIT_CMD));
+						b.put(new CommandMessage(JCmdTools.SERVER_EXIT_CMD));
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
@@ -293,7 +292,7 @@ public class JServer {
 
 				// send the ARP to the client
 				try {
-					b.put(new SymbolPacket(JCmdTools.SEND_ARP_SYMBOL));
+					b.put(new SymbolMessage(JCmdTools.SEND_ARP_SYMBOL));
 					System.out.println("-+-index:"+num+", "+b+"---+-");
 				} catch (InterruptedException e) {
 					it.remove();b.clear();

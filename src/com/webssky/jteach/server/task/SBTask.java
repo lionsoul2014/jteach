@@ -3,26 +3,19 @@ package com.webssky.jteach.server.task;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
-import java.net.SocketTimeoutException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
 
 import javax.imageio.ImageIO;
 
-import com.sun.imageio.plugins.wbmp.WBMPImageReader;
-import com.webssky.jteach.msg.CommandPacket;
-import com.webssky.jteach.msg.DataPacket;
+import com.webssky.jteach.msg.CommandMessage;
+import com.webssky.jteach.msg.DataMessage;
 import com.webssky.jteach.server.JBean;
 import com.webssky.jteach.server.JServer;
 import com.webssky.jteach.util.JCmdTools;
 import com.webssky.jteach.util.JTeachIcon;
-import javafx.concurrent.Task;
 
 
 /**
@@ -49,7 +42,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 	@Override
 	public void addClient(JBean bean) {
-		bean.put(new CommandPacket(JCmdTools.SERVER_BROADCAST_START_CMD));
+		bean.put(new CommandMessage(JCmdTools.SERVER_BROADCAST_START_CMD));
 		beanList.add(bean);
 		System.out.printf("add a new client %s\n", bean.getAddr());
 	}
@@ -64,7 +57,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 				continue;
 			}
 
-			bean.put(new CommandPacket(cmd));
+			bean.put(new CommandMessage(cmd));
 		}
 	}
 
@@ -128,7 +121,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 			/*Mouse Location Info */
 			final Point mouse = MouseInfo.getPointerInfo().getLocation();
-			final MsgItem msg = new MsgItem(data, mouse.x, mouse.y);
+			final ScreenMessage msg = new ScreenMessage(data, mouse.x, mouse.y);
 
 			// remember the current img as the last
 			// image the for the next round
@@ -147,7 +140,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 					// append the Message
 					// to the current bean
-					bean.offer(new DataPacket(msg.encode()));
+					bean.offer(new DataMessage(msg.encode()));
 				}
 			}
 
@@ -159,12 +152,12 @@ public class SBTask implements JSTaskInterface,Runnable {
 		}
 	}
 	
-	private class MsgItem {
+	private class ScreenMessage {
 		byte[] data;
 		int x;
 		int y;
 		
-		MsgItem(byte[] data, int x, int y) {
+		ScreenMessage(byte[] data, int x, int y) {
 			this.data = data;
 			this.x = x;
 			this.y = y;
