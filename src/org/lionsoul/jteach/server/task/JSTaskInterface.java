@@ -12,11 +12,11 @@ public interface JSTaskInterface {
 	public static final int T_STOP = 0;
 	
 	/** start the Task */
-	public boolean startTask();
+	public boolean start();
 
 	/* add a new client */
 	public void addClient(JBean bean);
 
 	/** stop the working Task */
-	public void stopTask();
+	public void stop();
 }

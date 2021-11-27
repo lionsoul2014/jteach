@@ -149,7 +149,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	}
 	
 	@Override
-	public boolean startTask() {
+	public boolean start() {
 		String str = JServer.getInstance().getArguments().get(JCmdTools.SCREEN_MONITOR_KEY);
 		if ( str == null ) {
 			JServerLang.SCREEN_MONITOR_EMPTY_ARGUMENTS();
@@ -224,7 +224,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	}
 
 	@Override
-	public void stopTask() {
+	public void stop() {
 		setTStatus(T_STOP);
 
 		try {

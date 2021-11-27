@@ -49,7 +49,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 	}
 
 	@Override
-	public boolean startTask() {
+	public boolean start() {
 		if (beanList.size() == 0) {
 			System.out.printf("Abort task %s Empty client list\n", this.getClass().getName());
 			return false;
@@ -60,7 +60,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 	}
 
 	@Override
-	public void stopTask() {
+	public void stop() {
 		System.out.println(STOPING_TIP);
 		setTSTATUS(T_STOP);
 

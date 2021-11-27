@@ -34,7 +34,7 @@ public class RCTask implements JSTaskInterface {
 	}
 
 	@Override
-	public boolean startTask() {
+	public boolean start() {
 		String str = JServer.getInstance().getArguments().get(JCmdTools.RCMD_EXECUTE_KEY);
 		if ( str == null ) {
 			JServerLang.RCMD_EXECUTE_EMPTY_ARGUMENTS();
@@ -83,7 +83,7 @@ public class RCTask implements JSTaskInterface {
 	}
 
 	@Override
-	public void stopTask() {
+	public void stop() {
 		
 	}
 	

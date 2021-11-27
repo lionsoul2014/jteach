@@ -70,7 +70,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 	}
 
 	@Override
-	public boolean startTask() {
+	public boolean start() {
 		if (beanList.size() == 0) {
 			System.out.println("Empty client list");
 			return false;
@@ -87,7 +87,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 	}
 
 	@Override
-	public void stopTask() {
+	public void stop() {
 		System.out.println(STOPING_TIP);
 		setTSTATUS(T_STOP);
 

@@ -73,7 +73,7 @@ public class JServer {
 	/** reset JSTask */
 	public void stopJSTask() {
 		if (JSTask != null) {
-			JSTask.stopTask();
+			JSTask.stop();
 			JSTask = null;
 		}
 	}
@@ -112,7 +112,7 @@ public class JServer {
 				if ( JSTask == null ) {
 					JServerLang.STOP_NULL_THREAD();
 				} else {
-					JSTask.stopTask();
+					JSTask.stop();
 					JSTask = null;
 				}
 			} else if ( _input.equals(JCmdTools.DELE) ) {
@@ -144,7 +144,7 @@ public class JServer {
 			Class<?> _class = Class.forName(classname);
 			Constructor<?> con = _class.getConstructor(JServer.class);
 			JSTask = (JSTaskInterface) con.newInstance(this);
-			if ( JSTask.startTask() == false ) {
+			if ( JSTask.start() == false ) {
 				stopJSTask();
 			}
 		} catch (Exception e) {
