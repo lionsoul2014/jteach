@@ -190,9 +190,9 @@ public class JServer {
 	
 	/**
 	 * exit the program 
-	 * if EXIT_CLOSE_KEY is pass. <br />
+	 * if EXIT_CLOSE_KEY is pass.
 	 * A symbol will send to all the JBeans to
-	 * order them to stop the client program. <br />
+	 * order them to stop the client program.
 	 */
 	public void exit() {
 		if ( arguments != null 
@@ -201,9 +201,9 @@ public class JServer {
 			synchronized (beanList) {
 				for (JBean b : beanList) {
 					try {
-						b.put(new CommandMessage(JCmdTools.SERVER_EXIT_CMD));
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+						b.offer(new CommandMessage(JCmdTools.SERVER_EXIT_CMD));
+					} catch (IllegalAccessException e) {
+						b.reportClosedError();
 					}
 				}
 			}
@@ -281,12 +281,6 @@ public class JServer {
 			while ( it.hasNext() ) {
 				final JBean b = it.next();
 
-				// check and remove the cleared bean
-				if (b.isClosed()) {
-					it.remove();
-					continue;
-				}
-
 				String num = JCmdTools.formatString(j+"", 2, '0');
 				j++;
 
@@ -294,9 +288,10 @@ public class JServer {
 				try {
 					b.put(new SymbolMessage(JCmdTools.SEND_ARP_SYMBOL));
 					System.out.println("-+-index:"+num+", "+b+"---+-");
-				} catch (InterruptedException e) {
-					it.remove();b.clear();
+				} catch (IllegalAccessException e) {
+					// b.reportClosedError();
 					System.out.println("-+-index:"+num+", "+b+"(gc)---+-");
+					it.remove();
 				}
 			}
 		}

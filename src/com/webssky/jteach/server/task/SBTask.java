@@ -11,7 +11,7 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 import com.webssky.jteach.msg.CommandMessage;
-import com.webssky.jteach.msg.DataMessage;
+import com.webssky.jteach.msg.BytesMessage;
 import com.webssky.jteach.server.JBean;
 import com.webssky.jteach.server.JServer;
 import com.webssky.jteach.util.JCmdTools;
@@ -42,9 +42,17 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 	@Override
 	public void addClient(JBean bean) {
-		bean.put(new CommandMessage(JCmdTools.SERVER_BROADCAST_START_CMD));
-		beanList.add(bean);
-		System.out.printf("add a new client %s\n", bean.getAddr());
+		try {
+			boolean res = bean.offer(new CommandMessage(JCmdTools.SERVER_BROADCAST_START_CMD));
+			if (res == false) {
+				System.out.printf("failed to add new client %s\n", bean.getAddr());
+			} else {
+				beanList.add(bean);
+				System.out.printf("add a new client %s\n", bean.getAddr());
+			}
+		} catch (IllegalAccessException e) {
+			bean.reportClosedError();
+		}
 	}
 
 	/* send symbol to all beans */
@@ -52,12 +60,12 @@ public class SBTask implements JSTaskInterface,Runnable {
 		Iterator<JBean> it = beanList.iterator();
 		while ( it.hasNext() ) {
 			final JBean bean = it.next();
-			if (bean.isClosed()) {
+			try {
+				bean.offer(new CommandMessage(cmd));
+			} catch (IllegalAccessException e) {
+				bean.reportClosedError();
 				it.remove();
-				continue;
 			}
-
-			bean.put(new CommandMessage(cmd));
 		}
 	}
 
@@ -107,14 +115,14 @@ public class SBTask implements JSTaskInterface,Runnable {
 			 * turn the BufferedImage to Byte and compress the byte data
 			 * then send them to all the beans */
 			final byte[] data;
-			final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			try {
-				// JPEGCodec.createJPEGEncoder(bos).encode(B_IMG);
+				final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				ImageIO.write(img, "jpeg", bos);
 				data = bos.toByteArray();
 				bos.flush();
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				// e1.printStackTrace();
+				System.out.printf("failed to encode screen JPEG\n");
 				continue;
 			}
 			
@@ -133,14 +141,14 @@ public class SBTask implements JSTaskInterface,Runnable {
 				final Iterator<JBean> it = beanList.iterator();
 				while (it.hasNext()) {
 					final JBean bean = it.next();
-					if (bean.isClosed()) {
+					try {
+						// append the Message
+						// to the current bean
+						bean.offer(new BytesMessage(msg.encode()));
+					} catch (IllegalAccessException e) {
+						bean.reportClosedError();
 						it.remove();
-						continue;
 					}
-
-					// append the Message
-					// to the current bean
-					bean.offer(new DataMessage(msg.encode()));
 				}
 			}
 

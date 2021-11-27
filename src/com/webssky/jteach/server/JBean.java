@@ -84,8 +84,24 @@ public class JBean {
 		return socket;
 	}
 
-	/* wait until the message push to the queue */
-	public void put(Message msg) {
+	/** send a message immediately */
+	public void send(Message msg) throws IOException, IllegalAccessException {
+		if (isClosed()) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
+		synchronized (output) {
+			output.write(msg.encode());
+			output.flush();
+		}
+	}
+
+	/** wait until the message push to the queue */
+	public void put(Message msg) throws IllegalAccessException {
+		if (isClosed()) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
 		try {
 			sendPool.put(msg);
 		} catch (InterruptedException e) {
@@ -93,30 +109,34 @@ public class JBean {
 		}
 	}
 
-	/* send a message immediately */
-	public void send(Message msg) throws IOException {
-		synchronized (output) {
-			output.write(msg.encode());
-			output.flush();
+	/** offer or throw an exception for the message */
+	public boolean offer(Message msg) throws IllegalAccessException {
+		if (isClosed()) {
+			throw new IllegalAccessException("socket closed exception");
 		}
-	}
 
-	/* offer or throw an exception for the message */
-	public boolean offer(Message msg) {
 		return sendPool.offer(msg);
 	}
 
-	/* read the first message */
-	public Message poll() {
+	/** read the first message */
+	public Message poll() throws IllegalAccessException {
+		if (isClosed()) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
 		return readPool.poll();
 	}
 
-	/* take or wait for the first message */
-	public Message take() throws InterruptedException {
+	/** take or wait for the first message */
+	public Message take() throws InterruptedException, IllegalAccessException {
+		if (isClosed()) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
 		return readPool.take();
 	}
 
-	/* Message read thread */
+	/** Message read thread */
 	private class ReadTask implements Runnable {
 		@Override
 		public void run() {
@@ -134,24 +154,25 @@ public class JBean {
 					lastReadAt = System.currentTimeMillis();
 					// do the message receive decode
 					switch (symbol) {
-						case JCmdTools.SEND_HBT_SYMBOL -> {
-							// heartbeat
-						}
-						case JCmdTools.SEND_ARP_SYMBOL -> {
-							// task level heartbeat
-						}
-						case JCmdTools.SEND_CMD_SYMBOL -> {
-							// command message
-						}
-						case JCmdTools.SEND_DATA_SYMBOL -> {
-							// data message
-						}
+					case JCmdTools.SEND_HBT_SYMBOL:
+						// heartbeat
+						break;
+					case JCmdTools.SEND_ARP_SYMBOL:
+						// task level heartbeat
+						break;
+					case JCmdTools.SEND_CMD_SYMBOL:
+						// command message
+						break;
+					case JCmdTools.SEND_DATA_SYMBOL:
+						// data message
+						break;
 					}
 				} catch (SocketTimeoutException e) {
-					System.out.printf("client %s read timeoutput count %d\n", name, offlineCount);
+					System.out.printf("client %s read timeout count %d\n", name, offlineCount);
 					offlineCount++;
-					if (offlineCount > 100) {
+					if (offlineCount > 30) {
 						System.out.printf("client %s went offline due to too many read timeout\n", name);
+						clear();
 						break;
 					}
 				} catch (IOException e) {
@@ -163,7 +184,7 @@ public class JBean {
 		}
 	}
 
-	/* data send thread */
+	/** data send thread */
 	private class SendTask implements Runnable {
 		@Override
 		public void run() {
@@ -323,6 +344,10 @@ public class JBean {
 			output.write(b, 0, length);
 			output.flush();
 		}
+	}
+
+	public void reportClosedError() {
+		System.out.printf("client %s closed\n", name);
 	}
 
 	public String toString() {

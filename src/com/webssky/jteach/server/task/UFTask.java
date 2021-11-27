@@ -7,11 +7,15 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JFileChooser;
 
+import com.webssky.jteach.msg.BytesMessage;
+import com.webssky.jteach.msg.CommandIntegerMessage;
+import com.webssky.jteach.msg.CommandMessage;
 import com.webssky.jteach.server.JBean;
 import com.webssky.jteach.server.JServer;
 import com.webssky.jteach.util.JCmdTools;
@@ -34,20 +38,24 @@ public class UFTask implements JSTaskInterface,Runnable {
 	public static final int POINT_LENGTH = 60;
 	private File file = null;
 	private int TStatus = T_RUN;
-	private final List<JBean> beans;
+	private final List<JBean> beanList;
 	
 	public UFTask(JServer server) {
-		beans = server.copyBeanList();
+		beanList = Collections.synchronizedList(server.copyBeanList());
 	}
 
 	@Override
 	public void addClient(JBean bean) {
-
+		// Ignore the new client bean
 	}
 
 	@Override
 	public void startTask() {
-		JServer.threadPool.execute(this);
+		if (beanList.size() == 0) {
+			System.out.printf("Abort task %s Empty client list\n", this.getClass().getName());
+		} else {
+			JServer.threadPool.execute(this);
+		}
 	}
 
 	@Override
@@ -56,14 +64,14 @@ public class UFTask implements JSTaskInterface,Runnable {
 		setTSTATUS(T_STOP);
 
 		/* send stop command to all the beans */
-		final Iterator<JBean> it = beans.iterator();
-		while ( it.hasNext() ) {
-			JBean b = it.next();
+		final Iterator<JBean> it = beanList.iterator();
+		while (it.hasNext()) {
+			final JBean b = it.next();
 			try {
-				b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
-			} catch (IOException e) {
+				b.offer(new CommandMessage(JCmdTools.SERVER_TASK_STOP_CMD));
+			} catch (IllegalAccessException e) {
+				b.reportClosedError();
 				it.remove();
-				b.clear();
 			}
 		}
 
@@ -80,21 +88,34 @@ public class UFTask implements JSTaskInterface,Runnable {
 			JServer.getInstance().resetJSTask();
 			return;
 		}
+
+		// create the input stream
 		file = chooser.getSelectedFile();
-		BufferedInputStream bis = null;
+		final BufferedInputStream bis;
 		try {
-			
-			/* inform all the beans the information of the file name and size */
-			for ( int j = 0; j < beans.size(); j++ ) {
-				JBean bean = beans.get(j);
-				bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_UPLOAD_START_CMD);
-				bean.send(file.getName(), file.length());
-			}
-			
-			/* create a buffer InputStream */
 			bis = new BufferedInputStream(new FileInputStream(file));
-			int len = 0;
-			float readLen = 0;
+		} catch (FileNotFoundException e) {
+			return;
+		}
+
+		/* inform all the beans the information of the file name and size */
+		synchronized (beanList) {
+			final Iterator<JBean> it = beanList.iterator();
+			while (it.hasNext()) {
+				final JBean b = it.next();
+				try {
+					// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_UPLOAD_START_CMD);
+					// bean.send(file.getName(), file.length());
+					b.offer(new CommandIntegerMessage(JCmdTools.SERVER_UPLOAD_START_CMD, file.length()));
+				} catch (IllegalAccessException e) {
+					b.reportClosedError();
+					it.remove();
+				}
+			}
+		}
+
+		try {
+			/* create a buffer InputStream */
 			System.out.println("File Informationme:");
 			System.out.println("-+---name:"+file.getName());
 			System.out.println("-+---size:"+file.length()/1024+"K - "+file.length());
@@ -106,23 +127,38 @@ public class UFTask implements JSTaskInterface,Runnable {
 			 * then send the byte[] to all the JBeans
 			 * till all the bytes were sent out
 			 */
+			float readLen = 0;
+			int counter = 0, len = 0;
 			byte b[] = new byte[1024*JCmdTools.FILE_UPLOAD_ONCE_SIZE];
-			int counter = 0;
-			Iterator<JBean> it = null;
 			while ( (len = bis.read(b, 0, b.length)) > 0 ) {
 				readLen += len;
 				counter++;
-				it = beans.iterator();
-				while ( it.hasNext() ) {
-					JBean bean = it.next();
-					try {
-						bean.send(b, len);
-					} catch (IOException e) {
-						it.remove();bean.clear();
+
+				// do the chunked data send
+				boolean checkSize = false;
+				synchronized (beanList) {
+					final Iterator<JBean> it = beanList.iterator();
+					while (it.hasNext()) {
+						final JBean bean = it.next();
+						try {
+							// bean.send(b, len);
+							bean.offer(new BytesMessage(b));
+						} catch (IllegalAccessException e) {
+							checkSize = true;
+							bean.reportClosedError();
+							it.remove();
+						}
 					}
 				}
 
-				/* file transmifer progress show */
+				// check the bean list size
+				if (checkSize && beanList.size() == 0) {
+					System.out.printf("Task %s overed due to empty client list\n", this.getClass().getName());
+					break;
+				}
+
+
+				/* file transmission progress bar */
 				if ( counter % POINT_LENGTH == 0 ) {
 					System.out.println( (int) (readLen/1024)+"K - "
 							+format.format(readLen/file.length()*100)+"%");
@@ -143,9 +179,13 @@ public class UFTask implements JSTaskInterface,Runnable {
 			System.out.println(BIS_CREATE_ERROR);
 		} catch (IOException e) {
 			System.out.println(FILE_READ_ERROR);
-		} finally {
-			if ( bis != null ) {
-				try {bis.close();} catch (IOException e) {}
+		}
+
+		// check and close the buffer input stream
+		if ( bis != null ) {
+			try {
+				bis.close();
+			} catch (IOException e) {
 			}
 		}
 

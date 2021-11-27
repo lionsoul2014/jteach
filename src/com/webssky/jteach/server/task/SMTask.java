@@ -31,6 +31,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -40,6 +41,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
+import com.webssky.jteach.msg.BytesMessage;
+import com.webssky.jteach.msg.CommandMessage;
+import com.webssky.jteach.msg.Message;
 import com.webssky.jteach.rmi.RMIInterface;
 import com.webssky.jteach.server.JBean;
 import com.webssky.jteach.server.JServer;
@@ -63,11 +67,14 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	public static Dimension wSize = null;
 	
 	private int TStatus = T_RUN;
+
 	private JBean bean = null;		// monitor machine
-	private final List<JBean> beans;
+	private final List<JBean> beanList;
+
 	private DataInputStream reader = null;
-	private final ImageJPanel map;
 	private volatile BufferedImage B_IMG = null;
+
+	private final ImageJPanel map;
 	private Dimension MAP_SIZE = null;
 	private RMIInterface RMIInstance = null;
 	private String control = null;
@@ -103,7 +110,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			public void windowLostFocus(WindowEvent e) {}
 		});
 
-		beans = server.copyBeanList();
+		beanList = Collections.synchronizedList(server.copyBeanList());
 	}
 	
 	/** screen image show JPanel */
@@ -290,7 +297,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	 * @throws RemoteException 
 	 * @throws MalformedURLException 
 	 */
-	public void getRMIInstance(String host) throws MalformedURLException,
+	private void getRMIInstance(String host) throws MalformedURLException,
 		RemoteException, NotBoundException {
 		String path = System.getProperty("user.dir").replaceAll("\\\\", "/");
 		System.setProperty("java.security.policy", "file:///" + path + "/security.policy");
@@ -314,32 +321,25 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		}
 
 		if ( str.matches("^[0-9]{1,}$") == false ) {
-			System.out.println("Ilegal Index For Screen Monitor");
+			System.out.printf("Invalid client index %s for task %s\n", str, this.getClass().getName());
 			JServer.getInstance().resetJSTask();
 			return;
 		}
 
 		int index = Integer.parseInt(str);
-		if ( index < 0 || index >= beans.size() ) {
+		if (index < 0 || index >= beanList.size()) {
 			System.out.println("Index out of bounds.");
 			JServer.getInstance().resetJSTask();
 			return;
 		}
 		
-		bean = beans.get(index);
-		reader = bean.getReader();
-		if ( bean == null || reader == null ) {
-			beans.remove(index);
-			JServer.getInstance().resetJSTask();
-			System.out.println("JBean is NULL or reader is NULL.");
-			return;
-		}
+		final JBean bean = beanList.get(index);
 
-		//get the control arguments
+		// get the control arguments
 		control = JServer.getInstance().getArguments().get(JCmdTools.REMOTE_CONTROL_KEY);
 		if ( control != null && control.equals(JCmdTools.REMOTE_CONTROL_VAL) ) {
 			try {
-				getRMIInstance(bean.getIP());
+				getRMIInstance(bean.getAddr());
 			} catch (MalformedURLException e) {
 				System.out.println("Fail to load RMIServer instance.");
 			} catch (RemoteException e) {
@@ -351,33 +351,35 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		
 		// get monitor broadcast arguments
 		broadcast = JServer.getInstance().getArguments().get(JCmdTools.MONITOR_BROADCAST_KEY);
-		if ( broadcast != null && broadcast.equals(JCmdTools.MONITOR_BROADCAST_VAL) ) {
-			beans.remove(index);
-			final Iterator<JBean> it = beans.iterator();
+		if (broadcast != null && broadcast.equals(JCmdTools.MONITOR_BROADCAST_VAL)) {
+			beanList.remove(index);
+			final Iterator<JBean> it = beanList.iterator();
 			while ( it.hasNext() ) {
-				JBean b = it.next();
+				final JBean b = it.next();
 				try {
-					b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_BROADCAST_START_CMD);
-				} catch (IOException e) {
-					it.remove();b.clear();
+					// b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_BROADCAST_START_CMD);
+					b.offer(new CommandMessage(JCmdTools.SERVER_BROADCAST_START_CMD));
+				} catch (IllegalAccessException e) {
+					b.reportClosedError();
+					it.remove();
 				}
 			}
 		}
 		
 		/* send start symbol and the image data receive thread */
 		try {
-			bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_SCREEN_MONITOR_CMD);
+			// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_SCREEN_MONITOR_CMD);
+			bean.offer(new CommandMessage(JCmdTools.SERVER_SCREEN_MONITOR_CMD));
 			JServer.threadPool.execute(this);
 			SwingUtilities.invokeLater(new Runnable(){
 				@Override
 				public void run() {
-					setTitle(W_TITLE+"["+bean.getIP()+"]");
+					setTitle(W_TITLE+"["+bean.getAddr()+"]");
 					setVisible(true);
 				}
 			});
-		} catch (IOException e) {
-			System.out.println("Fail to send ScreenMonitor start symbol to JBean.");
-			beans.remove(index);
+		} catch (IllegalAccessException e) {
+			bean.reportClosedError();
 			JServer.getInstance().resetJSTask();
 		}
 	}
@@ -387,84 +389,50 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		setTStatus(T_STOP);
 
 		try {
-			bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
-		} catch (IOException e) {
-			System.out.println("Fail to send ScreenMonitor stop symbol to JBean.");
+			// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
+			bean.offer(new CommandMessage(JCmdTools.SERVER_TASK_STOP_CMD));
+		} catch (IllegalAccessException e) {
+			bean.reportClosedError();
 		}
 		
-		//send stop symbol
-		final Iterator<JBean> it = beans.iterator();
-		while ( it.hasNext() ) {
-			JBean b = it.next();
+		// send stop symbol
+		final Iterator<JBean> it = beanList.iterator();
+		while (it.hasNext()) {
+			final JBean b = it.next();
 			try {
-				b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
-			} catch (IOException e) {
+				// b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
+				b.offer(new CommandMessage(JCmdTools.SERVER_TASK_STOP_CMD));
+			} catch (IllegalAccessException e) {
+				b.reportClosedError();
 				it.remove();
-				b.clear();
 			}
 		}
 
-		System.out.println("Screen Monitor Thread Is Stoped!");
+		System.out.println("Screen monitor thread stopped!");
 	}
 
 	@Override
 	public void run() {
-		GroupImageSendTask imgSend = null;
 		while ( getTStatus() == T_RUN ) {
 			try {
-				/*load symbol*/
-				char symbol = reader.readChar();
-				if ( symbol != JCmdTools.SEND_DATA_SYMBOL ) continue;
-				
-				/*mouse position info*/
-				MOUSE_POS = new Point(reader.readInt(), reader.readInt());
-				
-				/*image byte length*/
-				int imgsize = reader.readInt();
-				
-				/*
-				 * get byte data
-				 * reader byte data to buffer
-				 * a loop may need cause cannot read all the byte by once
-				 * if the network is not good enough
-				 */
-				byte buffer[] = new byte[imgsize];
-				int length = 0;
-				while ( length < imgsize ) {
-					int readsize = reader.read(buffer, length, imgsize - length);
-					if ( readsize > 0 ) length += readsize;
-					else break;
-				}
-				
+				/* load symbol */
+				final Message msg = bean.take();
+
 				/*format the byte data to a BufferedImage*/
-				ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
-				B_IMG = ImageIO.read(bis);
-				//B_IMG = JPEGCodec.createJPEGDecoder(bis).decodeAsBufferedImage();
-				if ( MAP_SIZE == null ) MAP_SIZE = new Dimension(B_IMG.getWidth(), B_IMG.getHeight());
-				//setPreferredSize(MAP_SIZE);
-				//setSize(MAP_SIZE);
-				
+				B_IMG = ImageIO.read(new ByteArrayInputStream(new byte[0]));
+				if (MAP_SIZE == null) {
+					MAP_SIZE = new Dimension(B_IMG.getWidth(), B_IMG.getHeight());
+				}
+
 				/*repaint the Image JPanel*/
 				repaintImageJPanel();
-				
-				/* send the received data all the other JBeans*/
-				if ( imgSend == null ) {
-					if ( beans.size() == 0 ) {
-						continue;
-					}
-
-					/*
-					 * create a new GroupImageSendTask object
-					 * and refresh the data 
-					 */
-					imgSend = new GroupImageSendTask(beans);
-					imgSend.refresh(MOUSE_POS, buffer);
-				} else {
-					/*just refresh the data and send them to all the other JBeans */
-					//if ( imgSend.getDType() == GroupImageSendTask.D_NEW ) continue;
-					imgSend.refresh(MOUSE_POS, buffer);
-				}
+			} catch (InterruptedException e) {
+				System.out.printf("client %s message take were interrupted\n", bean.getName());
 			} catch (IOException e) {
+				System.out.printf("client %s offline due to IOException\n", bean.getName());
+				break;
+			} catch (IllegalAccessException e) {
+				bean.reportClosedError();
 				break;
 			}
 		}
