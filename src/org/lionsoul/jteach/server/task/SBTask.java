@@ -57,7 +57,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 	/* send symbol to all beans */
 	private void cmdSendAll(int cmd) {
-		Iterator<JBean> it = beanList.iterator();
+		final Iterator<JBean> it = beanList.iterator();
 		while ( it.hasNext() ) {
 			final JBean bean = it.next();
 			try {
@@ -70,7 +70,12 @@ public class SBTask implements JSTaskInterface,Runnable {
 	}
 
 	@Override
-	public void startTask() {
+	public boolean startTask() {
+		if (beanList.size() == 0) {
+			System.out.println("Empty client list");
+			return false;
+		}
+
 		System.out.println(START_TIP);
 
 		// send broadcast start cmd to all the beans;
@@ -78,6 +83,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 
 		// start image catch thread
 		JServer.threadPool.execute(this);
+		return true;
 	}
 
 	@Override

@@ -34,12 +34,11 @@ public class RCTask implements JSTaskInterface {
 	}
 
 	@Override
-	public void startTask() {
+	public boolean startTask() {
 		String str = JServer.getInstance().getArguments().get(JCmdTools.RCMD_EXECUTE_KEY);
 		if ( str == null ) {
 			JServerLang.RCMD_EXECUTE_EMPTY_ARGUMENTS();
-			JServer.getInstance().resetJSTask();
-			return;
+			return false;
 		}
 		
 		/* send command to all the JBeans */
@@ -60,15 +59,13 @@ public class RCTask implements JSTaskInterface {
 		} else {
 			if (str.matches("^[0-9]{1,}$") == false) {
 				System.out.println("Invalid index for rc command.");
-				JServer.getInstance().resetJSTask();
-				return;
+				return false;
 			}
 
 			int index = Integer.parseInt(str);
 			if ( index < 0 || index >= server.beanCount() ) {
 				System.out.println("index out of bounds.");
-				JServer.getInstance().resetJSTask();
-				return;
+				return false;
 			}
 
 			try {
@@ -77,11 +74,12 @@ public class RCTask implements JSTaskInterface {
 				execute(bean);
 			} catch (IOException | IllegalAccessException e) {
 				CMD_SEND_ERROR("start command");
+				return false;
 			}
 		}
 
-		JServer.getInstance().resetJSTask();
 		System.out.println("Remote Command execute thread is stoped.");
+		return true;
 	}
 
 	@Override

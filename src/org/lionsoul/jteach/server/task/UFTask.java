@@ -49,12 +49,14 @@ public class UFTask implements JSTaskInterface,Runnable {
 	}
 
 	@Override
-	public void startTask() {
+	public boolean startTask() {
 		if (beanList.size() == 0) {
 			System.out.printf("Abort task %s Empty client list\n", this.getClass().getName());
-		} else {
-			JServer.threadPool.execute(this);
+			return false;
 		}
+
+		JServer.threadPool.execute(this);
+		return true;
 	}
 
 	@Override
@@ -76,7 +78,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 
 		System.out.println(STOPED_TIP);
 	}
-	
+
 	@Override
 	public void run() {
 		JFileChooser chooser = new JFileChooser();
@@ -84,7 +86,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 		chooser.setMultiSelectionEnabled(false);
 		int _result = chooser.showOpenDialog(null);
 		if ( _result != JFileChooser.APPROVE_OPTION ) {
-			JServer.getInstance().resetJSTask();
+			JServer.getInstance().stopJSTask();
 			return;
 		}
 
@@ -188,7 +190,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 			}
 		}
 
-		JServer.getInstance().resetJSTask();
+		JServer.getInstance().stopJSTask();
 		JServerLang.INPUT_ASK();
 	}
 	

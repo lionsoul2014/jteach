@@ -71,8 +71,11 @@ public class JServer {
 	}
 	
 	/** reset JSTask */
-	public void resetJSTask() {
-		JSTask = null;
+	public void stopJSTask() {
+		if (JSTask != null) {
+			JSTask.stopTask();
+			JSTask = null;
+		}
 	}
 	
 	/** run command */
@@ -97,30 +100,23 @@ public class JServer {
 			if ( _input.equals(JCmdTools.SB) || _input.equals(JCmdTools.UF)
 					|| _input.equals(JCmdTools.SM) || _input.equals(JCmdTools.RC)) {
 				_runJSTask(_input);
-			}
-			/*list all the online JBeans */
-			else if ( _input.equals(JCmdTools.LS) ) {
+			} else if ( _input.equals(JCmdTools.LS) ) {
+				/* list all the online JBeans */
 				listBeans();
-			}
-			
-			/*show the function menu of JTeach */
-			else if ( _input.equals(JCmdTools.MENU) ) {
+			} else if ( _input.equals(JCmdTools.MENU) ) {
+				/* show the function menu of JTeach */
 				JCmdTools.showCmdMenu();
-			}
-			/*
-			 * stop the current JSTask working thread
-			 * and reset the JSTask 
-			 */
-			else if ( _input.equals(JCmdTools.STOP) ) {
+			} else if ( _input.equals(JCmdTools.STOP) ) {
+				/* stop the current JSTask working thread
+				 * and reset the JSTask */
 				if ( JSTask == null ) {
 					JServerLang.STOP_NULL_THREAD();
 				} else {
 					JSTask.stopTask();
 					JSTask = null;
 				}
-			} 
-			/*remove JBean*/
-			else if ( _input.equals(JCmdTools.DELE) ) {
+			} else if ( _input.equals(JCmdTools.DELE) ) {
+				/* remove JBean */
 				delete();
 			} else if ( _input.equals(JCmdTools.EXIT) ) {
 				exit();
@@ -148,7 +144,9 @@ public class JServer {
 			Class<?> _class = Class.forName(classname);
 			Constructor<?> con = _class.getConstructor(JServer.class);
 			JSTask = (JSTaskInterface) con.newInstance(this);
-			JSTask.startTask();
+			if ( JSTask.startTask() == false ) {
+				stopJSTask();
+			}
 		} catch (Exception e) {
 			//e.printStackTrace();
 			JServerLang.RUN_COMMAND_ERROR(cmd);
@@ -256,11 +254,6 @@ public class JServer {
 		}
 	}
 	
-	/**
-	 * return the arguments HashMap
-	 * 
-	 * @return HashMap<String, String>
-	 */
 	public HashMap<String, String> getArguments() {
 		return arguments;
 	}
@@ -297,26 +290,11 @@ public class JServer {
 		}
 	}
 
-	/* remove the specified bean */
-	public void removeBean(int index) {
-		beanList.remove(index);
-	}
-
 	/* return the bean size */
 	public int beanCount() {
 		return beanList.size();
 	}
 
-	/* get the bean list */
-	public List<JBean> getBeanList() {
-		return beanList;
-	}
-
-	/* get the specified bean */
-	public JBean getBean(int index) {
-		return beanList.get(index);
-	}
-	
 	/**
 	 * make a copy for an array
 	 * @return List
@@ -324,9 +302,6 @@ public class JServer {
 	public List<JBean> copyBeanList() {
 		final List<JBean> list = new ArrayList<>();
 		synchronized (beanList) {
-			// for (JBean b : beanList) {
-			// 	list.add(b);
-			// }
 			list.addAll(beanList);
 		}
 
@@ -334,14 +309,10 @@ public class JServer {
 	}
 	
 	public static void main(String[] args) {
-		int opacity = 0;
 		if ( args.length > 0 ) {
-			opacity = Integer.parseInt(args[0]);
-			if ( args.length > 1 ) {
-				int p = Integer.parseInt(args[1]);
-				if ( p >= 1024 && p <= 65535 ) {
-					PORT = p;
-				}
+			int p = Integer.parseInt(args[0]);
+			if (p >= 1024 && p <= 65535) {
+				PORT = p;
 			}
 		}
 

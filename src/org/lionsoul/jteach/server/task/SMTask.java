@@ -110,168 +110,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 
 		beanList = Collections.synchronizedList(server.copyBeanList());
 	}
-	
-	/** screen image show JPanel */
-	private class ImageJPanel extends JPanel implements 
-		MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
-		private static final long serialVersionUID = 1L;
 
-		public ImageJPanel() {
-			addMouseListener(this);
-			addMouseMotionListener(this);
-			addMouseWheelListener(this);
-			addKeyListener(this);
-			setFocusable(true);
-			setFocusTraversalKeysEnabled(false);
-		}
-		
-		@Override
-		public void update(Graphics g) {
-			paintComponent(g);
-		}
-		
-		@Override
-		protected void paintComponent(Graphics g) {
-			g.setColor(Color.BLACK);
-			g.fillRect(0, 0, getWidth(), getHeight());
-			if ( B_IMG == null ) {
-				g.setColor(Color.WHITE);
-				g.setFont(IFONT);
-				FontMetrics m = getFontMetrics(IFONT);
-				g.drawString(EMTPY_INFO,
-						(getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
-			} else {
-				g.drawImage(B_IMG, 0, 0, null);
-				/* Draw the Mouse */
-				g.drawImage(MOUSE_CURSOR, MOUSE_POS.x, MOUSE_POS.y, null);
-			}
-		}
-		
-		/**
-		 * mouse listener area 
-		 */
-		@Override
-		public void mouseClicked(MouseEvent e) {}
-		@Override
-		public void mouseEntered(MouseEvent e) {}
-		@Override
-		public void mouseExited(MouseEvent e) {}
-		@Override
-		public void keyTyped(KeyEvent e) {}
-
-		@Override
-		public void mousePressed(MouseEvent e) {
-			if ( RMIInstance == null ) {
-				return;
-			}
-
-			int button = -1;
-			switch ( e.getButton() ) {
-				/**Button 1*/
-				case MouseEvent.BUTTON1:
-					button = InputEvent.BUTTON1_MASK;
-					break;
-				case MouseEvent.BUTTON2: 
-					button = InputEvent.BUTTON2_MASK;
-					break;
-				case MouseEvent.BUTTON3:
-					button = InputEvent.BUTTON3_MASK;
-					break;
-			}
-
-			try {
-				RMIInstance.mousePress(button);
-			} catch (RemoteException e1) {
-				e1.printStackTrace();
-				System.out.println("-+**Error: mouse press execute.");
-			}
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {
-			if ( RMIInstance == null ) {
-				return;
-			}
-
-			int button = -1;
-			switch ( e.getButton() ) {
-				/**Button 1*/
-				case MouseEvent.BUTTON1:
-					button = InputEvent.BUTTON1_MASK;
-					break;
-				case MouseEvent.BUTTON2: 
-					button = InputEvent.BUTTON2_MASK;
-					break;
-				case MouseEvent.BUTTON3:
-					button = InputEvent.BUTTON3_MASK;
-					break;
-			}
-
-			try {
-				RMIInstance.mouseRelease(button);
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: mouse release execute.");
-			}
-		}
-		
-
-		@Override
-		public void mouseMoved(MouseEvent e) {
-			if ( RMIInstance == null ) return;
-
-			try {
-				RMIInstance.mouseMove( e.getX(),  e.getY());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: mouse move execute.");
-			}
-		}
-		
-		@Override
-		public void mouseDragged(MouseEvent e) {
-			if ( RMIInstance == null ) return;
-			try {
-				RMIInstance.mouseMove(e.getX(), e.getY());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: mouse drag execute.");
-			}
-		}
-
-		
-		/**
-		 * mouse wheel listener area
-		 */
-		@Override
-		public void mouseWheelMoved(MouseWheelEvent e) {
-			if ( RMIInstance == null ) return;
-			try {
-				RMIInstance.mouseWheel(e.getWheelRotation());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: mouse wheel execute.");
-			}
-		}
-		
-		@Override
-		public void keyPressed(KeyEvent e) {
-			if ( RMIInstance == null ) return;
-			try {
-				//System.out.println("after:"+e.getKeyCode());
-				RMIInstance.keyPress(e.getKeyCode());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: key press execute.");
-			}
-		}
-
-		@Override
-		public void keyReleased(KeyEvent e) {
-			if ( RMIInstance == null ) return;
-			try {
-				RMIInstance.keyRelease(e.getKeyCode());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: key release execute.");
-			}
-		}
-	}
-	
 	private void repaintImageJPanel() {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
@@ -310,28 +149,25 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	}
 	
 	@Override
-	public void startTask() {
+	public boolean startTask() {
 		String str = JServer.getInstance().getArguments().get(JCmdTools.SCREEN_MONITOR_KEY);
 		if ( str == null ) {
 			JServerLang.SCREEN_MONITOR_EMPTY_ARGUMENTS();
-			JServer.getInstance().resetJSTask();
-			return;
+			return false;
 		}
 
 		if ( str.matches("^[0-9]{1,}$") == false ) {
 			System.out.printf("Invalid client index %s for task %s\n", str, this.getClass().getName());
-			JServer.getInstance().resetJSTask();
-			return;
+			return false;
 		}
 
 		int index = Integer.parseInt(str);
 		if (index < 0 || index >= beanList.size()) {
 			System.out.println("Index out of bounds.");
-			JServer.getInstance().resetJSTask();
-			return;
+			return false;
 		}
 		
-		final JBean bean = beanList.get(index);
+		bean = beanList.get(index);
 
 		// get the control arguments
 		control = JServer.getInstance().getArguments().get(JCmdTools.REMOTE_CONTROL_KEY);
@@ -340,14 +176,34 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				getRMIInstance(bean.getAddr());
 			} catch (MalformedURLException e) {
 				System.out.println("Fail to load RMIServer instance.");
+				return false;
 			} catch (RemoteException e) {
 				System.out.println("Fail to load RMIServer instance.");
+				return false;
 			} catch (NotBoundException e) {
 				System.out.println("Fail to load RMIServer instance.");
+				return false;
 			}
 		}
-		
-		// get monitor broadcast arguments
+
+		/* send start symbol and the image data receive thread */
+		try {
+			// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_SCREEN_MONITOR_CMD);
+			bean.offer(new CommandMessage(JCmdTools.SERVER_SCREEN_MONITOR_CMD));
+			JServer.threadPool.execute(this);
+			SwingUtilities.invokeLater(new Runnable(){
+				@Override
+				public void run() {
+					setTitle(W_TITLE+"["+bean.getAddr()+"]");
+					setVisible(true);
+				}
+			});
+		} catch (IllegalAccessException e) {
+			bean.reportClosedError();
+			return false;
+		}
+
+		/* get monitor broadcast arguments */
 		broadcast = JServer.getInstance().getArguments().get(JCmdTools.MONITOR_BROADCAST_KEY);
 		if (broadcast != null && broadcast.equals(JCmdTools.MONITOR_BROADCAST_VAL)) {
 			beanList.remove(index);
@@ -363,23 +219,8 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				}
 			}
 		}
-		
-		/* send start symbol and the image data receive thread */
-		try {
-			// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_SCREEN_MONITOR_CMD);
-			bean.offer(new CommandMessage(JCmdTools.SERVER_SCREEN_MONITOR_CMD));
-			JServer.threadPool.execute(this);
-			SwingUtilities.invokeLater(new Runnable(){
-				@Override
-				public void run() {
-					setTitle(W_TITLE+"["+bean.getAddr()+"]");
-					setVisible(true);
-				}
-			});
-		} catch (IllegalAccessException e) {
-			bean.reportClosedError();
-			JServer.getInstance().resetJSTask();
-		}
+
+		return true;
 	}
 
 	@Override
@@ -437,7 +278,168 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 
 		_dispose();
 	}
-	
+
+	/** screen image show JPanel */
+	private class ImageJPanel extends JPanel implements
+			MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
+		private static final long serialVersionUID = 1L;
+
+		public ImageJPanel() {
+			addMouseListener(this);
+			addMouseMotionListener(this);
+			addMouseWheelListener(this);
+			addKeyListener(this);
+			setFocusable(true);
+			setFocusTraversalKeysEnabled(false);
+		}
+
+		@Override
+		public void update(Graphics g) {
+			paintComponent(g);
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			g.setColor(Color.BLACK);
+			g.fillRect(0, 0, getWidth(), getHeight());
+			if ( B_IMG == null ) {
+				g.setColor(Color.WHITE);
+				g.setFont(IFONT);
+				FontMetrics m = getFontMetrics(IFONT);
+				g.drawString(EMTPY_INFO,
+						(getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
+			} else {
+				g.drawImage(B_IMG, 0, 0, null);
+				/* Draw the Mouse */
+				g.drawImage(MOUSE_CURSOR, MOUSE_POS.x, MOUSE_POS.y, null);
+			}
+		}
+
+		/**
+		 * mouse listener area
+		 */
+		@Override
+		public void mouseClicked(MouseEvent e) {}
+		@Override
+		public void mouseEntered(MouseEvent e) {}
+		@Override
+		public void mouseExited(MouseEvent e) {}
+		@Override
+		public void keyTyped(KeyEvent e) {}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			if ( RMIInstance == null ) {
+				return;
+			}
+
+			int button = -1;
+			switch ( e.getButton() ) {
+				/**Button 1*/
+				case MouseEvent.BUTTON1:
+					button = InputEvent.BUTTON1_MASK;
+					break;
+				case MouseEvent.BUTTON2:
+					button = InputEvent.BUTTON2_MASK;
+					break;
+				case MouseEvent.BUTTON3:
+					button = InputEvent.BUTTON3_MASK;
+					break;
+			}
+
+			try {
+				RMIInstance.mousePress(button);
+			} catch (RemoteException e1) {
+				e1.printStackTrace();
+				System.out.println("-+**Error: mouse press execute.");
+			}
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			if ( RMIInstance == null ) {
+				return;
+			}
+
+			int button = -1;
+			switch ( e.getButton() ) {
+				/**Button 1*/
+				case MouseEvent.BUTTON1:
+					button = InputEvent.BUTTON1_MASK;
+					break;
+				case MouseEvent.BUTTON2:
+					button = InputEvent.BUTTON2_MASK;
+					break;
+				case MouseEvent.BUTTON3:
+					button = InputEvent.BUTTON3_MASK;
+					break;
+			}
+
+			try {
+				RMIInstance.mouseRelease(button);
+			} catch (RemoteException e1) {
+				System.out.println("-+**Error: mouse release execute.");
+			}
+		}
+
+
+		@Override
+		public void mouseMoved(MouseEvent e) {
+			if ( RMIInstance == null ) return;
+
+			try {
+				RMIInstance.mouseMove( e.getX(),  e.getY());
+			} catch (RemoteException e1) {
+				System.out.println("-+**Error: mouse move execute.");
+			}
+		}
+
+		@Override
+		public void mouseDragged(MouseEvent e) {
+			if ( RMIInstance == null ) return;
+			try {
+				RMIInstance.mouseMove(e.getX(), e.getY());
+			} catch (RemoteException e1) {
+				System.out.println("-+**Error: mouse drag execute.");
+			}
+		}
+
+
+		/**
+		 * mouse wheel listener area
+		 */
+		@Override
+		public void mouseWheelMoved(MouseWheelEvent e) {
+			if ( RMIInstance == null ) return;
+			try {
+				RMIInstance.mouseWheel(e.getWheelRotation());
+			} catch (RemoteException e1) {
+				System.out.println("-+**Error: mouse wheel execute.");
+			}
+		}
+
+		@Override
+		public void keyPressed(KeyEvent e) {
+			if ( RMIInstance == null ) return;
+			try {
+				//System.out.println("after:"+e.getKeyCode());
+				RMIInstance.keyPress(e.getKeyCode());
+			} catch (RemoteException e1) {
+				System.out.println("-+**Error: key press execute.");
+			}
+		}
+
+		@Override
+		public void keyReleased(KeyEvent e) {
+			if ( RMIInstance == null ) return;
+			try {
+				RMIInstance.keyRelease(e.getKeyCode());
+			} catch (RemoteException e1) {
+				System.out.println("-+**Error: key release execute.");
+			}
+		}
+	}
+
 	private int getTStatus() {
 		return TStatus;
 	}
