@@ -15,17 +15,13 @@ import javax.swing.ImageIcon;
  */
 public class JTeachIcon {
 	
-	/**
-	 * create an icon image 
-	 */
+	/** create an icon image */
 	public static ImageIcon Create(String filename) {
 		ImageIcon icon = new ImageIcon(JTeachIcon.class.getResource("/res/images/"+filename));
 		return icon;
 	}
 	
-	/**
-	 * resize the BufferedImage 
-	 */
+	/** resize the BufferedImage */
 	public static BufferedImage resize(BufferedImage srcImg, int dst_w, int dst_h) {
 		int type = srcImg.getType();
 
@@ -70,7 +66,6 @@ public class JTeachIcon {
 		g.dispose();
 		return _dst;
 	}
-
 
 	public static boolean ImageEquals(BufferedImage image1, BufferedImage image2) {
 		int w1 = image1.getWidth();

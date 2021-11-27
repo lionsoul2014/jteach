@@ -50,9 +50,8 @@ import org.lionsoul.jteach.util.JTeachIcon;
 
 
 /**
- * JTeach Client <br />
- * 
- * @author chenxin - chenxin619315@gmail.com <br />
+ * JTeach Client .
+ * @author chenxin - chenxin619315@gmail.com
  */
 public class JClient extends JFrame {
 	
@@ -254,8 +253,7 @@ public class JClient extends JFrame {
 	 * @throws MalformedURLException
 	 * @throws UnknownHostException 
 	 */
-	public void regRMI() throws RemoteException,
-		MalformedURLException, UnknownHostException {
+	public void regRMI() throws RemoteException, MalformedURLException, UnknownHostException {
 		/* get the linux's remote host */
 		String host = InetAddress.getLocalHost().getHostAddress();
 		if ( OS.equals("LINUX") ) {
@@ -354,7 +352,7 @@ public class JClient extends JFrame {
 		}
 
 		SystemTray systemTray = SystemTray.getSystemTray();
-		tray = new TrayIcon(TRAY_ICON.getImage(), "JTeach - webssky");
+		tray = new TrayIcon(TRAY_ICON.getImage(), "JTeach - lionsoul");
 		tray.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -370,19 +368,19 @@ public class JClient extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if ( ! Desktop.isDesktopSupported()) {
 					JOptionPane.showMessageDialog(null, "Unsupport function for your System," +
-							"You can visit site http://www.webssky.com directly",
+							"You can visit site http://www.lionsoul.org directly",
 							"JTeach: ", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				Desktop desktop = Desktop.getDesktop();
 				if ( ! desktop.isSupported(Desktop.Action.BROWSE) ) {
 					JOptionPane.showMessageDialog(null, "Unsupport function for your System, " +
-							"You can visit site http://www.webssky.com directly",
+							"You can visit site http://www.lionsoul.org directly",
 							"JTeach: ", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				try {
-					desktop.browse(new URI("http://www.webssky.com"));
+					desktop.browse(new URI("http://www.lionsoul.org"));
 				} catch (Exception e1) {
 					JOptionPane.showMessageDialog(null, e1);
 				}

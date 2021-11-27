@@ -1,2 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: jteach.client.JClient
+Main-Class: org.lionsoul.jteach.client.JClient
+

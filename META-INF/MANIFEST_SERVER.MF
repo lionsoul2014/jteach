@@ -1,2 +1,2 @@
 Manifest-Version: 1.0
-Main-Class: jteach.server.JServer
+Main-Class: org.lionsoul.jteach.server.JServer

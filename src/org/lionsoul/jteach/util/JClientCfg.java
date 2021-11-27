@@ -25,7 +25,7 @@ public class JClientCfg {
 	public static final String ABOUT_BUTTON_TEXT = "About";
 	
 	public static final String ABOUT_INFO = "JTeach - Multimedia Teaching Software\n" +
-			"@author: chenxin - webssky\n"+
+			"@author: lionsoul\n"+
 			"{@email: chenxin619315@gmail.com}\n" +
 			"{@link: http://www.lionsoul.org}";
 	
