@@ -30,7 +30,7 @@ public class JServer {
 	public static final String OS = System.getProperty("os.name").toUpperCase();
 
 	public static final int M_RUN = 1;
-	// public static final int M_OVER = 0;
+	public static final int M_OVER = 0;
 	private int STATE = M_RUN;
 	
 	private volatile JSTaskInterface JSTask = null;
@@ -257,7 +257,7 @@ public class JServer {
 	}
 	
 	/**
-	 * return the arguments HashMap <br />
+	 * return the arguments HashMap
 	 * 
 	 * @return HashMap<String, String>
 	 */
@@ -286,7 +286,7 @@ public class JServer {
 
 				// send the ARP to the client
 				try {
-					b.put(new SymbolMessage(JCmdTools.SEND_ARP_SYMBOL));
+					b.offer(SymbolMessage.valueOf(JCmdTools.SEND_ARP_SYMBOL));
 					System.out.println("-+-index:"+num+", "+b+"---+-");
 				} catch (IllegalAccessException e) {
 					// b.reportClosedError();

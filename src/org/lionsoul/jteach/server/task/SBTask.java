@@ -19,8 +19,8 @@ import org.lionsoul.jteach.util.JTeachIcon;
 
 
 /**
- * Broadcast Sender Task. <br />
- * @author chenxin - chenxin619315@gmail.com <br />
+ * Broadcast Sender Task.
+ * @author chenxin - chenxin619315@gmail.com
  */
 public class SBTask implements JSTaskInterface,Runnable {
 	
