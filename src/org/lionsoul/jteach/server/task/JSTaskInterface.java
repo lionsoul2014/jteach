@@ -1,6 +1,6 @@
 package org.lionsoul.jteach.server.task;
 
-import org.lionsoul.jteach.server.JBean;
+import org.lionsoul.jteach.msg.JBean;
 
 /**
  * Task Interface for JTeach Server

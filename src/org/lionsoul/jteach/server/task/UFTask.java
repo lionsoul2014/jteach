@@ -12,10 +12,8 @@ import java.util.List;
 
 import javax.swing.JFileChooser;
 
-import org.lionsoul.jteach.msg.BytesMessage;
-import org.lionsoul.jteach.msg.CommandIntegerMessage;
-import org.lionsoul.jteach.msg.CommandMessage;
-import org.lionsoul.jteach.server.JBean;
+import org.lionsoul.jteach.msg.Packet;
+import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
 import org.lionsoul.jteach.util.JCmdTools;
 import org.lionsoul.jteach.util.JServerLang;
@@ -69,7 +67,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 		while (it.hasNext()) {
 			final JBean b = it.next();
 			try {
-				b.offer(new CommandMessage(JCmdTools.SERVER_TASK_STOP_CMD));
+				b.offer(Packet.COMMAND_TASK_STOP);
 			} catch (IllegalAccessException e) {
 				b.reportClosedError();
 				it.remove();
@@ -105,19 +103,20 @@ public class UFTask implements JSTaskInterface,Runnable {
 			while (it.hasNext()) {
 				final JBean b = it.next();
 				try {
-					// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_UPLOAD_START_CMD);
-					// bean.send(file.getName(), file.length());
-					b.offer(new CommandIntegerMessage(JCmdTools.SERVER_UPLOAD_START_CMD, file.length()));
+					b.offer(Packet.COMMAND_UPLOAD_START);
+					b.offer(Packet.valueOf(file.getName(), file.length()));
 				} catch (IllegalAccessException e) {
 					b.reportClosedError();
 					it.remove();
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
 		}
 
 		try {
 			/* create a buffer InputStream */
-			System.out.println("File Informationme:");
+			System.out.println("File Information:");
 			System.out.println("-+---name:"+file.getName());
 			System.out.println("-+---size:"+file.length()/1024+"K - "+file.length());
 			System.out.println(FILE_TRASMIT_START);
@@ -142,8 +141,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 					while (it.hasNext()) {
 						final JBean bean = it.next();
 						try {
-							// bean.send(b, len);
-							bean.offer(new BytesMessage(b));
+							bean.offer(Packet.valueOf(b));
 						} catch (IllegalAccessException e) {
 							checkSize = true;
 							bean.reportClosedError();

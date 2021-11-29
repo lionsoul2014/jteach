@@ -18,17 +18,55 @@ public class JCmdTools {
 	/**
 	 * Commands and Symbol
 	 */
-	public static final char SEND_CMD_SYMBOL = 'C';
-	public static final char SEND_DATA_SYMBOL = 'D';
-	public static final char SEND_ARP_SYMBOL = 'P';
-	public static final char SEND_HBT_SYMBOL = 'H';
-	
-	public static final int SERVER_BROADCAST_START_CMD = 1;
-	public static final int SERVER_UPLOAD_START_CMD = 2;
-	public static final int SERVER_SCREEN_MONITOR_CMD = 3;
-	public static final int SERVER_RCMD_EXECUTE_CMD = 4;
-	public static final int SERVER_TASK_STOP_CMD = 0;
-	public static final int SERVER_EXIT_CMD = -1;
+	public static final byte SYMBOL_SEND_CMD = 'C';
+	public static final byte SYMBOL_SEND_DATA = 'D';
+	public static final byte SYMBOL_SEND_ARP = 'P';
+	public static final byte SYMBOL_SEND_HBT = 'H';
+	public static final byte[] SYMBOL_LIST = new byte[] {
+		SYMBOL_SEND_CMD,
+		SYMBOL_SEND_DATA,
+		SYMBOL_SEND_ARP,
+		SYMBOL_SEND_HBT
+	};
+
+	public static final boolean validSymbol(byte symbol) {
+		for (byte b: SYMBOL_LIST) {
+			if (b == symbol) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	public static final int COMMAND_NULL = -1;
+	public static final int COMMAND_EXIT = 0;
+	public static final int COMMAND_TASK_STOP = 1;
+	public static final int COMMAND_BROADCAST_START = 2;
+	public static final int COMMAND_UPLOAD_START = 3;
+	public static final int COMMAND_SCREEN_MONITOR = 4;
+	public static final int COMMAND_RCMD_SINGLE_EXECUTION = 5;
+	public static final int COMMAND_RCMD_ALL_EXECUTION = 6;
+	public static final int[] COMMAND_LIST = new int[] {
+		COMMAND_EXIT,
+		COMMAND_TASK_STOP,
+		COMMAND_BROADCAST_START,
+		COMMAND_UPLOAD_START,
+		COMMAND_SCREEN_MONITOR,
+		COMMAND_RCMD_SINGLE_EXECUTION,
+		COMMAND_RCMD_ALL_EXECUTION
+	};
+
+	public static final boolean validCommand(byte cmd) {
+		for (int c : COMMAND_LIST) {
+			if (cmd == c) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
 	//public static final int HEART_BEAT_DATA = 0xff;
 	public static final int SO_TIMEOUT = 10000;
 	
@@ -197,7 +235,7 @@ public class JCmdTools {
 	 * get all the ip for the local machine 
 	 */
 	public static HashMap<String, String> getNetInterface() {
-		HashMap<String, String> hosts = new HashMap<String, String>();
+		HashMap<String, String> hosts = new HashMap<>();
 		Enumeration<NetworkInterface> netI;
 		try {
 			netI = NetworkInterface.getNetworkInterfaces();

@@ -1,6 +1,6 @@
-package org.lionsoul.jteach.server;
+package org.lionsoul.jteach.msg;
 
-import org.lionsoul.jteach.msg.Message;
+import org.lionsoul.jteach.server.JServer;
 import org.lionsoul.jteach.util.JCmdTools;
 
 import java.io.DataInputStream;
@@ -12,8 +12,9 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
- * Client Bean. <br />
- * @author chenxin 
+ * Client Bean.
+ *
+ * @author chenxin<chenxin619315@gmail.com>
  */
 public class JBean {
 
@@ -28,8 +29,8 @@ public class JBean {
 	private long lastReadAt = 0;
 
 	/* message read/send blocking queue */
-	private final BlockingDeque<Message> sendPool;
-	private final BlockingDeque<Message> readPool;
+	private final BlockingDeque<Packet> sendPool;
+	private final BlockingDeque<Packet> readPool;
 
 	public JBean(Socket s) throws IOException {
 		if (s == null) {
@@ -84,42 +85,95 @@ public class JBean {
 		return socket;
 	}
 
+
 	/** send a message immediately */
-	public void send(Message msg) throws IOException, IllegalAccessException {
+	public void send(Packet p) throws IOException, IllegalAccessException {
 		if (isClosed()) {
 			throw new IllegalAccessException("socket closed exception");
 		}
 
 		synchronized (output) {
-			output.write(msg.encode());
+			output.write(p.encode());
 			output.flush();
 		}
 	}
 
 	/** wait until the message push to the queue */
-	public void put(Message msg) throws IllegalAccessException {
+	public void put(Packet p) throws IllegalAccessException {
 		if (isClosed()) {
 			throw new IllegalAccessException("socket closed exception");
 		}
 
 		try {
-			sendPool.put(msg);
+			sendPool.put(p);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
 
-	/** offer or throw an exception for the message */
-	public boolean offer(Message msg) throws IllegalAccessException {
+
+	/* read a packet */
+	public Packet read() throws IOException, IllegalAccessException {
 		if (isClosed()) {
 			throw new IllegalAccessException("socket closed exception");
 		}
 
-		return sendPool.offer(msg);
+		synchronized (input) {
+			final byte symbol = input.readByte();
+			final byte attr = input.readByte();
+
+			// update the last read at
+			lastReadAt = System.currentTimeMillis();
+			// if (!JCmdTools.validSymbol(symbol)) {
+			// 	throw new UnknownSymbolException("unknown symbol " + symbol);
+			// }
+
+			// check and parse the command
+			final int cmd;
+			if ((attr & Packet.HAS_CMD) == 0) {
+				cmd = JCmdTools.COMMAND_NULL;
+			} else {
+				cmd = input.readInt();
+			}
+
+			// check and receive the data
+			final byte[] data;
+			if ((attr & Packet.HAS_DATA) == 0) {
+				data = null;
+			} else {
+				/* the length of the data */
+				final int dLen = input.readInt();
+
+				/* read the byte data into the buffer
+				 * cause cannot read all the data by once when the data is large */
+				data = new byte[dLen];
+				int rLen = 0;
+				while (rLen < dLen) {
+					final int size = input.read(data, rLen, dLen - rLen);
+					if (size > 0) {
+						rLen += size;
+					} else {
+						break;
+					}
+				}
+			}
+
+			return new Packet(symbol, cmd, data);
+		}
 	}
 
-	/** read the first message */
-	public Message poll() throws IllegalAccessException {
+	/** offer or throw an exception for the message */
+	public boolean offer(Packet p) throws IllegalAccessException {
+		if (isClosed()) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
+		return sendPool.offer(p);
+	}
+
+
+	/** read the first packet */
+	public Packet poll() throws IllegalAccessException {
 		if (isClosed()) {
 			throw new IllegalAccessException("socket closed exception");
 		}
@@ -127,8 +181,8 @@ public class JBean {
 		return readPool.poll();
 	}
 
-	/** take or wait for the first message */
-	public Message take() throws InterruptedException, IllegalAccessException {
+	/** take or wait for the first Packet */
+	public Packet take() throws InterruptedException, IllegalAccessException {
 		if (isClosed()) {
 			throw new IllegalAccessException("socket closed exception");
 		}
@@ -148,25 +202,8 @@ public class JBean {
 				}
 
 				try {
-					final char symbol = input.readChar();
-
-					// update the last read at
-					lastReadAt = System.currentTimeMillis();
-					// do the message receive decode
-					switch (symbol) {
-					case JCmdTools.SEND_HBT_SYMBOL:
-						// heartbeat
-						break;
-					case JCmdTools.SEND_ARP_SYMBOL:
-						// task level heartbeat
-						break;
-					case JCmdTools.SEND_CMD_SYMBOL:
-						// command message
-						break;
-					case JCmdTools.SEND_DATA_SYMBOL:
-						// data message
-						break;
-					}
+					final Packet p = read();
+					readPool.put(p);
 				} catch (SocketTimeoutException e) {
 					System.out.printf("client %s read timeout count %d\n", name, offlineCount);
 					offlineCount++;
@@ -179,6 +216,11 @@ public class JBean {
 					System.out.printf("client %s went offline due to read IOException\n", name);
 					clear();
 					break;
+				} catch (IllegalAccessException e) {
+					reportClosedError();
+					break;
+				} catch (InterruptedException e) {
+					System.out.printf("read interrupted of client %s\n", name);
 				}
 			}
 		}
@@ -195,10 +237,10 @@ public class JBean {
 				}
 
 				try {
-					final Message msg = sendPool.take();
+					final Packet p = sendPool.take();
 					/* lock the socket and send the message data */
 					synchronized (output) {
-						output.write(msg.encode());
+						output.write(p.encode());
 						output.flush();
 					}
 				} catch (InterruptedException e) {
@@ -224,128 +266,6 @@ public class JBean {
 		sendPool.clear();
 	}
 	
-	/**
-	 * just send symbol 
-	 * @throws IOException 
-	 */
-	public synchronized void send(char symbol) throws IOException {
-		if ( output != null ) {
-			output.writeChar(symbol);
-			output.flush();
-		}
-	}
-	
-	/**
-	 * Send symbol and Command 
-	 * @throws IOException 
-	 */
-	public synchronized void send(char symbol, int cmd) throws IOException {
-		if ( output != null ) {
-			output.writeChar(symbol);
-			output.writeInt(cmd);
-			output.flush();
-		}
-	}
-	
-	/**
-	 * Send symbol and byte[] 
-	 * @throws IOException 
-	 */
-	public synchronized void send(char symbol, byte[] b) throws IOException {
-		if ( output != null ) {
-			output.writeChar(symbol);
-			output.write(b);
-			output.flush();
-		}
-	}
-	
-	/**
-	 * Send symbol and Byte Data 
-	 * @throws IOException 
-	 */
-	public synchronized void send(int symbol, int length,
-			byte[] data) throws IOException {
-		if ( output != null ) {
-			output.writeChar(symbol);
-			output.writeInt(length);
-			output.write(data);
-			output.flush();
-		}
-	}
-	
-	/**
-	 * send symbol and Mouse position and byte data
-	 * @throws IOException 
-	 */
-	public synchronized void send(int symbol,int x, int y, int length,
-			byte[] data) throws IOException {
-		if ( output != null ) {
-			output.writeChar(symbol);
-			output.writeInt(x);
-			output.writeInt(y);
-			output.writeInt(length);
-			output.write(data);
-			output.flush();
-		}
-	}
-	
-	/**
-	 * send String and long
-	 * @throws IOException 
-	 */
-	public synchronized void send(String str, long x) throws IOException {
-		if ( output != null ) {
-			output.writeUTF(str);
-			output.writeLong(x);
-			output.flush();
-		}
-	}
-	
-	/**
-	 * send string 
-	 * @throws IOException 
-	 */
-	public synchronized void send(String str) throws IOException {
-		if ( output != null ) {
-			output.writeUTF(str);
-			output.flush();
-		}
-	}
-	
-	/**
-	 * send symbol and string 
-	 * @throws IOException 
-	 */
-	public synchronized void send(char symbol, String str) throws IOException {
-		if ( output != null ) {
-			output.writeChar(symbol);
-			output.writeUTF(str);
-			output.flush();
-		}
-	}
-	
-	/**
-	 * send integer 
-	 * @throws IOException 
-	 */
-	public synchronized void send(int x) throws IOException {
-		if ( output != null ) {
-			output.writeInt(x);
-			output.flush();
-		}
-	}
-	
-	/**
-	 * send byte[] 
-	 * @throws IOException 
-	 */
-	public synchronized void send(byte[] b, int length) throws IOException {
-		if ( output != null ) {
-			output.write(b, 0, length);
-			output.flush();
-		}
-	}
-
 	public void reportClosedError() {
 		System.out.printf("client %s closed\n", name);
 	}

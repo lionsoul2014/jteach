@@ -40,10 +40,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
-import org.lionsoul.jteach.msg.CommandMessage;
-import org.lionsoul.jteach.msg.Message;
+import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.rmi.RMIInterface;
-import org.lionsoul.jteach.server.JBean;
+import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
 import org.lionsoul.jteach.util.JCmdTools;
 import org.lionsoul.jteach.util.JServerLang;
@@ -189,7 +188,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		/* send start symbol and the image data receive thread */
 		try {
 			// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_SCREEN_MONITOR_CMD);
-			bean.offer(new CommandMessage(JCmdTools.SERVER_SCREEN_MONITOR_CMD));
+			bean.offer(Packet.COMMAND_SCREEN_MONITOR);
 			JServer.threadPool.execute(this);
 			SwingUtilities.invokeLater(new Runnable(){
 				@Override
@@ -212,7 +211,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				final JBean b = it.next();
 				try {
 					// b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_BROADCAST_START_CMD);
-					b.offer(new CommandMessage(JCmdTools.SERVER_BROADCAST_START_CMD));
+					b.offer(Packet.COMMAND_BROADCAST_START);
 				} catch (IllegalAccessException e) {
 					b.reportClosedError();
 					it.remove();
@@ -228,8 +227,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		setTStatus(T_STOP);
 
 		try {
-			// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
-			bean.offer(new CommandMessage(JCmdTools.SERVER_TASK_STOP_CMD));
+			bean.offer(Packet.COMMAND_TASK_STOP);
 		} catch (IllegalAccessException e) {
 			bean.reportClosedError();
 		}
@@ -239,8 +237,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		while (it.hasNext()) {
 			final JBean b = it.next();
 			try {
-				// b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_TASK_STOP_CMD);
-				b.offer(new CommandMessage(JCmdTools.SERVER_TASK_STOP_CMD));
+				b.offer(Packet.COMMAND_TASK_STOP);
 			} catch (IllegalAccessException e) {
 				b.reportClosedError();
 				it.remove();
@@ -255,10 +252,10 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		while ( getTStatus() == T_RUN ) {
 			try {
 				/* load symbol */
-				final Message msg = bean.take();
+				final Packet p = bean.take();
 
-				/*format the byte data to a BufferedImage*/
-				B_IMG = ImageIO.read(new ByteArrayInputStream(new byte[0]));
+				/* format the byte data to a BufferedImage */
+				B_IMG = ImageIO.read(new ByteArrayInputStream(p.data));
 				if (MAP_SIZE == null) {
 					MAP_SIZE = new Dimension(B_IMG.getWidth(), B_IMG.getHeight());
 				}

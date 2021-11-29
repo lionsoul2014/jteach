@@ -11,15 +11,15 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.lionsoul.jteach.msg.CommandMessage;
-import org.lionsoul.jteach.msg.SymbolMessage;
+import org.lionsoul.jteach.msg.JBean;
+import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.server.task.JSTaskInterface;
 import org.lionsoul.jteach.util.JCmdTools;
 import org.lionsoul.jteach.util.JServerLang;
 
 /**
- * JTeach Server <br />
- * @author chenxin - chenxin619315@gmail.com <br />
+ * JTeach Server
+ * @author chenxin<chenxin619315@gmail.com>
  */
 public class JServer {
 	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
@@ -155,8 +155,9 @@ public class JServer {
 	
 	/** Start Listening Thread */
 	public void StartMonitorThread() {
-		if (server == null) return;
-		threadPool.execute(new ConnectMonitor());
+		if (server != null) {
+			threadPool.execute(new ConnectMonitor());
+		}
 	}
 	
 	/** Listening Task inner class */
@@ -199,7 +200,7 @@ public class JServer {
 			synchronized (beanList) {
 				for (JBean b : beanList) {
 					try {
-						b.offer(new CommandMessage(JCmdTools.SERVER_EXIT_CMD));
+						b.offer(Packet.COMMAND_EXIT);
 					} catch (IllegalAccessException e) {
 						b.reportClosedError();
 					}
@@ -236,9 +237,8 @@ public class JServer {
 
 			beanList.clear();
 			System.out.println("Clear Ok.");
-		}
-		/* remove the Specified JBean */
-		else {
+		} else {
+			/* remove the Specified JBean */
 			if ( !v.matches("^[0-9]{1,}$") ) {
 				JServerLang.DELETE_JBEAN_EMPTY_ARGUMENTS();
 				return;
@@ -279,7 +279,7 @@ public class JServer {
 
 				// send the ARP to the client
 				try {
-					b.offer(SymbolMessage.valueOf(JCmdTools.SEND_ARP_SYMBOL));
+					b.offer(Packet.SYMBOL_ARP);
 					System.out.println("-+-index:"+num+", "+b+"---+-");
 				} catch (IllegalAccessException e) {
 					// b.reportClosedError();

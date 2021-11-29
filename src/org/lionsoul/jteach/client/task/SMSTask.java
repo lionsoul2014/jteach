@@ -2,24 +2,21 @@ package org.lionsoul.jteach.client.task;
 
 import java.awt.AWTException;
 import java.awt.MouseInfo;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 
-import org.lionsoul.jteach.client.JCWriter;
 import org.lionsoul.jteach.client.JClient;
-import org.lionsoul.jteach.util.JCmdTools;
-import org.lionsoul.jteach.util.JTeachIcon;
+import org.lionsoul.jteach.msg.JBean;
+import org.lionsoul.jteach.msg.Packet;
+import org.lionsoul.jteach.msg.ScreenMessage;
 
 
 /**
- * Image send thread for Screen monitor. <br />
+ * Image send thread for Screen monitor.
  * 
  * @author chenxin - chenxin619315@gmail.com
  */
@@ -30,17 +27,17 @@ public class SMSTask implements JCTaskInterface {
 
 	private int TStatus = T_RUN;
 	private Robot robot = null;
-	private JCWriter writer = null;
-	
-	public SMSTask() {
+	private final JBean bean;
+
+	public SMSTask(JClient client) {
 		try {
 			robot = new Robot();
 		} catch (AWTException e) {
 			JOptionPane.showMessageDialog(null, "Fail to create Robot Object",
 					"JTeach:", JOptionPane.ERROR_MESSAGE);
 		}
-		
-		writer = new JCWriter();
+
+		this.bean = client.getBean();
 	}
 
 	@Override
@@ -57,46 +54,38 @@ public class SMSTask implements JCTaskInterface {
 	
 	@Override
 	public void run() {
-		BufferedImage S_IMG = null, I_BAK = null;
-		Point mouse = null;
-		byte[] data = null;
+		// BufferedImage B_IMG = null;
 		while ( getTStatus() == T_RUN ) {
 			try {
-				/**get the screen image*/
-				S_IMG = robot.createScreenCapture(SCREEN_RECT);
+				/* get the screen image */
+				final BufferedImage img = robot.createScreenCapture(SCREEN_RECT);
 
-				if ( I_BAK == null ) {
-					I_BAK = S_IMG;
-				} else if (JTeachIcon.ImageEquals(I_BAK, S_IMG) ) {
-					continue;
-				}
-				
-				/**mouse location information*/
-				mouse = MouseInfo.getPointerInfo().getLocation();
-				
-				/**
-				 * encode the Screen Image and
-				 * store them in byte[] 
-				 */
-				ByteArrayOutputStream ais = new ByteArrayOutputStream();
+				// if ( B_IMG == null ) {
+				// 	B_IMG = img;
+				// } else if (JTeachIcon.ImageEquals(B_IMG, img) ) {
+				// 	continue;
+				// }
+
+				/* encode the screen image */
+				final Packet p;
 				try {
-					// JPEGCodec.createJPEGEncoder(ais).encode(S_IMG);
-					ImageIO.write(S_IMG, "jpeg", ais);
-					data = ais.toByteArray();
-					ais.flush();
+					p = new ScreenMessage(MouseInfo.getPointerInfo().getLocation(), img).encode();
 				} catch (IOException e) {
+					System.out.printf("failed to decode screen image");
 					continue;
 				}
-				
-				/**
-				 * send the image byte data to server 
-				 */
-				writer.send(JCmdTools.SEND_DATA_SYMBOL, mouse.x, mouse.y, data.length, data);
-				
-				// reset the image
-				I_BAK = S_IMG;
+
+				// reset the backup image
+				// I_BAK = S_IMG;
+
+				/* send the image byte data to server */
+				bean.send(p);
 			} catch (IOException e) {
-				JClient.getInstance().offLineClear();
+				System.out.printf("Task %s overed due to %s\n", e.getClass().getName());
+				bean.clear();
+				break;
+			} catch (IllegalAccessException e) {
+				bean.reportClosedError();
 				break;
 			}
 		}

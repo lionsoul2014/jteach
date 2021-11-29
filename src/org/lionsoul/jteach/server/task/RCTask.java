@@ -1,20 +1,22 @@
 package org.lionsoul.jteach.server.task;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Scanner;
 
-import org.lionsoul.jteach.msg.CommandMessage;
-import org.lionsoul.jteach.msg.CommandStringMessage;
-import org.lionsoul.jteach.msg.Message;
-import org.lionsoul.jteach.msg.StringDataMessage;
-import org.lionsoul.jteach.server.JBean;
+import org.lionsoul.jteach.msg.Packet;
+import org.lionsoul.jteach.msg.JBean;
+import org.lionsoul.jteach.msg.StringMessage;
 import org.lionsoul.jteach.server.JServer;
 import org.lionsoul.jteach.util.JCmdTools;
 import org.lionsoul.jteach.util.JServerLang;
 
 
 /**
- * thread for run command on online remote machine
+ * thread for run command on online remote machine.
+ *
  * @author chenxin - chenxin619315@gmail.com
  */
 public class RCTask implements JSTaskInterface {
@@ -48,8 +50,7 @@ public class RCTask implements JSTaskInterface {
 			while (it.hasNext()) {
 				final JBean bean = it.next();
 				try {
-					bean.offer(new CommandStringMessage(
-							JCmdTools.SERVER_RCMD_EXECUTE_CMD, JCmdTools.SERVER_RCMD_ALL));
+					bean.offer(Packet.COMMAND_RCMD_ALL_EXECUTE);
 				} catch (IllegalAccessException e) {
 					bean.reportClosedError();
 					it.remove();
@@ -70,7 +71,7 @@ public class RCTask implements JSTaskInterface {
 
 			try {
 				final JBean bean = beanList.get(index);
-				bean.offer(new CommandStringMessage(JCmdTools.SERVER_RCMD_EXECUTE_CMD, JCmdTools.SERVER_RMCD_SINGLE));
+				bean.offer(Packet.COMMAND_RCMD_SINGLE_EXECUTE);
 				execute(bean);
 			} catch (IOException | IllegalAccessException e) {
 				CMD_SEND_ERROR("start command");
@@ -78,7 +79,7 @@ public class RCTask implements JSTaskInterface {
 			}
 		}
 
-		System.out.println("Remote Command execute thread is stoped.");
+		System.out.println("Remote Command execute thread is stopped.");
 		return true;
 	}
 
@@ -109,13 +110,18 @@ public class RCTask implements JSTaskInterface {
 			}
 
 			final boolean exit;
-			final Message msg;
+			final Packet p;
 			if (line.equals(EXIT_CMD_STR)) {
 				exit = true;
-				msg = new CommandMessage(JCmdTools.SERVER_TASK_STOP_CMD);
+				p = Packet.COMMAND_TASK_STOP;
 			} else {
 				exit = false;
-				msg = new StringDataMessage(line);
+				try {
+					p = Packet.valueOf(line);
+				} catch (IOException e) {
+					System.out.printf("failed to encode StringMessage %s\n", line);
+					continue;
+				}
 			}
 
 			synchronized (beanList) {
@@ -123,7 +129,7 @@ public class RCTask implements JSTaskInterface {
 				while ( it.hasNext() ) {
 					final JBean bean = it.next();
 					try {
-						bean.offer(msg);
+						bean.offer(p);
 					} catch (IllegalAccessException e) {
 						bean.reportClosedError();
 						it.remove();
@@ -157,21 +163,27 @@ public class RCTask implements JSTaskInterface {
 			
 			/* exit the remote command execute thread */
 			if (line.equals(EXIT_CMD_STR)) {
-				bean.offer(new CommandMessage(JCmdTools.SERVER_TASK_STOP_CMD));
+				bean.offer(Packet.COMMAND_TASK_STOP);
 				break;
 			}
 
-			bean.offer(new StringDataMessage(line));
+			bean.offer(Packet.valueOf(line));
 
 			/* get and print the execution response */
-			final Message msg = bean.poll();
-			// final DataInputStream dis = bean.getReader();
-			// final String resLine = dis.readUTF();
-			// if (resLine.equals(JCmdTools.RCMD_NOREPLY_VAL)) {
-			// 	System.out.println("execution failed or empty return");
-			// } else {
-			// 	System.out.println(resLine);
-			// }
+			final Packet p = bean.poll();
+			final StringMessage msg;
+			try {
+				msg = StringMessage.decode(p);
+			} catch (IOException e) {
+				System.out.println("Failed to decode the string packet");
+				continue;
+			}
+
+			if (msg.str.equals(JCmdTools.RCMD_NOREPLY_VAL)) {
+				System.out.println("execution failed or empty return");
+			} else {
+				System.out.println(msg.str);
+			}
 		}
 	}
 	

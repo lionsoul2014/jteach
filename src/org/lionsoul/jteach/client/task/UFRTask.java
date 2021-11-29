@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -20,14 +19,17 @@ import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileSystemView;
 
 import org.lionsoul.jteach.client.JClient;
+import org.lionsoul.jteach.msg.FileInfoMessage;
+import org.lionsoul.jteach.msg.JBean;
+import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.util.JClientCfg;
 import org.lionsoul.jteach.util.JCmdTools;
 
 
 /**
- * File Receive When Server started the File Upload Thread. <br />
+ * File Receive When Server started the File Upload Thread.
  * 
- * @author chenxin <br />
+ * @author  chenxin<chenxin619315@gmail.com>
  */
 public class UFRTask extends JFrame implements JCTaskInterface {
 	
@@ -43,8 +45,9 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 	private JLabel infoLabel = null;
 	private JProgressBar pBar = null;
 	private Thread tThread = null;
+	private JBean bean;
 
-	public UFRTask() {
+	public UFRTask(JClient client) {
 		this.setTitle(W_TILTE);
 		this.setAlwaysOnTop(true);
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -58,6 +61,7 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 		this.setSize(W_SIZE);
 		initGUI();
 		this.setLocationRelativeTo(null);
+		this.bean = client.getBean();
 	}
 	
 	/**
@@ -85,33 +89,21 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 	 * set the value of ProgressBar pBar 
 	 */
 	private void setBarValue(final int v) {
-		SwingUtilities.invokeLater(new Runnable(){
-			@Override
-			public void run() {
-				pBar.setValue(v);
-			}
-		});
+		SwingUtilities.invokeLater(() -> pBar.setValue(v));
 	}
 	
 	private void setTipInfo(final String str) {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				infoLabel.setText(str);
-			}
-		});
+		SwingUtilities.invokeLater(() -> infoLabel.setText(str));
 	}
 
 	@Override
 	public void startCTask(String...args) {
 		JClient.getInstance().setTipInfo("File Receive Thread Is Working.");
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				setVisible(true);
-				requestFocus();
-			}
+		SwingUtilities.invokeLater(() -> {
+			setVisible(true);
+			requestFocus();
 		});
+
 		//JClient.threadPool.execute(this);
 		tThread = new Thread(this);
 		tThread.start();
@@ -126,12 +118,16 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 				dispose();
 			}
 		});
-		/**
+
+		/*
 		 * when client mean to exit the file receive thread
 		 * the byte[] load thread must be over at the same time
-		 * tThread.interrupt could finish this 
+		 * tThread.interrupt could finish this
 		 */
-		if ( tThread != null ) tThread.interrupt(); 
+		if ( tThread != null ) {
+			tThread.interrupt();
+		}
+
 		JClient.getInstance().resetJCTask();
 		JClient.getInstance().notifyCmdMonitor();
 		JClient.getInstance().setTipInfo("File Receive Thread Is Overed!");
@@ -140,71 +136,60 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 	@Override
 	public void run() {
 		FileSystemView fsv = FileSystemView.getFileSystemView();
-		DataInputStream reader = JClient.getInstance().getReader();
-		if ( reader == null ) return;
-		BufferedOutputStream bos = null;
 		try {
-			/**
-			 * get the name of the file
-			 * and the total byte of the file  
-			 */
-			String fileName = reader.readUTF();
-			long filesize = reader.readLong();
+			final Packet p = bean.read();
+			final FileInfoMessage info;
+			try {
+				info = FileInfoMessage.decode(p);
+			} catch (IOException e) {
+				System.out.println("failed to decode the file info message");
+				stopCTask();
+				return;
+			}
+
+			setTipInfo("File:" + info.name + ", size:" + info.length / 1024 + "K");
+			final BufferedOutputStream bos = new BufferedOutputStream(
+					new FileOutputStream(fsv.getHomeDirectory() + "/" + info.name));
+
 			
-			setTipInfo("File:"+fileName+", size:"+filesize/1024+"K");
-			bos = new BufferedOutputStream(new FileOutputStream(fsv.getHomeDirectory()+"/"+fileName));
-			
-			/**
-			 * byte array
+			/* byte array
 			 * get the byte from socket and store them in byte array b
-			 * then put them in bos BufferedOuputStream for save them in file
-			 */
-			final byte b[] = new byte[1024*JCmdTools.FILE_UPLOAD_ONCE_SIZE];
+			 * then put them in bos BufferedOutputStream for to save them in file */
 			long readLen = 0;
-			long limiter = 0;
-			while ( readLen < filesize ) {
-				/**
-				 * could exit the while throught thread.interrupt) 
-				 */
+			while (readLen < info.length) {
+				/* could exit the loop through thread.interrupt) */
 				try {
 					Thread.sleep(1);
 				} catch (InterruptedException e) {
 					break;
 				}
-				/**
-				 * load full of byte[] b 
-				 */
-				int byteLoad = 0;
-				if ( readLen + b.length < filesize ) limiter = b.length;
-				else limiter = filesize - readLen;
-				while ( byteLoad < limiter ) {
-					int rSize = reader.read(b, byteLoad, b.length - byteLoad);
-					if ( rSize > 0 )  byteLoad += rSize;
-					else break;
+
+				/* load data packet */
+				final Packet cp = bean.read();
+				if (!cp.isSymbol(JCmdTools.SYMBOL_SEND_DATA)) {
+					System.out.printf("Ignore symbol %s\n", cp.symbol);
+					continue;
 				}
-				readLen += byteLoad;
-				bos.write(b, 0, byteLoad);
+
+				bos.write(cp.data, 0, cp.length);
+				readLen += cp.length;
+
 				//bos.flush();
-				setBarValue((int) (readLen * P_MAX / filesize));
+				setBarValue((int) (readLen * P_MAX / info.length));
 			}
+
 			bos.flush();
 			bos.close();
 			tThread = null;
 		} catch (IOException e) {
-			try {
-				if ( bos != null ) bos.close();
-			} catch (IOException e1) {}
-			JClient.getInstance().offLineClear();
+			System.out.printf("Task % overed due to %s\n", this.getClass().getName(), e.getClass().getName());
+			bean.clear();
+		} catch (IllegalAccessException e) {
+			bean.reportClosedError();
 		}
+
 		setTipInfo("File receive thread was overed.");
 		stopCTask();
 	}
-	
-	/*public static void main(String args[]) {
-		new UFRTask().startCTask();
-		//FileSystemView fsv = FileSystemView.getFileSystemView();
-		//System.out.println(fsv.getDefaultDirectory().getAbsolutePath());
-		//System.getProperties().list(System.out);
-	}*/
 
 }

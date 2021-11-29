@@ -2,20 +2,15 @@ package org.lionsoul.jteach.server.task;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-
-import org.lionsoul.jteach.msg.CommandMessage;
-import org.lionsoul.jteach.msg.BytesMessage;
-import org.lionsoul.jteach.server.JBean;
+import org.lionsoul.jteach.msg.Packet;
+import org.lionsoul.jteach.msg.ScreenMessage;
+import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
-import org.lionsoul.jteach.util.JCmdTools;
-import org.lionsoul.jteach.util.JTeachIcon;
 
 
 /**
@@ -43,7 +38,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 	@Override
 	public void addClient(JBean bean) {
 		try {
-			boolean res = bean.offer(new CommandMessage(JCmdTools.SERVER_BROADCAST_START_CMD));
+			boolean res = bean.offer(Packet.COMMAND_BROADCAST_START);
 			if (res == false) {
 				System.out.printf("failed to add new client %s\n", bean.getAddr());
 			} else {
@@ -52,20 +47,6 @@ public class SBTask implements JSTaskInterface,Runnable {
 			}
 		} catch (IllegalAccessException e) {
 			bean.reportClosedError();
-		}
-	}
-
-	/* send symbol to all beans */
-	private void cmdSendAll(int cmd) {
-		final Iterator<JBean> it = beanList.iterator();
-		while ( it.hasNext() ) {
-			final JBean bean = it.next();
-			try {
-				bean.offer(new CommandMessage(cmd));
-			} catch (IllegalAccessException e) {
-				bean.reportClosedError();
-				it.remove();
-			}
 		}
 	}
 
@@ -79,7 +60,16 @@ public class SBTask implements JSTaskInterface,Runnable {
 		System.out.println(START_TIP);
 
 		// send broadcast start cmd to all the beans;
-		cmdSendAll(JCmdTools.SERVER_BROADCAST_START_CMD);
+		final Iterator<JBean> it = beanList.iterator();
+		while ( it.hasNext() ) {
+			final JBean bean = it.next();
+			try {
+				bean.offer(Packet.COMMAND_BROADCAST_START);
+			} catch (IllegalAccessException e) {
+				bean.reportClosedError();
+				it.remove();
+			}
+		}
 
 		// start image catch thread
 		JServer.threadPool.execute(this);
@@ -92,13 +82,23 @@ public class SBTask implements JSTaskInterface,Runnable {
 		setTSTATUS(T_STOP);
 
 		// send broadcast stop cmd to all the beans;
-		cmdSendAll(JCmdTools.SERVER_TASK_STOP_CMD);
+		final Iterator<JBean> it = beanList.iterator();
+		while ( it.hasNext() ) {
+			final JBean bean = it.next();
+			try {
+				bean.offer(Packet.COMMAND_TASK_STOP);
+			} catch (IllegalAccessException e) {
+				bean.reportClosedError();
+				it.remove();
+			}
+		}
+
 		System.out.println(STOPED_TIP);
 	}
 
 	@Override
 	public void run() {
-		BufferedImage B_IMG = null;
+		// BufferedImage B_IMG = null;
 		while ( getTSTATUS() == T_RUN ) {
 			//load img
 			final BufferedImage img = robot.createScreenCapture(
@@ -110,36 +110,25 @@ public class SBTask implements JSTaskInterface,Runnable {
 			 * if over 98% of the picture is the same
 			 * and there is no necessary to send the picture
 			 */
-			if ( B_IMG == null ) {
-				B_IMG = img;
-			} else if (JTeachIcon.ImageEquals(B_IMG, img) ) {
-				continue;
-			}
-			
-			
-			/*
-			 * turn the BufferedImage to Byte and compress the byte data
-			 * then send them to all the beans */
-			final byte[] data;
-			try {
-				final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				ImageIO.write(img, "jpeg", bos);
-				data = bos.toByteArray();
-				bos.flush();
-			} catch (IOException e1) {
-				// e1.printStackTrace();
-				System.out.printf("failed to encode screen JPEG\n");
-				continue;
-			}
-			
+			// if ( B_IMG == null ) {
+			// 	B_IMG = img;
+			// } else if (JTeachIcon.ImageEquals(B_IMG, img) ) {
+			// 	continue;
+			// }
 
-			/*Mouse Location Info */
-			final Point mouse = MouseInfo.getPointerInfo().getLocation();
-			final ScreenMessage msg = new ScreenMessage(data, mouse.x, mouse.y);
+
+			/* encode the screen message */
+			final Packet p;
+			try {
+				p = new ScreenMessage(MouseInfo.getPointerInfo().getLocation(), img).encode();
+			} catch (IOException e) {
+				System.out.printf("failed to decode screen image");
+				continue;
+			}
 
 			// remember the current img as the last
 			// image the for the next round
-			B_IMG = img;
+			// B_IMG = img;
 
 
 			/* send the image data to the clients */
@@ -150,7 +139,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 					try {
 						// append the Message
 						// to the current bean
-						bean.offer(new BytesMessage(msg.encode()));
+						bean.offer(p);
 					} catch (IllegalAccessException e) {
 						bean.reportClosedError();
 						it.remove();
@@ -163,22 +152,6 @@ public class SBTask implements JSTaskInterface,Runnable {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
-	}
-	
-	private class ScreenMessage {
-		byte[] data;
-		int x;
-		int y;
-		
-		ScreenMessage(byte[] data, int x, int y) {
-			this.data = data;
-			this.x = x;
-			this.y = y;
-		}
-
-		byte[] encode() {
-			return new byte[0];
 		}
 	}
 

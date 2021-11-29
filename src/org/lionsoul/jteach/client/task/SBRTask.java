@@ -4,28 +4,25 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.EOFException;
+import java.io.IOException;
 import java.net.SocketTimeoutException;
-//import java.util.zip.ZipInputStream;
 
-import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import org.lionsoul.jteach.client.JCWriter;
 import org.lionsoul.jteach.client.JClient;
+import org.lionsoul.jteach.msg.JBean;
+import org.lionsoul.jteach.msg.Packet;
+import org.lionsoul.jteach.msg.ScreenMessage;
 import org.lionsoul.jteach.util.JCmdTools;
 import org.lionsoul.jteach.util.JTeachIcon;
 
 
 /**
- * Task for Broadcast Receive when server started the
- * 		Broadcast Send Thread <br />
+ * Task for Broadcast Receive when server started the Broadcast Send Thread
  * 
- * @author chenxin <br />
+ * @author chenxin<chenxin619315@gmail.com>
  */
 public class SBRTask extends JFrame implements JCTaskInterface {
 
@@ -40,11 +37,11 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	public static Dimension IMG_SIZE = null;
 
 	private int TStatus = T_RUN;
-	private volatile Point MOUSE_POS = null;
-	private volatile BufferedImage B_IMG = null;
 	private final ImageJPanel imgJPanel;
+	private final JBean bean;
+	private volatile ScreenMessage screen = null;
 
-	public SBRTask() {
+	public SBRTask(JClient client) {
 		this.setTitle(title);
 		this.setUndecorated(true);
 		this.setAlwaysOnTop(true);
@@ -52,26 +49,24 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		this.setSize(JClient.SCREEN_SIZE);
 		this.setResizable(false);
-		setLayout(new BorderLayout());
-		imgJPanel = new ImageJPanel();
-		getContentPane().add(imgJPanel, BorderLayout.CENTER);
+		this.setLayout(new BorderLayout());
 		this.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				/*
-				 * stop the JCTask and dispose the window 
-				 */
+				/* stop the JCTask and dispose the window */
 				//stopCTask();
 				//_dispose();
 			}
 		});
+
+		this.bean = client.getBean();
+		imgJPanel = new ImageJPanel();
+		getContentPane().add(imgJPanel, BorderLayout.CENTER);
 	}
 	
 	/**
-	 * Remote BufferedImage show JPanel. <br />
-	 * 		paint the BufferedImage Load from the socket. <br />
-	 * 
-	 * @author chenxin
+	 * Remote BufferedImage show JPanel.
+	 * paint the BufferedImage Load from the socket.
 	 */
 	private class ImageJPanel extends JPanel {
 		
@@ -88,7 +83,9 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 		protected void paintComponent(Graphics g) {
 			g.setColor(Color.BLACK);
 			g.fillRect(0, 0, getWidth(), getHeight());
-			if ( B_IMG == null ) {
+
+			/* Draw the waiting typo */
+			if ( screen == null ) {
 				g.setColor(Color.WHITE);
 				g.setFont(IFONT);
 				FontMetrics m = getFontMetrics(IFONT);
@@ -97,25 +94,20 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 			}
 			
 			if ( IMG_SIZE == null ) {
-				BIT = Math.max((float)B_IMG.getWidth()/JClient.SCREEN_SIZE.width,
-					(float)B_IMG.getHeight()/JClient.SCREEN_SIZE.height);
+				BIT = Math.max(
+					(float)screen.img.getWidth()/JClient.SCREEN_SIZE.width,
+					(float)screen.img.getHeight()/JClient.SCREEN_SIZE.height
+				);
 			}
 			
-			/*
-			 * Draw the image from server
-			 * start from point IMG_POS with size IMG_SIZE 
-			 */
-			// final int w = getWidth(), h = getHeight();
-			// final int dst_w = (int) Math.ceil(w * 0.96);
-			// final int dst_h = (int) Math.ceil(h * 0.96);
+			/* Draw the image */
 			final int dst_w = getWidth();
 			final int dst_h = getHeight();
-			final BufferedImage img = JTeachIcon.resize_2(B_IMG, dst_w, dst_h);
+			final BufferedImage img = JTeachIcon.resize_2(screen.img, dst_w, dst_h);
 			g.drawImage(img, 0, 0, dst_w, dst_h, null);
 
-			/*Draw the Mouse*/
-			g.drawImage(MOUSE_CURSOR, (int) (MOUSE_POS.x / BIT),
-					(int) ( MOUSE_POS.y / BIT), null);
+			/* Draw the Mouse */
+			g.drawImage(MOUSE_CURSOR, (int)(screen.mouse.x/BIT), (int) (screen.mouse.y/BIT), null);
 		}
 	}
 	
@@ -123,9 +115,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 		SwingUtilities.invokeLater(() -> imgJPanel.repaint());
 	}
 	
-	/**
-	 * dispose the JFrame 
-	 */
+	/** dispose the JFrame */
 	public void _dispose() {
 		this.setVisible(false);
 		//dispose();
@@ -149,68 +139,41 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 
 	@Override
 	public void run() {
-		DataInputStream reader = JClient.getInstance().getReader();
-		final JCWriter writer = new JCWriter();
 		while ( getTSTATUS() == T_RUN ) {
 			try {
-				// send the heartbeat packet
-				writer.send(JCmdTools.SEND_HBT_SYMBOL);
-				final char symbol = reader.readChar();
+				final Packet p = bean.read();
 
-				/*
-				 * Check the symbol type
-				 * case SEND_CMD_SYMBOL, then stop the current thread
-				 * case SEND_IMG_SYMBOL, then receive the image data from server
-				 * 		get the image size then get the image
-				 */
-				if (symbol == JCmdTools.SEND_CMD_SYMBOL) {
-					int cmd = reader.readInt();
-					if (cmd == JCmdTools.SERVER_TASK_STOP_CMD) {
+				/* Check the symbol type */
+				if (p.symbol == JCmdTools.SYMBOL_SEND_CMD) {
+					if (p.cmd == JCmdTools.COMMAND_TASK_STOP) {
 						System.out.printf("Task %s is overed by stop command\n", this.getClass().getName());
 						break;
 					}
-				} else if (symbol != JCmdTools.SEND_DATA_SYMBOL) {
-					System.out.printf("Ignore %s symbol\n", symbol);
+					System.out.printf("Ignore command %d\n", p.cmd);
+					continue;
+				} else if (p.symbol != JCmdTools.SYMBOL_SEND_DATA) {
+					System.out.printf("Ignore symbol %s\n", p.symbol);
 					continue;
 				}
 
-				/*load the mouse location information */
-				MOUSE_POS = new Point(reader.readInt(), reader.readInt());
-
-				/* the size of the BufferedImage */
-				int imgSize = reader.readInt();
-
-				/*
-				 * the BufferedImage byte data
-				 * read the byte data into the buffer
-				 * cause cannot read all the data by once when the image is large
-				 */
-				byte buffer[] = new byte[imgSize];
-				int length = 0;
-				while (length < imgSize) {
-					final int rSize = reader.read(buffer, length, imgSize - length);
-					if (rSize > 0) {
-						length += rSize;
-					} else {
-						break;
-					}
+				/* decode the packet to the ScreenMessage */
+				try {
+					screen = ScreenMessage.decode(p);
+				} catch (IOException e) {
+					System.out.printf("failed to decode the screen message");
+					continue;
 				}
-
-				/*turn the byte data to a BufferedImage */
-				final ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
-				//ZipInputStream zis = new ZipInputStream(bis);
-				//zis.getNextEntry();
-				B_IMG = ImageIO.read(bis);
 
 				/* repaint the ImageJPanel */
 				repaintImageJPanel();
 			} catch (SocketTimeoutException e) {
 				System.out.printf("Task %s read timeout\n", this.getClass().getName());
-			} catch (EOFException e) {
-			} catch (Exception e) {
-				JClient.getInstance().offLineClear();
+			} catch (IOException e) {
 				System.out.printf("Task %s is overed by %s\n", getClass().getName(), e.getClass().getName());
+				bean.clear();
 				break;
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
 			}
 		}
 		
