@@ -19,6 +19,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileSystemView;
 
 import org.lionsoul.jteach.client.JClient;
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.FileInfoMessage;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
@@ -37,6 +38,7 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 	public static final String W_TILTE = "JTeach - FileUpload";
 	public static final String INFO_LABEL_TEXT = "JTeach> Load File Info From Server.";
 	public static final Dimension W_SIZE = new Dimension(450, 80);
+	private static final Log log = Log.getLogger(UFRTask.class);
 	
 	public static final int P_MIN = 0;
 	public static final int P_MAX = 100;
@@ -45,7 +47,10 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 	private JLabel infoLabel = null;
 	private JProgressBar pBar = null;
 	private Thread tThread = null;
-	private JBean bean;
+
+
+	private JClient client;
+	private final JBean bean;
 
 	public UFRTask(JClient client) {
 		this.setTitle(W_TILTE);
@@ -61,6 +66,8 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 		this.setSize(W_SIZE);
 		initGUI();
 		this.setLocationRelativeTo(null);
+
+		this.client = client;
 		this.bean = client.getBean();
 	}
 	
@@ -98,13 +105,12 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 
 	@Override
 	public void startCTask(String...args) {
-		JClient.getInstance().setTipInfo("File Receive Thread Is Working.");
+		client.setTipInfo("File Receive Thread Is Working.");
 		SwingUtilities.invokeLater(() -> {
 			setVisible(true);
 			requestFocus();
 		});
 
-		//JClient.threadPool.execute(this);
 		tThread = new Thread(this);
 		tThread.start();
 	}
@@ -128,9 +134,9 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 			tThread.interrupt();
 		}
 
-		JClient.getInstance().resetJCTask();
-		JClient.getInstance().notifyCmdMonitor();
-		JClient.getInstance().setTipInfo("File Receive Thread Is Overed!");
+		client.resetJCTask();
+		client.notifyCmdMonitor();
+		client.setTipInfo("File Receive Thread Is Overed!");
 	}
 
 	@Override
@@ -142,7 +148,7 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 			try {
 				info = FileInfoMessage.decode(p);
 			} catch (IOException e) {
-				System.out.println("failed to decode the file info message");
+				log.error("failed to decode the file info message");
 				stopCTask();
 				return;
 			}
@@ -167,7 +173,7 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 				/* load data packet */
 				final Packet cp = bean.take();
 				if (!cp.isSymbol(JCmdTools.SYMBOL_SEND_DATA)) {
-					System.out.printf("Ignore symbol %s\n", cp.symbol);
+					log.debug("Ignore symbol %s", cp.symbol);
 					continue;
 				}
 
@@ -182,11 +188,11 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 			bos.close();
 			tThread = null;
 		} catch (IOException e) {
-			System.out.printf("%s: task is overed due to %s\n", this.getClass().getName(), e.getClass().getName());
+			log.error("task is overed due to %s", e.getClass().getName());
 		} catch (IllegalAccessException e) {
 			bean.reportClosedError();
 		} catch (InterruptedException e) {
-			System.out.printf("%s: bean.take interrupted", this.getClass().getName());
+			log.warn("bean.take was interrupted");
 		}
 
 		setTipInfo("File receive thread was overed.");

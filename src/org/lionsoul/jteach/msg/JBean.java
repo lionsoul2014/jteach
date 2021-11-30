@@ -1,6 +1,6 @@
 package org.lionsoul.jteach.msg;
 
-import org.lionsoul.jteach.server.JServer;
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.util.JCmdTools;
 
 import java.io.DataInputStream;
@@ -21,6 +21,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class JBean {
 
 	public static final ExecutorService threadPool = Executors.newCachedThreadPool();
+	private static final Log log = Log.getLogger(JBean.class);
 
 	private final Socket socket;
 	private volatile boolean closed;
@@ -28,7 +29,7 @@ public class JBean {
 	private final DataInputStream input;
 
 	private String name;
-	private String addr;
+	private String host;
 
 	private long lastReadAt = 0;
 
@@ -45,7 +46,7 @@ public class JBean {
 		// this.socket.setTcpNoDelay(true);
 		this.socket.setSoTimeout(JCmdTools.SO_TIMEOUT);
 		this.name = socket.getInetAddress().getHostName();
-		this.addr = socket.getInetAddress().getHostAddress();
+		this.host = socket.getInetAddress().getHostAddress();
 		this.output = new DataOutputStream(socket.getOutputStream());
 		this.input  = new DataInputStream(socket.getInputStream());
 
@@ -82,8 +83,8 @@ public class JBean {
 		return name;
 	}
 
-	public String getAddr() {
-		return addr;
+	public String getHost() {
+		return host;
 	}
 
 	public Socket getSocket() {
@@ -201,7 +202,7 @@ public class JBean {
 		public void run() {
 			while (true) {
 				if (closed) {
-					System.out.printf("%s: client %s read thread closed\n", JBean.this.getClass().getName(), getName());
+					log.error("client %s message read thread closed", getName());
 					break;
 				}
 
@@ -215,22 +216,22 @@ public class JBean {
 					} else if (p.isSymbol(JCmdTools.SYMBOL_SEND_HBT)) {
 						// global heartbeat and try to extend the last active at
 						// @Note: already done it in the #_read
-						System.out.printf("%s: heartbeat received\n", JBean.this.getClass().getName());
+						log.debug("received heartbeat from from client %s", getName());
 						continue;
 					}
 
 					readPool.put(p);
 				} catch (SocketTimeoutException e) {
-					System.out.printf("%s: client %s read aborted count due to %s\n", JBean.this.getClass().getName(), name, e.getClass().getName());
+					log.debug("client %s read aborted count due to %s", getName(), e.getClass().getName());
 				} catch (IOException e) {
-					System.out.printf("%s: client %s went offline due to read %s\n", JBean.this.getClass().getName(), name, e.getClass().getName());
+					log.error("client %s went offline due to read %s", getName(), e.getClass().getName());
 					clear();
 					break;
 				} catch (IllegalAccessException e) {
 					reportClosedError();
 					break;
 				} catch (InterruptedException e) {
-					System.out.printf("%s: read interrupted of client %s\n", JBean.this.getClass().getName(), name);
+					log.warn("read from client was interrupted from client", getName());
 				}
 			}
 		}
@@ -242,7 +243,7 @@ public class JBean {
 		public void run() {
 			while (true) {
 				if (closed) {
-					System.out.printf("%s: client %s send thread closed\n", JBean.this.getClass().getName(), getName());
+					log.error("client %s message send thread closed", getName());
 					break;
 				}
 
@@ -254,11 +255,9 @@ public class JBean {
 						output.flush();
 					}
 				} catch (InterruptedException e) {
-					System.out.printf("%s: client %s send pool take were interrupted\n",
-							JBean.this.getClass().getName(), name);
+					log.warn("client %s send pool.take was interrupted", getName());
 				} catch (IOException e) {
-					System.out.printf("%s: client %s went offline due to send %s\n",
-							JBean.this.getClass().getName(), name, e.getClass().getName());
+					log.error("client %s went offline due to send %s", getName(), e.getClass().getName());
 					clear();
 					break;
 				}
@@ -272,7 +271,7 @@ public class JBean {
 		public void run() {
 			while (true) {
 				if (closed) {
-					System.out.printf("%s: client %s heartbeat thread stopped", JBean.this.getClass().getName(), getName());
+					log.error("client %s heartbeat thread stopped", getName());
 					break;
 				}
 
@@ -288,8 +287,7 @@ public class JBean {
 						output.flush();
 					}
 				} catch (IOException e) {
-					System.out.printf("%s: client %s went offline due to send %s\n",
-							JBean.this.getClass().getName(), name, e.getClass().getName());
+					log.error("client %s went offline due to send %s", getName(), e.getClass().getName());
 					clear();
 					break;
 				}
@@ -314,7 +312,7 @@ public class JBean {
 	}
 
 	public String toString() {
-		return "IP:" + addr + ", HOST:" + name;
+		return "IP:" + host + ", HOST:" + name;
 	}
 
 }

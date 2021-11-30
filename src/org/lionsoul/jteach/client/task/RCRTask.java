@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import org.lionsoul.jteach.client.JClient;
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.util.JCmdTools;
@@ -18,13 +19,16 @@ import org.lionsoul.jteach.util.JCmdTools;
 public class RCRTask implements JCTaskInterface {
 	
 	private int TStatus = T_RUN;
-	private final static Runtime run = Runtime.getRuntime();
+	private static final Runtime run = Runtime.getRuntime();
+	private static final Log log = Log.getLogger(RCRTask.class);
 
 	private int cmd;
+	private final JClient client;
 	private final JBean bean;
 
 	public RCRTask(JClient client) {
-		bean = client.getBean();
+		this.client = client;
+		this.bean = client.getBean();
 	}
 
 	@Override
@@ -35,7 +39,7 @@ public class RCRTask implements JCTaskInterface {
 			cmd = JCmdTools.COMMAND_RCMD_ALL_EXECUTION;
 		}
 
-		JClient.getInstance().setTipInfo("RCMD Execute Thread Is Working.");
+		client.setTipInfo("RCMD Execute Thread Is Working.");
 		JBean.threadPool.execute(this);
 	}
 
@@ -56,10 +60,10 @@ public class RCRTask implements JCTaskInterface {
 					if (p.cmd == JCmdTools.COMMAND_TASK_STOP) {
 						break;
 					}
-					System.out.printf("Ignore command %d", p.cmd);
+					log.debug("Ignore command %d", p.cmd);
 					continue;
 				} else if (p.symbol != JCmdTools.SYMBOL_SEND_DATA) {
-					System.out.printf("Ignore symbol %s\n", p.symbol);
+					log.debug("Ignore symbol %s\n", p.symbol);
 					continue;
 				}
 
@@ -85,7 +89,7 @@ public class RCRTask implements JCTaskInterface {
 					in.close();
 					br.close();
 				} catch (IOException e) {
-					System.out.printf("failed to exec command %s\n", command);
+					log.error("failed to exec command %s\n", command);
 					continue;
 				}
 
@@ -107,19 +111,19 @@ public class RCRTask implements JCTaskInterface {
 						bean.send(Packet.valueOf(buff.toString()));
 					}
 				} catch (IOException e) {
-					System.out.printf("%s: failed to decode the string with %s", bean.getClass().getName(), e.getClass().getName());
+					log.error("failed to decode the string with %s", e.getClass().getName());
 				}
 			} catch (IllegalAccessException e) {
 				bean.reportClosedError();
 				break;
 			} catch (InterruptedException e) {
-				System.out.printf("%s: bean.take interrupted\n", this.getClass().getName());
+				log.warn("bean.take were interrupted");
 			}
 		}
 
-		JClient.getInstance().resetJCTask();
-		JClient.getInstance().notifyCmdMonitor();
-		JClient.getInstance().setTipInfo("RCMD Execute Thread Is Overed!");
+		client.resetJCTask();
+		client.notifyCmdMonitor();
+		client.setTipInfo("RCMD Execute Thread Is Overed!");
 	}
 
 	private synchronized void setTStatus( int t ) {

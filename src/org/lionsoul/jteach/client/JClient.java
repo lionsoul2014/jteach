@@ -3,6 +3,7 @@ package org.lionsoul.jteach.client;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -30,6 +31,7 @@ import org.lionsoul.jteach.client.task.RCRTask;
 import org.lionsoul.jteach.client.task.SBRTask;
 import org.lionsoul.jteach.client.task.SMSTask;
 import org.lionsoul.jteach.client.task.UFRTask;
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.rmi.RMIServer;
@@ -50,11 +52,11 @@ public class JClient extends JFrame implements Runnable {
 	public static final int T_RUN = 1;
 	public static Object Lock = new Object();
 	public static final String OS = System.getProperty("os.name").toUpperCase();
-	
+	public static final Log log = Log.getLogger(JClient.class);
+
 	public static int PORT = 55535;
 	private static RMIServer RMIInstance = null;
-	private static JClient _instance = null;
-	
+
 	/** GUI Component area */
 	private JLabel tipLabel = null;
 	private JTextField serverTextField = null;
@@ -65,13 +67,6 @@ public class JClient extends JFrame implements Runnable {
 	private volatile JBean bean = null;
 	private volatile JCTaskInterface JCTask = null;
 
-	public static JClient getInstance() {
-		if ( _instance == null ) {
-			_instance = new JClient();
-		}
-		return _instance;
-	}
-	
 	private JClient() {
 		this.setTitle(JClientCfg.W_TITLE);
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -195,6 +190,7 @@ public class JClient extends JFrame implements Runnable {
 					regRMI();
 				}
 
+				log.debug("client connected to server %s:%d", ip, PORT);
 				setTipInfo("Connected, Wait Symbol From Server.");
 				break;
 			} catch (UnknownHostException e1) {
@@ -204,7 +200,7 @@ public class JClient extends JFrame implements Runnable {
 				JOptionPane.showMessageDialog(null, "rmi register error, but it doesn't matter!");
 				break;
 			} catch (IOException e1) {
-				System.out.printf("%-2dth trying: failed to connect to server by %s:%d\n", counter, ip, PORT);
+				log.debug("%dth try: failed to connect to server by %s:%d\n", counter, ip, PORT);
 			}
 
 			if (++counter > 30) {
@@ -225,7 +221,7 @@ public class JClient extends JFrame implements Runnable {
 			JOptionPane.showMessageDialog(null, "fail To Create Socket");
 			return false;
 		} else {
-			System.out.printf("%-2dth trying: successfully connected to the server by %s:%d\n", counter, ip, PORT);
+			log.debug("%dth try: successfully connected to the server by %s:%d\n", counter, ip, PORT);
 		}
 
 		return true;
@@ -322,7 +318,7 @@ public class JClient extends JFrame implements Runnable {
 			try {
 				/* Message symbol */
 				// bean.getSocket().setSoTimeout(0);
-				System.out.printf("%s: Waiting for data packet from server ... \n", getClass().getName());
+				log.debug("waiting for data packet from server ... ");
 				final Packet p = bean.take();
 				if (p.symbol != JCmdTools.SYMBOL_SEND_CMD) {
 					continue;
@@ -402,12 +398,12 @@ public class JClient extends JFrame implements Runnable {
 				bean.reportClosedError();
 				break;
 			} catch (InterruptedException e) {
-				System.out.printf("%s: bean.take interrupted\n", this.getClass().getName());
+				log.warn("bean.take were interrupted");
 			}
 		}
 
 		if (reConnect) {
-			System.out.println("client is now offline cus of error, try to reconnecting ... ");
+			log.debug("client is now offline cus of error, reconnecting ... ");
 			connect();
 		}
 	}
@@ -442,8 +438,9 @@ public class JClient extends JFrame implements Runnable {
 	}
 
 	public static void main(String[] args) {
+		final JClient client = new JClient();
 		SwingUtilities.invokeLater(() -> {
-			JClient.getInstance().setVisible(true);
+			client.setVisible(true);
 		});
 	}
 

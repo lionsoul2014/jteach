@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.StringMessage;
@@ -22,6 +23,8 @@ import org.lionsoul.jteach.util.JServerLang;
 public class RCTask implements JSTaskInterface {
 	
 	public static final String EXIT_CMD_STR = ":exit";
+	public static final Log log = Log.getLogger(SBTask.class);
+
 	private final JServer server;
 	private final List<JBean> beanList;
 
@@ -59,27 +62,27 @@ public class RCTask implements JSTaskInterface {
 			executeToAll();
 		} else {
 			if (str.matches("^[0-9]{1,}$") == false) {
-				System.out.println("Invalid index for rc command.");
+				log.error("invalid index %s for rc command", str);
 				return false;
 			}
 
 			int index = Integer.parseInt(str);
 			if ( index < 0 || index >= server.beanCount() ) {
-				System.out.println("index out of bounds.");
+				log.error("index %d out of bounds", index);
 				return false;
 			}
 
+			final JBean bean = beanList.get(index);
 			try {
-				final JBean bean = beanList.get(index);
 				bean.offer(Packet.COMMAND_RCMD_SINGLE_EXECUTE);
 				execute(bean);
 			} catch (IOException | IllegalAccessException e) {
-				CMD_SEND_ERROR("start command");
+				log.error("failed start command execution on bean %s", bean.getHost());
 				return false;
 			}
 		}
 
-		System.out.println("Remote Command execute thread is stopped.");
+		log.debug("remote command execute thread is stopped.");
 		return true;
 	}
 
@@ -105,7 +108,7 @@ public class RCTask implements JSTaskInterface {
 			}
 
 			if (beanList.size() == 0) {
-				System.out.printf("Task %s overed due to empty clients\n", this.getClass().getName());
+				log.debug("task is overed due to empty clients");
 				break;
 			}
 
@@ -119,7 +122,7 @@ public class RCTask implements JSTaskInterface {
 				try {
 					p = Packet.valueOf(line);
 				} catch (IOException e) {
-					System.out.printf("failed to encode StringMessage %s\n", line);
+					log.error("failed to encode StringMessage %s\n", line);
 					continue;
 				}
 			}
@@ -175,7 +178,7 @@ public class RCTask implements JSTaskInterface {
 			try {
 				msg = StringMessage.decode(p);
 			} catch (IOException e) {
-				System.out.println("Failed to decode the string packet");
+				log.error("failed to decode the string packet");
 				continue;
 			}
 
@@ -186,9 +189,5 @@ public class RCTask implements JSTaskInterface {
 			}
 		}
 	}
-	
-	public static void CMD_SEND_ERROR(String str) {
-		System.out.println("Fail to send "+str);
-	}
-	
+
 }

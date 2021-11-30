@@ -12,6 +12,7 @@ import java.util.List;
 
 import javax.swing.JFileChooser;
 
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
@@ -31,6 +32,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 	
 	public static final String STOPING_TIP = "File Upload Thread Is Stoping...";
 	public static final String STOPED_TIP = "File Upload Thread Is Stoped.";
+	public static final Log log = Log.getLogger(UFTask.class);
 	
 	public static final int POINT_LENGTH = 60;
 	private File file = null;
@@ -52,7 +54,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 	@Override
 	public boolean start() {
 		if (beanList.size() == 0) {
-			System.out.printf("Abort task %s Empty client list\n", this.getClass().getName());
+			log.debug("task abort due to empty client list");
 			return false;
 		}
 
@@ -155,7 +157,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 
 				// check the bean list size
 				if (checkSize && beanList.size() == 0) {
-					System.out.printf("Task %s overed due to empty client list\n", this.getClass().getName());
+					log.debug("task is overed due to empty client list");
 					break;
 				}
 
@@ -175,7 +177,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 					break;
 				}
 			}
-			System.out.println("File transmit completed.");
+			log.info("file transfer completed.");
 			bis.close();
 		} catch (FileNotFoundException e) {
 			System.out.println(BIS_CREATE_ERROR);

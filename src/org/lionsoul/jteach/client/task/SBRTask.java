@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import org.lionsoul.jteach.client.JClient;
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
@@ -32,13 +33,17 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	public static final String EMTPY_INFO = "Loading Image Resource From Server";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
 	public static Image MOUSE_CURSOR = JTeachIcon.Create("m_pen.png").getImage();
+	public static final Log log = Log.getLogger(SBRTask.class);
+
 	public static float BIT = 1;
 	public static Dimension IMG_SIZE = null;
 
 	private int TStatus = T_RUN;
 	private final ImageJPanel imgJPanel;
-	private final JBean bean;
 	private volatile ScreenMessage screen = null;
+
+	private JClient client;
+	private final JBean bean;
 
 	public SBRTask(JClient client) {
 		this.setTitle(title);
@@ -58,6 +63,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 			}
 		});
 
+		this.client = client;
 		this.bean = client.getBean();
 		imgJPanel = new ImageJPanel();
 		getContentPane().add(imgJPanel, BorderLayout.CENTER);
@@ -122,7 +128,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 
 	@Override
 	public void startCTask(String...args) {
-		JClient.getInstance().setTipInfo("Broadcast Thread Is Working");
+		client.setTipInfo("Broadcast Thread Is Working");
 		JBean.threadPool.execute(this);
 		SwingUtilities.invokeLater(() -> {
 			setVisible(true);
@@ -145,13 +151,13 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 				/* Check the symbol type */
 				if (p.symbol == JCmdTools.SYMBOL_SEND_CMD) {
 					if (p.cmd == JCmdTools.COMMAND_TASK_STOP) {
-						System.out.printf("Task %s is overed by stop command\n", this.getClass().getName());
+						log.debug("task is overed by stop command");
 						break;
 					}
-					System.out.printf("Ignore command %d\n", p.cmd);
+					log.debug("Ignore command %d", p.cmd);
 					continue;
 				} else if (p.symbol != JCmdTools.SYMBOL_SEND_DATA) {
-					System.out.printf("Ignore symbol %s\n", p.symbol);
+					log.debug("Ignore symbol %s", p.symbol);
 					continue;
 				}
 
@@ -159,25 +165,25 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 				try {
 					screen = ScreenMessage.decode(p);
 				} catch (IOException e) {
-					System.out.printf("failed to decode the screen message");
+					log.error("failed to decode the screen message");
 					continue;
 				}
 
 				/* repaint the ImageJPanel */
 				repaintImageJPanel();
 			} catch (IllegalAccessException e) {
-				System.out.printf("%s: task is overed due to %s\n", this.getClass().getName(), e.getClass().getName());
+				log.error("task is overed due to %s", e.getClass().getName());
 				break;
 			} catch (InterruptedException e) {
-				System.out.printf("%s: bean.take interrupted\n", this.getClass().getName());
+				log.warn("bean.take was interrupted");
 			}
 		}
 		
 		//dispose the JFrame
 		_dispose();
-		JClient.getInstance().resetJCTask();
-		JClient.getInstance().notifyCmdMonitor();
-		JClient.getInstance().setTipInfo("Broadcast Thread Is Overed!");
+		client.resetJCTask();
+		client.notifyCmdMonitor();
+		client.setTipInfo("Broadcast Thread Is Overed!");
 	}
 	
 	public synchronized void setTSTATUS(int s) {

@@ -40,6 +40,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.rmi.RMIInterface;
 import org.lionsoul.jteach.msg.JBean;
@@ -60,6 +61,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	public static final String EMTPY_INFO = "Loading Image Resource From JBean";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
 	public static final Image MOUSE_CURSOR = JTeachIcon.Create("m_plan.png").getImage();
+	public static final Log log = Log.getLogger(UFTask.class);
 
 	public static Point MOUSE_POS = null;
 
@@ -158,13 +160,13 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		}
 
 		if ( str.matches("^[0-9]{1,}$") == false ) {
-			System.out.printf("Invalid client index %s for task %s\n", str, this.getClass().getName());
+			log.error("invalid client index %s", str);
 			return false;
 		}
 
 		int index = Integer.parseInt(str);
 		if (index < 0 || index >= beanList.size()) {
-			System.out.println("Index out of bounds.");
+			log.error("index %d out of bounds", index);
 			return false;
 		}
 		
@@ -174,15 +176,15 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		control = server.getArguments().get(JCmdTools.REMOTE_CONTROL_KEY);
 		if ( control != null && control.equals(JCmdTools.REMOTE_CONTROL_VAL) ) {
 			try {
-				getRMIInstance(bean.getAddr());
+				getRMIInstance(bean.getHost());
 			} catch (MalformedURLException e) {
-				System.out.println("Fail to load RMIServer instance.");
+				log.error("failed to load RMIServer instance.");
 				return false;
 			} catch (RemoteException e) {
-				System.out.println("Fail to load RMIServer instance.");
+				log.error("failed to load RMIServer instance.");
 				return false;
 			} catch (NotBoundException e) {
-				System.out.println("Fail to load RMIServer instance.");
+				log.error("failed to load RMIServer instance.");
 				return false;
 			}
 		}
@@ -195,7 +197,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			SwingUtilities.invokeLater(new Runnable(){
 				@Override
 				public void run() {
-					setTitle(W_TITLE+"["+bean.getAddr()+"]");
+					setTitle(W_TITLE+"["+bean.getHost()+"]");
 					setVisible(true);
 				}
 			});
@@ -246,7 +248,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			}
 		}
 
-		System.out.println("Screen monitor thread stopped!");
+		log.info("screen monitor thread stopped!");
 	}
 
 	@Override
@@ -265,9 +267,9 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				/*repaint the Image JPanel*/
 				repaintImageJPanel();
 			} catch (InterruptedException e) {
-				System.out.printf("client %s message take were interrupted\n", bean.getName());
+				log.warn("client %s message take were interrupted", bean.getName());
 			} catch (IOException e) {
-				System.out.printf("client %s offline due to IOException\n", bean.getName());
+				log.error("client %s went offline due to %s\n", bean.getName(), e.getClass().getName());
 				break;
 			} catch (IllegalAccessException e) {
 				bean.reportClosedError();

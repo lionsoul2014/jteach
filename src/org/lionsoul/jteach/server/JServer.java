@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.*;
 
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.server.task.JSTaskInterface;
@@ -23,6 +24,7 @@ public class JServer {
 	public static int PORT = 55535;
 	public static ServerSocket server = null;
 	public static final String OS = System.getProperty("os.name").toUpperCase();
+	public static final Log log = Log.getLogger(JServer.class);
 
 	public static final int M_RUN = 1;
 	public static final int M_OVER = 0;
@@ -221,7 +223,7 @@ public class JServer {
 			}
 
 			beanList.clear();
-			System.out.println("Clear Ok.");
+			log.debug("all clients cleared");
 		} else {
 			/* remove the Specified JBean */
 			if ( !v.matches("^[0-9]{1,}$") ) {
@@ -231,10 +233,10 @@ public class JServer {
 
 			int index = Integer.parseInt(v);
 			if ( index < 0 || index >= beanList.size() ) {
-				System.out.println(index+" Index out of bounds");
+				log.debug("Index out of bounds %d", index);
 			} else {
 				beanList.remove(index);
-				System.out.println("Remove Ok.");
+				log.debug("client on index %d removed", index);
 			}
 		}
 	}
@@ -265,10 +267,10 @@ public class JServer {
 				// send the ARP to the client
 				try {
 					b.offer(Packet.ARP);
-					System.out.println("-+-index:"+num+", "+b+"---+-");
+					log.info("client %d {name: %s, host: %d}", num, b.getName(), b.getHost());
 				} catch (IllegalAccessException e) {
 					// b.reportClosedError();
-					System.out.println("-+-index:"+num+", "+b+"(gc)---+-");
+					log.info("client %d {name: %s, host: %d} removed", num, b.getName(), b.getHost());
 					it.remove();
 				}
 			}

@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
 import org.lionsoul.jteach.msg.JBean;
@@ -24,6 +25,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 	public static final String STOPED_TIP = "Broadcast Thread Is Stoped.";
 	public static final String THREAD_NUMBER_TIP = "Thread Numbers: ";
 	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
+	public static final Log log = Log.getLogger(SBTask.class);
 
 	private volatile int TStatus = T_RUN;
 
@@ -40,10 +42,10 @@ public class SBTask implements JSTaskInterface,Runnable {
 		try {
 			boolean res = bean.offer(Packet.COMMAND_BROADCAST_START);
 			if ( !res ) {
-				System.out.printf("failed to add new client %s\n", bean.getAddr());
+				log.error("failed to add new client %s", bean.getHost());
 			} else {
 				beanList.add(bean);
-				System.out.printf("add a new client %s\n", bean.getAddr());
+				log.debug("add a new client %s", bean.getHost());
 			}
 		} catch (IllegalAccessException e) {
 			bean.reportClosedError();
@@ -53,7 +55,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 	@Override
 	public boolean start() {
 		if (beanList.size() == 0) {
-			System.out.println("Empty client list");
+			log.debug("empty client list");
 			return false;
 		}
 
@@ -122,7 +124,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 			try {
 				p = new ScreenMessage(MouseInfo.getPointerInfo().getLocation(), img).encode();
 			} catch (IOException e) {
-				System.out.printf("failed to decode screen image");
+				log.error("failed to decode screen image");
 				continue;
 			}
 

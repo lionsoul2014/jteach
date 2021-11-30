@@ -10,6 +10,7 @@ import java.io.IOException;
 import javax.swing.JOptionPane;
 
 import org.lionsoul.jteach.client.JClient;
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
@@ -24,9 +25,12 @@ public class SMSTask implements JCTaskInterface {
 	
 	public static final Rectangle SCREEN_RECT = new Rectangle(
 			JClient.SCREEN_SIZE.width, JClient.SCREEN_SIZE.height);
+	private static final Log log = Log.getLogger(SMSTask.class);
 
 	private int TStatus = T_RUN;
 	private Robot robot = null;
+
+	private final JClient client;
 	private final JBean bean;
 
 	public SMSTask(JClient client) {
@@ -37,19 +41,20 @@ public class SMSTask implements JCTaskInterface {
 					"JTeach:", JOptionPane.ERROR_MESSAGE);
 		}
 
+		this.client = client;
 		this.bean = client.getBean();
 	}
 
 	@Override
 	public void startCTask(String...args) {
 		JBean.threadPool.execute(this);
-		JClient.getInstance().setTipInfo("Screen Monitor Thread Is Working.");
+		client.setTipInfo("Screen Monitor Thread Is Working.");
 	}
 
 	@Override
 	public void stopCTask() {
 		setTStatus(T_STOP);
-		JClient.getInstance().setTipInfo("Screen Monitor Thread Is Overed.");
+		client.setTipInfo("Screen Monitor Thread Is Overed.");
 	}
 	
 	@Override
@@ -71,7 +76,7 @@ public class SMSTask implements JCTaskInterface {
 				try {
 					p = new ScreenMessage(MouseInfo.getPointerInfo().getLocation(), img).encode();
 				} catch (IOException e) {
-					System.out.printf("failed to decode screen image");
+					log.error("failed to decode screen image");
 					continue;
 				}
 
@@ -81,7 +86,7 @@ public class SMSTask implements JCTaskInterface {
 				/* send the image byte data to server */
 				bean.send(p);
 			} catch (IOException e) {
-				System.out.printf("Task %s overed due to %s\n", e.getClass().getName());
+				log.error("task is overed due to %s", e.getClass().getName());
 				bean.clear();
 				break;
 			} catch (IllegalAccessException e) {
