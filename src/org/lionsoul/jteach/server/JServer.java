@@ -303,6 +303,7 @@ public class JServer {
 			}
 		}
 
+		Log.setLevel(Log.INFO);
 		final JServer server = new JServer();
 		server.initServer();
 		server.StartMonitorThread();

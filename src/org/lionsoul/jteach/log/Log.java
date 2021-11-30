@@ -23,7 +23,7 @@ public class Log {
     };
 
     public final Class<?> baseClass;
-    private int level;
+    private static int level;
 
     public Log(Class<?> baseClass) {
         this.baseClass = baseClass;
@@ -71,9 +71,8 @@ public class Log {
         print(ERROR, format, args);
     }
 
-    public Log setLevel(int level) {
-        this.level = level;
-        return this;
+    public static void setLevel(int level) {
+        Log.level = level;
     }
 
 }
