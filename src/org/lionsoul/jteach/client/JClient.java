@@ -322,7 +322,7 @@ public class JClient extends JFrame implements Runnable {
 			try {
 				/* Message symbol */
 				// bean.getSocket().setSoTimeout(0);
-				System.out.println("Waiting for data packet from server ... ");
+				System.out.printf("%s: Waiting for data packet from server ... \n", getClass().getName());
 				final Packet p = bean.take();
 				if (p.symbol != JCmdTools.SYMBOL_SEND_CMD) {
 					continue;
