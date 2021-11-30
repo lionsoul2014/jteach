@@ -90,8 +90,8 @@ public class Packet {
     }
 
     /* symbol packet */
-    public static final Packet SYMBOL_ARP = new Packet(JCmdTools.SYMBOL_SEND_ARP, JCmdTools.COMMAND_NULL, null);
-    public static final Packet SYMBOL_HEARTBEAT = new Packet(JCmdTools.SYMBOL_SEND_HBT, JCmdTools.COMMAND_NULL, null);
+    public static final Packet ARP = new Packet(JCmdTools.SYMBOL_SEND_ARP, JCmdTools.COMMAND_NULL, null);
+    public static final Packet HEARTBEAT = new Packet(JCmdTools.SYMBOL_SEND_HBT, JCmdTools.COMMAND_NULL, null);
 
     /* command packet */
     public static final Packet COMMAND_EXIT = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_EXIT, null);

@@ -49,7 +49,7 @@ public class RCRTask implements JCTaskInterface {
 		while ( getTStatus() == T_RUN ) {
 			try {
 				/* load a packet */
-				final Packet p = bean.read();
+				final Packet p = bean.take();
 
 				/* Command execute symbol */
 				if (p.symbol == JCmdTools.SYMBOL_SEND_CMD) {
@@ -100,18 +100,20 @@ public class RCRTask implements JCTaskInterface {
 				 * send the empty tip
 				 * else send the execution output
 				 */
-				if ( counter == 0 ) {
-					bean.send(Packet.valueOf(JCmdTools.RCMD_NOREPLY_VAL));
-				} else {
-					bean.send(Packet.valueOf(buff.toString()));
+				try {
+					if (counter == 0) {
+						bean.send(Packet.valueOf(JCmdTools.RCMD_NOREPLY_VAL));
+					} else {
+						bean.send(Packet.valueOf(buff.toString()));
+					}
+				} catch (IOException e) {
+					System.out.printf("%s: failed to decode the string with %s", bean.getClass().getName(), e.getClass().getName());
 				}
 			} catch (IllegalAccessException e) {
 				bean.reportClosedError();
 				break;
-			} catch (IOException e) {
-				System.out.printf("Task %s overed due to %s\n", e.getClass().getName());
-				bean.clear();
-				break;
+			} catch (InterruptedException e) {
+				System.out.printf("%s: bean.take interrupted\n", this.getClass().getName());
 			}
 		}
 

@@ -53,6 +53,7 @@ public class JBean {
 	public void start() {
 		JServer.threadPool.execute(new ReadTask());
 		JServer.threadPool.execute(new SendTask());
+		JServer.threadPool.execute(new HeartBeartTask());
 	}
 
 	public void stop() {
@@ -111,14 +112,24 @@ public class JBean {
 		}
 	}
 
+	/** offer or throw an exception for the message */
+	public boolean offer(Packet p) throws IllegalAccessException {
+		if (isClosed()) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
+		return sendPool.offer(p);
+	}
+
 
 	/* read a packet */
-	public Packet read() throws IOException, IllegalAccessException {
+	private Packet _read() throws IOException, IllegalAccessException {
 		if (isClosed()) {
 			throw new IllegalAccessException("socket closed exception");
 		}
 
 		synchronized (input) {
+			socket.setSoTimeout(0);
 			final byte symbol = input.readByte();
 			final byte attr = input.readByte();
 
@@ -162,16 +173,6 @@ public class JBean {
 		}
 	}
 
-	/** offer or throw an exception for the message */
-	public boolean offer(Packet p) throws IllegalAccessException {
-		if (isClosed()) {
-			throw new IllegalAccessException("socket closed exception");
-		}
-
-		return sendPool.offer(p);
-	}
-
-
 	/** read the first packet */
 	public Packet poll() throws IllegalAccessException {
 		if (isClosed()) {
@@ -194,33 +195,37 @@ public class JBean {
 	private class ReadTask implements Runnable {
 		@Override
 		public void run() {
-			int offlineCount = 0;
 			while (true) {
 				if (closed) {
-					System.out.printf("client %s read thread closed\n");
+					System.out.printf("%s: client %s read thread closed\n", JBean.this.getClass().getName(), getName());
 					break;
 				}
 
 				try {
-					final Packet p = read();
+					final Packet p = _read();
+
+					/* check and dispatch the specified packet */
+					if (p.isSymbol(JCmdTools.SYMBOL_SEND_ARP)) {
+						// task level heartbeat
+						continue;
+					} else if (p.isSymbol(JCmdTools.SYMBOL_SEND_HBT)) {
+						// global heartbeat and try to extend the last active at
+						// @Note: already done it in the #_read
+						continue;
+					}
+
 					readPool.put(p);
 				} catch (SocketTimeoutException e) {
-					System.out.printf("client %s read timeout count %d\n", name, offlineCount);
-					offlineCount++;
-					if (offlineCount > 30) {
-						System.out.printf("client %s went offline due to too many read timeout\n", name);
-						clear();
-						break;
-					}
+					System.out.printf("%s: client %s read aborted count due to %s\n", JBean.this.getClass().getName(), name, e.getClass().getName());
 				} catch (IOException e) {
-					System.out.printf("client %s went offline due to read IOException\n", name);
+					System.out.printf("%s: client %s went offline due to read %s\n", JBean.this.getClass().getName(), name, e.getClass().getName());
 					clear();
 					break;
 				} catch (IllegalAccessException e) {
 					reportClosedError();
 					break;
 				} catch (InterruptedException e) {
-					System.out.printf("read interrupted of client %s\n", name);
+					System.out.printf("%s: read interrupted of client %s\n", JBean.this.getClass().getName(), name);
 				}
 			}
 		}
@@ -232,7 +237,7 @@ public class JBean {
 		public void run() {
 			while (true) {
 				if (closed) {
-					System.out.printf("client %s send thread closed\n");
+					System.out.printf("%s: client %s send thread closed\n", JBean.this.getClass().getName(), getName());
 					break;
 				}
 
@@ -244,9 +249,42 @@ public class JBean {
 						output.flush();
 					}
 				} catch (InterruptedException e) {
-					System.out.printf("client %s send pool take were interrupted\n", name);
+					System.out.printf("%s: client %s send pool take were interrupted\n",
+							JBean.this.getClass().getName(), name);
 				} catch (IOException e) {
-					System.out.printf("client %s went offline due to send IOException\n", name);
+					System.out.printf("%s: client %s went offline due to send %s\n",
+							JBean.this.getClass().getName(), name, e.getClass().getName());
+					clear();
+					break;
+				}
+			}
+		}
+	}
+
+	/** Heartbeat thread */
+	private class HeartBeartTask implements Runnable {
+		@Override
+		public void run() {
+			while (true) {
+				if (closed) {
+					System.out.printf("%s: client %s heartbeat thread stopped", JBean.this.getClass().getName(), getName());
+					break;
+				}
+
+				try {
+					Thread.sleep(JCmdTools.SO_TIMEOUT);
+				} catch (InterruptedException e) {
+					// Ignore the interrupted
+				}
+
+				try {
+					synchronized (output) {
+						output.write(Packet.HEARTBEAT.encode());
+						output.flush();
+					}
+				} catch (IOException e) {
+					System.out.printf("%s: client %s went offline due to send %s\n",
+							JBean.this.getClass().getName(), name, e.getClass().getName());
 					clear();
 					break;
 				}
@@ -267,7 +305,7 @@ public class JBean {
 	}
 	
 	public void reportClosedError() {
-		System.out.printf("client %s closed\n", name);
+		System.out.printf("%s: client %s closed\n", this.getClass().getName(), name);
 	}
 
 	public String toString() {

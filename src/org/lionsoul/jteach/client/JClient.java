@@ -193,14 +193,12 @@ public class JClient extends JFrame implements Runnable {
 			try {
 				final Socket s = new Socket(ip, PORT);
 				bean = new JBean(s);
-				// bean.start();
+				bean.start();
 				startCMDMonitor();
 
-				/*
-				 * register a RMI Server:
+				/* register a RMI Server:
 				 * watch out the reconnection here.
-				 * so register the rmi server when the RMIInstance is not null
-				 */
+				 * so register the rmi server when the RMIInstance is not null */
 				if (RMIInstance == null) {
 					regRMI();
 				}
@@ -247,7 +245,7 @@ public class JClient extends JFrame implements Runnable {
 	 * @throws MalformedURLException
 	 * @throws UnknownHostException 
 	 */
-	public void regRMI() throws RemoteException, MalformedURLException, UnknownHostException {
+	private void regRMI() throws RemoteException, MalformedURLException, UnknownHostException {
 		/* get the linux's remote host */
 		String host = InetAddress.getLocalHost().getHostAddress();
 		if ( OS.equals("LINUX") ) {
@@ -330,16 +328,10 @@ public class JClient extends JFrame implements Runnable {
 			}
 
 			try {
-				// check and break the socket if
-				// it were closed or cleared
-				if (bean.isClosed()) {
-					bean.reportClosedError();
-					break;
-				}
-
 				/* Message symbol */
 				// bean.getSocket().setSoTimeout(0);
-				final Packet p = bean.read();
+				System.out.println("Waiting for data packet from server ... ");
+				final Packet p = bean.take();
 				if (p.symbol != JCmdTools.SYMBOL_SEND_CMD) {
 					continue;
 				}
@@ -413,15 +405,12 @@ public class JClient extends JFrame implements Runnable {
 				else if (p.isCommand(JCmdTools.COMMAND_EXIT)) {
 					System.exit(0);
 				}
-			} catch (IOException e) {
-				bean.clear();
-				reConnect = true;
-				System.out.printf("cmd monitor is overed by exception %s\n", e.getClass().getName());
-				break;
 			} catch (IllegalAccessException e) {
 				reConnect = true;
 				bean.reportClosedError();
 				break;
+			} catch (InterruptedException e) {
+				System.out.printf("%s: bean.take interrupted\n", this.getClass().getName());
 			}
 		}
 

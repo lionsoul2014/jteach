@@ -137,7 +137,7 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 	public void run() {
 		FileSystemView fsv = FileSystemView.getFileSystemView();
 		try {
-			final Packet p = bean.read();
+			final Packet p = bean.take();
 			final FileInfoMessage info;
 			try {
 				info = FileInfoMessage.decode(p);
@@ -165,7 +165,7 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 				}
 
 				/* load data packet */
-				final Packet cp = bean.read();
+				final Packet cp = bean.take();
 				if (!cp.isSymbol(JCmdTools.SYMBOL_SEND_DATA)) {
 					System.out.printf("Ignore symbol %s\n", cp.symbol);
 					continue;
@@ -182,10 +182,11 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 			bos.close();
 			tThread = null;
 		} catch (IOException e) {
-			System.out.printf("Task % overed due to %s\n", this.getClass().getName(), e.getClass().getName());
-			bean.clear();
+			System.out.printf("%s: task is overed due to %s\n", this.getClass().getName(), e.getClass().getName());
 		} catch (IllegalAccessException e) {
 			bean.reportClosedError();
+		} catch (InterruptedException e) {
+			System.out.printf("%s: bean.take interrupted", this.getClass().getName());
 		}
 
 		setTipInfo("File receive thread was overed.");

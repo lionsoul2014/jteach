@@ -279,7 +279,7 @@ public class JServer {
 
 				// send the ARP to the client
 				try {
-					b.offer(Packet.SYMBOL_ARP);
+					b.offer(Packet.ARP);
 					System.out.println("-+-index:"+num+", "+b+"---+-");
 				} catch (IllegalAccessException e) {
 					// b.reportClosedError();

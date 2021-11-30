@@ -141,7 +141,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	public void run() {
 		while ( getTSTATUS() == T_RUN ) {
 			try {
-				final Packet p = bean.read();
+				final Packet p = bean.take();
 
 				/* Check the symbol type */
 				if (p.symbol == JCmdTools.SYMBOL_SEND_CMD) {
@@ -166,14 +166,11 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 
 				/* repaint the ImageJPanel */
 				repaintImageJPanel();
-			} catch (SocketTimeoutException e) {
-				System.out.printf("Task %s read timeout\n", this.getClass().getName());
-			} catch (IOException e) {
-				System.out.printf("Task %s is overed by %s\n", getClass().getName(), e.getClass().getName());
-				bean.clear();
-				break;
 			} catch (IllegalAccessException e) {
-				e.printStackTrace();
+				System.out.printf("%s: task is overed due to %s\n", this.getClass().getName(), e.getClass().getName());
+				break;
+			} catch (InterruptedException e) {
+				System.out.printf("%s: bean.take interrupted\n", this.getClass().getName());
 			}
 		}
 		
