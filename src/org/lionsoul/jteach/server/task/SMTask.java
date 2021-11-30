@@ -59,12 +59,13 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	public static final String W_TITLE = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From JBean";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
-	public static Image MOUSE_CURSOR = JTeachIcon.Create("m_plan.png").getImage();
+	public static final Image MOUSE_CURSOR = JTeachIcon.Create("m_plan.png").getImage();
+
 	public static Point MOUSE_POS = null;
-	public static Dimension wSize = null;
-	
+
 	private int TStatus = T_RUN;
 
+	private final JServer server;
 	private JBean bean = null;		// monitor machine
 	private final List<JBean> beanList;
 
@@ -80,15 +81,15 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	public SMTask(JServer server) {
 		this.setTitle(W_TITLE);
 		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
-		wSize = new Dimension(JServer.SCREEN_SIZE.width,
-				JServer.SCREEN_SIZE.height - screenInsets.bottom - screenInsets.top);
+		final Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
+		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		final Dimension wSize = new Dimension(screenSize.width, screenSize.height - screenInsets.bottom - screenInsets.top);
 		this.setSize(wSize);
 		setLayout(new BorderLayout());
 		Container c = getContentPane();
 		
 		//add the map to the JScrollPane
-		map = new ImageJPanel();
+		this.map = new ImageJPanel();
 		JScrollPane vBox = new JScrollPane(map);
 		vBox.setSize(wSize);
 		vBox.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -107,7 +108,8 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			public void windowLostFocus(WindowEvent e) {}
 		});
 
-		beanList = Collections.synchronizedList(server.copyBeanList());
+		this.server = server;
+		this.beanList = Collections.synchronizedList(server.copyBeanList());
 	}
 
 	private void repaintImageJPanel() {
@@ -149,7 +151,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	
 	@Override
 	public boolean start() {
-		String str = JServer.getInstance().getArguments().get(JCmdTools.SCREEN_MONITOR_KEY);
+		String str = server.getArguments().get(JCmdTools.SCREEN_MONITOR_KEY);
 		if ( str == null ) {
 			JServerLang.SCREEN_MONITOR_EMPTY_ARGUMENTS();
 			return false;
@@ -169,7 +171,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		bean = beanList.get(index);
 
 		// get the control arguments
-		control = JServer.getInstance().getArguments().get(JCmdTools.REMOTE_CONTROL_KEY);
+		control = server.getArguments().get(JCmdTools.REMOTE_CONTROL_KEY);
 		if ( control != null && control.equals(JCmdTools.REMOTE_CONTROL_VAL) ) {
 			try {
 				getRMIInstance(bean.getAddr());
@@ -189,7 +191,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		try {
 			// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_SCREEN_MONITOR_CMD);
 			bean.offer(Packet.COMMAND_SCREEN_MONITOR);
-			JServer.threadPool.execute(this);
+			JBean.threadPool.execute(this);
 			SwingUtilities.invokeLater(new Runnable(){
 				@Override
 				public void run() {
@@ -203,7 +205,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 		}
 
 		/* get monitor broadcast arguments */
-		broadcast = JServer.getInstance().getArguments().get(JCmdTools.MONITOR_BROADCAST_KEY);
+		broadcast = server.getArguments().get(JCmdTools.MONITOR_BROADCAST_KEY);
 		if (broadcast != null && broadcast.equals(JCmdTools.MONITOR_BROADCAST_VAL)) {
 			beanList.remove(index);
 			final Iterator<JBean> it = beanList.iterator();

@@ -1,15 +1,11 @@
 package org.lionsoul.jteach.server;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
@@ -22,7 +18,6 @@ import org.lionsoul.jteach.util.JServerLang;
  * @author chenxin<chenxin619315@gmail.com>
  */
 public class JServer {
-	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
 
 	/* Server port */
 	public static int PORT = 55535;
@@ -37,16 +32,6 @@ public class JServer {
 	private final List<JBean> beanList;
 	private HashMap<String, String> arguments = null;
 
-	public static ExecutorService threadPool = Executors.newCachedThreadPool();
-	private static JServer _instance = null;
-
-	public static JServer getInstance() {
-		if ( _instance == null ) {
-			_instance = new JServer();
-		}
-		return _instance;
-	}
-	
 	private JServer() {
 		beanList = Collections.synchronizedList(new ArrayList<>());
 	}
@@ -156,7 +141,7 @@ public class JServer {
 	/** Start Listening Thread */
 	public void StartMonitorThread() {
 		if (server != null) {
-			threadPool.execute(new ConnectMonitor());
+			JBean.threadPool.execute(new ConnectMonitor());
 		}
 	}
 	
@@ -316,10 +301,11 @@ public class JServer {
 			}
 		}
 
-		JServer.getInstance().initServer();
-		JServer.getInstance().StartMonitorThread();
+		final JServer server = new JServer();
+		server.initServer();
+		server.StartMonitorThread();
 		JCmdTools.showCmdMenu();
-		JServer.getInstance()._CmdLoader();
+		server._CmdLoader();
 	}
 
 }

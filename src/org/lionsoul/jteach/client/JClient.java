@@ -3,7 +3,6 @@ package org.lionsoul.jteach.client;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Toolkit;
-import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -17,10 +16,7 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -39,7 +35,6 @@ import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.rmi.RMIServer;
 import org.lionsoul.jteach.util.JClientCfg;
 import org.lionsoul.jteach.util.JCmdTools;
-import org.lionsoul.jteach.util.JTeachIcon;
 
 
 /**
@@ -50,13 +45,10 @@ public class JClient extends JFrame implements Runnable {
 	
 	private static final long serialVersionUID = 1L;
 	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
-	public static ExecutorService threadPool = Executors.newCachedThreadPool();
 	public static final int T_OVER = -1;
 	public static final int T_STOP = 0;
 	public static final int T_RUN = 1;
 	public static Object Lock = new Object();
-	public static final ImageIcon TRAY_ICON = JTeachIcon.Create("ws-tray.png");
-	public static TrayIcon tray = null;
 	public static final String OS = System.getProperty("os.name").toUpperCase();
 	
 	public static int PORT = 55535;
@@ -142,7 +134,7 @@ public class JClient extends JFrame implements Runnable {
 		connectButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				threadPool.execute(new Thread(() -> connect()));
+				JBean.threadPool.execute(new Thread(() -> connect()));
 			}
 		});
 		
@@ -301,7 +293,7 @@ public class JClient extends JFrame implements Runnable {
 	
 	/** start Server Input Monitor */
 	public void startCMDMonitor() {
-		threadPool.execute(this);
+		JBean.threadPool.execute(this);
 	}
 	
 	/**

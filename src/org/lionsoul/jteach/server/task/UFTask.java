@@ -35,10 +35,13 @@ public class UFTask implements JSTaskInterface,Runnable {
 	public static final int POINT_LENGTH = 60;
 	private File file = null;
 	private int TStatus = T_RUN;
+
+	private final JServer server;
 	private final List<JBean> beanList;
 	
 	public UFTask(JServer server) {
-		beanList = Collections.synchronizedList(server.copyBeanList());
+		this.server = server;
+		this.beanList = Collections.synchronizedList(server.copyBeanList());
 	}
 
 	@Override
@@ -53,7 +56,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 			return false;
 		}
 
-		JServer.threadPool.execute(this);
+		JBean.threadPool.execute(this);
 		return true;
 	}
 
@@ -84,7 +87,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 		chooser.setMultiSelectionEnabled(false);
 		int _result = chooser.showOpenDialog(null);
 		if ( _result != JFileChooser.APPROVE_OPTION ) {
-			JServer.getInstance().stopJSTask();
+			server.stopJSTask();
 			return;
 		}
 
@@ -188,7 +191,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 			}
 		}
 
-		JServer.getInstance().stopJSTask();
+		server.stopJSTask();
 		JServerLang.INPUT_ASK();
 	}
 	

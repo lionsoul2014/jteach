@@ -42,7 +42,7 @@ public class SMSTask implements JCTaskInterface {
 
 	@Override
 	public void startCTask(String...args) {
-		JClient.threadPool.execute(this);
+		JBean.threadPool.execute(this);
 		JClient.getInstance().setTipInfo("Screen Monitor Thread Is Working.");
 	}
 

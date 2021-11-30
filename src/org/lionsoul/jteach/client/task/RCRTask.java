@@ -36,7 +36,7 @@ public class RCRTask implements JCTaskInterface {
 		}
 
 		JClient.getInstance().setTipInfo("RCMD Execute Thread Is Working.");
-		JClient.threadPool.execute(this);
+		JBean.threadPool.execute(this);
 	}
 
 	@Override

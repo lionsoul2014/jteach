@@ -24,7 +24,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 	public static final String STOPED_TIP = "Broadcast Thread Is Stoped.";
 	public static final String THREAD_NUMBER_TIP = "Thread Numbers: ";
 	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
-	
+
 	private volatile int TStatus = T_RUN;
 
 	private final Robot robot;
@@ -72,7 +72,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 		}
 
 		// start image catch thread
-		JServer.threadPool.execute(this);
+		JBean.threadPool.execute(this);
 		return true;
 	}
 
@@ -148,7 +148,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 			}
 
 			try {
-				Thread.sleep(30);
+				Thread.sleep(16);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

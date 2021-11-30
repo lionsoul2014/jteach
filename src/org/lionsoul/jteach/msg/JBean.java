@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -17,6 +19,8 @@ import java.util.concurrent.LinkedBlockingDeque;
  * @author chenxin<chenxin619315@gmail.com>
  */
 public class JBean {
+
+	public static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
 	private final Socket socket;
 	private volatile boolean closed;
@@ -51,9 +55,9 @@ public class JBean {
 	}
 
 	public void start() {
-		JServer.threadPool.execute(new ReadTask());
-		JServer.threadPool.execute(new SendTask());
-		JServer.threadPool.execute(new HeartBeartTask());
+		threadPool.execute(new ReadTask());
+		threadPool.execute(new SendTask());
+		threadPool.execute(new HeartBeartTask());
 	}
 
 	public void stop() {

@@ -5,7 +5,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.SocketTimeoutException;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -124,7 +123,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	@Override
 	public void startCTask(String...args) {
 		JClient.getInstance().setTipInfo("Broadcast Thread Is Working");
-		JClient.threadPool.execute(this);
+		JBean.threadPool.execute(this);
 		SwingUtilities.invokeLater(() -> {
 			setVisible(true);
 			requestFocus();
