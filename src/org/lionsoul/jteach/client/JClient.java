@@ -46,7 +46,6 @@ import org.lionsoul.jteach.util.JCmdTools;
 public class JClient extends JFrame implements Runnable {
 	
 	private static final long serialVersionUID = 1L;
-	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
 	public static final int T_OVER = -1;
 	public static final int T_STOP = 0;
 	public static final int T_RUN = 1;

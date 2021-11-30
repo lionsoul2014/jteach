@@ -41,6 +41,9 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	private int TStatus = T_RUN;
 	private final ImageJPanel imgJPanel;
 	private volatile ScreenMessage screen = null;
+	private final Dimension screenSize;
+	private final Insets insetSize;
+
 
 	private JClient client;
 	private final JBean bean;
@@ -49,9 +52,13 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 		this.setTitle(title);
 		this.setUndecorated(true);
 		this.setAlwaysOnTop(true);
-		//this.setExtendedState(JFrame.MAXIMIZED_BOTH);
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		this.setSize(JClient.SCREEN_SIZE);
+		this.screenSize = getToolkit().getScreenSize();
+		this.insetSize = getToolkit().getScreenInsets(getGraphicsConfiguration());
+		this.setSize(screenSize);
+		// this.setBounds(0, 0, screenSize.width, screenSize.height);
+		// this.setExtendedState(JFrame.MAXIMIZED_VERT);
+		this.setLocationRelativeTo(null);
 		this.setResizable(false);
 		this.setLayout(new BorderLayout());
 		this.addWindowListener(new WindowAdapter() {
@@ -67,6 +74,9 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 		this.bean = client.getBean();
 		imgJPanel = new ImageJPanel();
 		getContentPane().add(imgJPanel, BorderLayout.CENTER);
+		log.debug("screen size: {w: %d, h: %d}, insets: {t: %d, r: %d, b: %d, l: %d}\n",
+				screenSize.width, screenSize.height,
+				insetSize.top, insetSize.right, insetSize.bottom, insetSize.left);
 	}
 	
 	/**
@@ -100,14 +110,14 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 			
 			if ( IMG_SIZE == null ) {
 				BIT = Math.max(
-					(float)screen.img.getWidth()/JClient.SCREEN_SIZE.width,
-					(float)screen.img.getHeight()/JClient.SCREEN_SIZE.height
+					(float)screen.img.getWidth()/screenSize.width,
+					(float)screen.img.getHeight()/screenSize.height
 				);
 			}
 			
 			/* Draw the image */
-			final int dst_w = getWidth();
-			final int dst_h = getHeight();
+			final int dst_w = getWidth() - insetSize.left - insetSize.right;
+			final int dst_h = getHeight() - insetSize.top - insetSize.bottom;
 			final BufferedImage img = JTeachIcon.resize_2(screen.img, dst_w, dst_h);
 			g.drawImage(img, 0, 0, dst_w, dst_h, null);
 

@@ -1,9 +1,6 @@
 package org.lionsoul.jteach.client.task;
 
-import java.awt.AWTException;
-import java.awt.MouseInfo;
-import java.awt.Rectangle;
-import java.awt.Robot;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -23,12 +20,11 @@ import org.lionsoul.jteach.msg.ScreenMessage;
  */
 public class SMSTask implements JCTaskInterface {
 	
-	public static final Rectangle SCREEN_RECT = new Rectangle(
-			JClient.SCREEN_SIZE.width, JClient.SCREEN_SIZE.height);
 	private static final Log log = Log.getLogger(SMSTask.class);
 
 	private int TStatus = T_RUN;
 	private Robot robot = null;
+	public  final Rectangle screenSize;
 
 	private final JClient client;
 	private final JBean bean;
@@ -41,6 +37,8 @@ public class SMSTask implements JCTaskInterface {
 					"JTeach:", JOptionPane.ERROR_MESSAGE);
 		}
 
+		final Dimension winSize = Toolkit.getDefaultToolkit().getScreenSize();
+		this.screenSize = new Rectangle(winSize.width, winSize.height);
 		this.client = client;
 		this.bean = client.getBean();
 	}
@@ -63,7 +61,7 @@ public class SMSTask implements JCTaskInterface {
 		while ( getTStatus() == T_RUN ) {
 			try {
 				/* get the screen image */
-				final BufferedImage img = robot.createScreenCapture(SCREEN_RECT);
+				final BufferedImage img = robot.createScreenCapture(screenSize);
 
 				// if ( B_IMG == null ) {
 				// 	B_IMG = img;
