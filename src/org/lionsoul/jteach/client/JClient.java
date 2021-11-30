@@ -108,7 +108,7 @@ public class JClient extends JFrame implements Runnable {
 		
 		serverTextField = new JTextField();
 		serverTextField.setBounds(100, 55, 200, 24);
-		serverTextField.addActionListener(LoginActionListener.getInstance());
+		serverTextField.addActionListener(e -> getConnectionJButton().doClick());
 		c.add(serverTextField);
 		
 		//server port
@@ -120,7 +120,7 @@ public class JClient extends JFrame implements Runnable {
 		
 		portTextField = new JTextField(PORT+"");
 		portTextField.setBounds(100, 90, 200, 24);
-		portTextField.addActionListener(LoginActionListener.getInstance());
+		portTextField.addActionListener(e -> getConnectionJButton().doClick());
 		c.add(portTextField);
 		
 		connectButton = new JButton(JClientCfg.CONNECT_BUTTON_TEXT);
