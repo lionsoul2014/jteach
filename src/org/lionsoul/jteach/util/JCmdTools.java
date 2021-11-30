@@ -22,11 +22,13 @@ public class JCmdTools {
 	public static final byte SYMBOL_SEND_DATA = 'D';
 	public static final byte SYMBOL_SEND_ARP = 'P';
 	public static final byte SYMBOL_SEND_HBT = 'H';
+	public static final byte SYMBOL_SOCKET_CLOSED = 'S';
 	public static final byte[] SYMBOL_LIST = new byte[] {
 		SYMBOL_SEND_CMD,
 		SYMBOL_SEND_DATA,
 		SYMBOL_SEND_ARP,
-		SYMBOL_SEND_HBT
+		SYMBOL_SEND_HBT,
+		SYMBOL_SOCKET_CLOSED
 	};
 
 	public static final boolean validSymbol(byte symbol) {

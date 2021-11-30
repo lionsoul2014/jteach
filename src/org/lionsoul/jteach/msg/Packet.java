@@ -93,6 +93,9 @@ public class Packet {
     public static final Packet ARP = new Packet(JCmdTools.SYMBOL_SEND_ARP, JCmdTools.COMMAND_NULL, null);
     public static final Packet HEARTBEAT = new Packet(JCmdTools.SYMBOL_SEND_HBT, JCmdTools.COMMAND_NULL, null);
 
+    /* not a real data packet to transfer between */
+    public static final Packet SOCKET_CLOSED = new Packet(JCmdTools.SYMBOL_SOCKET_CLOSED, JCmdTools.COMMAND_NULL, null);
+
     /* command packet */
     public static final Packet COMMAND_EXIT = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_EXIT, null);
     public static final Packet COMMAND_TASK_STOP = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_TASK_STOP, null);

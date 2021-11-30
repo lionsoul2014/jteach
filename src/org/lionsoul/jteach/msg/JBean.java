@@ -184,7 +184,12 @@ public class JBean {
 			throw new IllegalAccessException("socket closed exception");
 		}
 
-		return readPool.poll();
+		final Packet p = readPool.poll();
+		if (p.isSymbol(JCmdTools.SYMBOL_SOCKET_CLOSED)) {
+			throw new IllegalAccessException("socket clsoed exception");
+		}
+
+		return p;
 	}
 
 	/** take or wait for the first Packet */
@@ -193,7 +198,12 @@ public class JBean {
 			throw new IllegalAccessException("socket closed exception");
 		}
 
-		return readPool.take();
+		final Packet p = readPool.take();
+		if (p.isSymbol(JCmdTools.SYMBOL_SOCKET_CLOSED)) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
+		return p;
 	}
 
 	/** Message read thread */
@@ -249,6 +259,11 @@ public class JBean {
 
 				try {
 					final Packet p = sendPool.take();
+					if (p.isSymbol(JCmdTools.SYMBOL_SOCKET_CLOSED)) {
+						log.error("client %s socket closed", getName());
+						break;
+					}
+
 					/* lock the socket and send the message data */
 					synchronized (output) {
 						output.write(p.encode());
@@ -305,14 +320,18 @@ public class JBean {
 		closed = true;
 		readPool.clear();
 		sendPool.clear();
+
+		/* send the exit packet to notify the monitor */
+		readPool.addFirst(Packet.SOCKET_CLOSED);
+		sendPool.addFirst(Packet.SOCKET_CLOSED);
 	}
 	
 	public void reportClosedError() {
-		System.out.printf("%s: client %s closed\n", this.getClass().getName(), name);
+		log.error("connect to client %s closed", getName());
 	}
 
 	public String toString() {
-		return "IP:" + host + ", HOST:" + name;
+		return "{IP:" + host + ", HOST:" + name+"}";
 	}
 
 }
