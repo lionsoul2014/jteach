@@ -129,7 +129,7 @@ public class JServer {
 			Class<?> _class = Class.forName(classname);
 			Constructor<?> con = _class.getConstructor(JServer.class);
 			JSTask = (JSTaskInterface) con.newInstance(this);
-			if ( JSTask.start() == false ) {
+			if ( !JSTask.start() ) {
 				stopJSTask();
 			}
 		} catch (Exception e) {

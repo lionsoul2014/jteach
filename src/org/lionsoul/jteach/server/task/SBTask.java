@@ -39,7 +39,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 	public void addClient(JBean bean) {
 		try {
 			boolean res = bean.offer(Packet.COMMAND_BROADCAST_START);
-			if (res == false) {
+			if ( !res ) {
 				System.out.printf("failed to add new client %s\n", bean.getAddr());
 			} else {
 				beanList.add(bean);
