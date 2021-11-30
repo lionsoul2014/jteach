@@ -161,6 +161,7 @@ public class JServer {
 					final JBean bean = new JBean(s);
 					beanList.add(bean);
 					bean.start();
+					log.debug("new client %s connected", bean.getName());
 
 					/* check and add the new client to the running task */
 					if (JSTask != null) {
@@ -296,14 +297,35 @@ public class JServer {
 	}
 	
 	public static void main(String[] args) {
-		if ( args.length > 0 ) {
-			int p = Integer.parseInt(args[0]);
-			if (p >= 1024 && p <= 65535) {
-				PORT = p;
+		Log.setLevel(Log.INFO);	// default log level to info
+		for (int j = 0; j < args.length; j++) {
+			if ("--port".equals(args[j])) {
+				if (j < args.length) {
+					int p = Integer.parseInt(args[j+1]);
+					if (p >= 1024 && p <= 65525) {
+						PORT = p;
+					}
+				} else {
+					System.out.println("missing value for --port option");
+				}
+			} else if ("--log-level".equals(args[j])) {
+				if (j < args.length) {
+					final String str = args[j+1].toLowerCase();
+					if (str.equals("debug")) {
+						Log.setLevel(Log.DEBUG);
+					} else if (str.equals("info")) {
+						Log.setLevel(Log.INFO);
+					} else if (str.equals("warn")) {
+						Log.setLevel(Log.WARN);
+					} else if (str.equals("error")) {
+						Log.setLevel(Log.ERROR);
+					}
+				} else {
+					System.out.println("missing value for --log-level option");
+				}
 			}
 		}
 
-		Log.setLevel(Log.INFO);
 		final JServer server = new JServer();
 		server.initServer();
 		server.StartMonitorThread();
