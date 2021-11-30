@@ -211,6 +211,7 @@ public class JBean {
 					} else if (p.isSymbol(JCmdTools.SYMBOL_SEND_HBT)) {
 						// global heartbeat and try to extend the last active at
 						// @Note: already done it in the #_read
+						System.out.printf("%s: heartbeat received\n", JBean.this.getClass().getName());
 						continue;
 					}
 
