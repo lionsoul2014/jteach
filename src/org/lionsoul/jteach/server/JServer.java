@@ -267,10 +267,10 @@ public class JServer {
 				// send the ARP to the client
 				try {
 					b.offer(Packet.ARP);
-					log.info("client {index: %d, host: %s}", num, b.getHost());
+					log.info("client {index: %s, host: %s}", num, b.getHost());
 				} catch (IllegalAccessException e) {
 					// b.reportClosedError();
-					log.info("client {index: %d, host: %s} was removed", num, b.getHost());
+					log.info("client {index: %s, host: %s} was removed", num, b.getHost());
 					it.remove();
 				}
 			}
