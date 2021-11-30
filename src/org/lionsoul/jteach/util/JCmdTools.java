@@ -68,7 +68,7 @@ public class JCmdTools {
 
 
 	//public static final int HEART_BEAT_DATA = 0xff;
-	public static final int SO_TIMEOUT = 10000;
+	public static final int SO_TIMEOUT = 15000;
 	
 	/* screen monitor and remote control key */
 	public static final String MONITOR_AND_CONTROL = "MAC";
