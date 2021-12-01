@@ -48,15 +48,7 @@ public class JServerLang {
 	public static final void START_THREAD_RUNNING() {
 		System.out.println("A JSTask Thread Is Working, Run Stop To Stop It First.");
 	}
-	
-	public static final void RUN_COMMAND_ERROR(String ts) {
-		System.out.println("Unable To Start "+ts+"Task Thread.");
-	}
-	
-	public static final void TASK_PATH_INFO(String classname) {
-		System.out.println("Task Path: "+classname);
-	}
-	
+
 	public static final void STOP_NULL_THREAD() {
 		System.out.println("No JSTask Thread Is Working.");
 	}

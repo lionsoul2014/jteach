@@ -125,9 +125,10 @@ public class JServer {
 			return;
 		}
 
+		final String classname = "org.lionsoul.jteach.server.task."+cmd.toUpperCase()+"Task";
 		try {
-			String classname = "org.lionsoul.jteach.server.task."+cmd.toUpperCase()+"Task";
-			JServerLang.TASK_PATH_INFO(classname);
+			//JServerLang.TASK_PATH_INFO(classname);
+			System.out.printf("try to start task %s\n", classname);
 			Class<?> _class = Class.forName(classname);
 			Constructor<?> con = _class.getConstructor(JServer.class);
 			JSTask = (JSTaskInterface) con.newInstance(this);
@@ -135,8 +136,7 @@ public class JServer {
 				stopJSTask();
 			}
 		} catch (Exception e) {
-			//e.printStackTrace();
-			JServerLang.RUN_COMMAND_ERROR(cmd);
+			System.out.printf("failed to start task %s due to %s\n", classname, e.getClass().getName());
 		}
 	}
 	
