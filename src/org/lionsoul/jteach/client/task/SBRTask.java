@@ -15,8 +15,8 @@ import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
-import org.lionsoul.jteach.util.JCmdTools;
-import org.lionsoul.jteach.util.JTeachIcon;
+import org.lionsoul.jteach.util.CmdUtil;
+import org.lionsoul.jteach.util.ImageUtil;
 
 
 /**
@@ -30,7 +30,7 @@ public class SBRTask extends JCTaskBase {
 	public static final String title = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From Server";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
-	public static Image MOUSE_CURSOR = JTeachIcon.Create("m_pen.png").getImage();
+	public static Image MOUSE_CURSOR = ImageUtil.Create("m_pen.png").getImage();
 	public static final Log log = Log.getLogger(SBRTask.class);
 
 	public static float BIT = 1;
@@ -115,7 +115,7 @@ public class SBRTask extends JCTaskBase {
 			/* Draw the image */
 			final int dst_w = getWidth();
 			final int dst_h = getHeight();
-			final BufferedImage img = JTeachIcon.resize_2(screen.img, dst_w, dst_h);
+			final BufferedImage img = ImageUtil.resize_2(screen.img, dst_w, dst_h);
 			g.drawImage(img, 0, 0, dst_w, dst_h, null);
 
 			/* Draw the Mouse */
@@ -149,14 +149,14 @@ public class SBRTask extends JCTaskBase {
 				final Packet p = bean.take();
 
 				/* Check the symbol type */
-				if (p.symbol == JCmdTools.SYMBOL_SEND_CMD) {
-					if (p.cmd == JCmdTools.COMMAND_TASK_STOP) {
+				if (p.symbol == CmdUtil.SYMBOL_SEND_CMD) {
+					if (p.cmd == CmdUtil.COMMAND_TASK_STOP) {
 						log.debug("task is overed by stop command");
 						break;
 					}
 					log.debug("Ignore command %d", p.cmd);
 					continue;
-				} else if (p.symbol != JCmdTools.SYMBOL_SEND_DATA) {
+				} else if (p.symbol != CmdUtil.SYMBOL_SEND_DATA) {
 					log.debug("Ignore symbol %s", p.symbol);
 					continue;
 				}

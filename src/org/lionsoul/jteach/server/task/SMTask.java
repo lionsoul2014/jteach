@@ -42,9 +42,8 @@ import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.rmi.RMIInterface;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
-import org.lionsoul.jteach.util.JCmdTools;
-import org.lionsoul.jteach.util.JServerLang;
-import org.lionsoul.jteach.util.JTeachIcon;
+import org.lionsoul.jteach.util.CmdUtil;
+import org.lionsoul.jteach.util.ImageUtil;
 
 
 /**
@@ -56,7 +55,7 @@ public class SMTask extends JSTaskBase {
 	public static final String W_TITLE = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From JBean";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
-	public static final Image MOUSE_CURSOR = JTeachIcon.Create("m_plan.png").getImage();
+	public static final Image MOUSE_CURSOR = ImageUtil.Create("m_plan.png").getImage();
 	public static final Log log = Log.getLogger(UFTask.class);
 
 	public static Point MOUSE_POS = null;
@@ -138,7 +137,7 @@ public class SMTask extends JSTaskBase {
 		String path = System.getProperty("user.dir").replaceAll("\\\\", "/");
 		System.setProperty("java.security.policy", "file:///" + path + "/security.policy");
 		System.setSecurityManager(new RMISecurityManager());
-		String address = "rmi://" + host + ":" + JCmdTools.RMI_PORT + "/" + JCmdTools.RMI_OBJ;
+		String address = "rmi://" + host + ":" + CmdUtil.RMI_PORT + "/" + CmdUtil.RMI_OBJ;
 		RMIInstance = (RMIInterface) Naming.lookup(address);
 	}
 
@@ -149,9 +148,9 @@ public class SMTask extends JSTaskBase {
 	
 	@Override
 	public boolean start() {
-		String str = server.getArguments().get(JCmdTools.SCREEN_MONITOR_KEY);
+		String str = server.getArguments().get(CmdUtil.SCREEN_MONITOR_KEY);
 		if ( str == null ) {
-			JServerLang.SCREEN_MONITOR_EMPTY_ARGUMENTS();
+			System.out.println("-+-i : Integer: Monitor the specifier client's screen");
 			return false;
 		}
 
@@ -169,8 +168,8 @@ public class SMTask extends JSTaskBase {
 		bean = beanList.get(index);
 
 		// get the control arguments
-		control = server.getArguments().get(JCmdTools.REMOTE_CONTROL_KEY);
-		if ( control != null && control.equals(JCmdTools.REMOTE_CONTROL_VAL) ) {
+		control = server.getArguments().get(CmdUtil.REMOTE_CONTROL_KEY);
+		if ( control != null && control.equals(CmdUtil.REMOTE_CONTROL_VAL) ) {
 			try {
 				getRMIInstance(bean.getHost());
 			} catch (MalformedURLException e) {
@@ -203,8 +202,8 @@ public class SMTask extends JSTaskBase {
 		}
 
 		/* get monitor broadcast arguments */
-		broadcast = server.getArguments().get(JCmdTools.MONITOR_BROADCAST_KEY);
-		if (broadcast != null && broadcast.equals(JCmdTools.MONITOR_BROADCAST_VAL)) {
+		broadcast = server.getArguments().get(CmdUtil.MONITOR_BROADCAST_KEY);
+		if (broadcast != null && broadcast.equals(CmdUtil.MONITOR_BROADCAST_VAL)) {
 			beanList.remove(index);
 			final Iterator<JBean> it = beanList.iterator();
 			while ( it.hasNext() ) {

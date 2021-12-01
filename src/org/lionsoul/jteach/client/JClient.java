@@ -33,7 +33,7 @@ import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.rmi.RMIServer;
 import org.lionsoul.jteach.util.JClientCfg;
-import org.lionsoul.jteach.util.JCmdTools;
+import org.lionsoul.jteach.util.CmdUtil;
 
 
 /**
@@ -78,7 +78,7 @@ public class JClient extends JFrame implements Runnable {
 		this.setResizable(false);
 		this.setLocationRelativeTo(null);
 		initGUI();
-		JCmdTools.getNetInterface();
+		CmdUtil.getNetInterface();
 	}
 	
 	/**
@@ -229,23 +229,23 @@ public class JClient extends JFrame implements Runnable {
 		/* get the linux's remote host */
 		String host = InetAddress.getLocalHost().getHostAddress();
 		if ( OS.equals("LINUX") ) {
-			HashMap<String, String> ips = JCmdTools.getNetInterface();
-			String remote = ips.get(JCmdTools.HOST_REMOTE_KEY);
+			HashMap<String, String> ips = CmdUtil.getNetInterface();
+			String remote = ips.get(CmdUtil.HOST_REMOTE_KEY);
 			if ( remote != null ) {
 				host = remote;
 			}
 		}
 		
 		System.setProperty("java.rmi.server.hostname", host);
-		String codebase = JCmdTools.getJarHome(this).replaceAll("\\\\", "/");
+		String codebase = CmdUtil.getJarHome(this).replaceAll("\\\\", "/");
 		System.setProperty("java.rmi.server.codebase", "file://" + codebase + "/rmi-stub.jar");
 		System.setProperty("java.security.policy", "file://" + codebase + "security.policy");
-		LocateRegistry.createRegistry(JCmdTools.RMI_PORT);
+		LocateRegistry.createRegistry(CmdUtil.RMI_PORT);
 
 		/* create a RMIServer instance */
 		RMIInstance = RMIServer.getInstance();
 		Naming.rebind("rmi://" + host +
-				":" + JCmdTools.RMI_PORT + "/" +JCmdTools.RMI_OBJ, RMIInstance);
+				":" + CmdUtil.RMI_PORT + "/" + CmdUtil.RMI_OBJ, RMIInstance);
 		
 		// update the JFrame's title
 		final String hostAddr = host;
@@ -312,7 +312,7 @@ public class JClient extends JFrame implements Runnable {
 				// bean.getSocket().setSoTimeout(0);
 				log.debug("waiting for data packet from server ... ");
 				final Packet p = bean.take();
-				if (p.symbol != JCmdTools.SYMBOL_SEND_CMD) {
+				if (p.symbol != CmdUtil.SYMBOL_SEND_CMD) {
 					continue;
 				}
 
@@ -324,7 +324,7 @@ public class JClient extends JFrame implements Runnable {
 				 * change the JCTask pointer to a new SBRTask Object
 				 * then start the Thread
 				 */
-				if (p.isCommand(JCmdTools.COMMAND_BROADCAST_START)) {
+				if (p.isCommand(CmdUtil.COMMAND_BROADCAST_START)) {
 					setTStatus(T_STOP);
 					JCTask = new SBRTask(this);
 					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
@@ -338,7 +338,7 @@ public class JClient extends JFrame implements Runnable {
 				 * change the JCTask pointer to a new UFRTask Object
 				 * then start the thread
 				 */
-				else if (p.isCommand(JCmdTools.COMMAND_UPLOAD_START)) {
+				else if (p.isCommand(CmdUtil.COMMAND_UPLOAD_START)) {
 					setTStatus(T_STOP);
 					JCTask = new UFRTask(this);
 					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
@@ -351,7 +351,7 @@ public class JClient extends JFrame implements Runnable {
 				 * change the JCTask pointer to a new SMSTask Object
 				 * then start the thread
 				 */
-				else if (p.isCommand(JCmdTools.COMMAND_SCREEN_MONITOR)) {
+				else if (p.isCommand(CmdUtil.COMMAND_SCREEN_MONITOR)) {
 					JCTask = new SMSTask(this);
 					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
 					JCTask.start();
@@ -364,12 +364,12 @@ public class JClient extends JFrame implements Runnable {
 				 * change the JCTask pointer to a new RCRTask Object
 				 * then start the thread
 				 */
-				else if (p.isCommand(JCmdTools.COMMAND_RCMD_ALL_EXECUTION,
-						JCmdTools.COMMAND_RCMD_SINGLE_EXECUTION)) {
+				else if (p.isCommand(CmdUtil.COMMAND_RCMD_ALL_EXECUTION,
+						CmdUtil.COMMAND_RCMD_SINGLE_EXECUTION)) {
 					setTStatus(T_STOP);
 					JCTask = new RCRTask(this);
 					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
-					JCTask.start(p.isCommand(JCmdTools.COMMAND_RCMD_ALL_EXECUTION) ? "all" : "single");
+					JCTask.start(p.isCommand(CmdUtil.COMMAND_RCMD_ALL_EXECUTION) ? "all" : "single");
 					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
@@ -379,7 +379,7 @@ public class JClient extends JFrame implements Runnable {
 				 * this is unnecessary cause this kind of thread will over in its own thread
 				 * so this one is for the thread that send data to the server
 				 */
-				else if (p.isCommand(JCmdTools.COMMAND_TASK_STOP)) {
+				else if (p.isCommand(CmdUtil.COMMAND_TASK_STOP)) {
 					if (JCTask != null) {
 						JCTask.stop();
 						log.debug("task %s stopped by command %s", JCTask.getClass().getName(), p.cmd);
@@ -391,7 +391,7 @@ public class JClient extends JFrame implements Runnable {
 				 * the server is closed
 				 * and this command order the client to exit;
 				 */
-				else if (p.isCommand(JCmdTools.COMMAND_EXIT)) {
+				else if (p.isCommand(CmdUtil.COMMAND_EXIT)) {
 					System.exit(0);
 				}
 			} catch (IllegalAccessException e) {

@@ -10,7 +10,7 @@ import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.StringMessage;
-import org.lionsoul.jteach.util.JCmdTools;
+import org.lionsoul.jteach.util.CmdUtil;
 
 
 /**
@@ -31,9 +31,9 @@ public class RCRTask extends JCTaskBase {
 	@Override
 	public void start(String...args) {
 		if (args.length > 0 && "single".equals(args[0])) {
-			cmd = JCmdTools.COMMAND_RCMD_SINGLE_EXECUTION;
+			cmd = CmdUtil.COMMAND_RCMD_SINGLE_EXECUTION;
 		} else {
-			cmd = JCmdTools.COMMAND_RCMD_ALL_EXECUTION;
+			cmd = CmdUtil.COMMAND_RCMD_ALL_EXECUTION;
 		}
 
 		JBean.threadPool.execute(this);
@@ -47,13 +47,13 @@ public class RCRTask extends JCTaskBase {
 				final Packet p = bean.take();
 
 				/* Command execute symbol */
-				if (p.symbol == JCmdTools.SYMBOL_SEND_CMD) {
-					if (p.cmd == JCmdTools.COMMAND_TASK_STOP) {
+				if (p.symbol == CmdUtil.SYMBOL_SEND_CMD) {
+					if (p.cmd == CmdUtil.COMMAND_TASK_STOP) {
 						break;
 					}
 					log.debug("Ignore command %d", p.cmd);
 					continue;
-				} else if (p.symbol != JCmdTools.SYMBOL_SEND_DATA) {
+				} else if (p.symbol != CmdUtil.SYMBOL_SEND_DATA) {
 					log.debug("Ignore symbol %s\n", p.symbol);
 					continue;
 				}
@@ -93,7 +93,7 @@ public class RCRTask extends JCTaskBase {
 				}
 
 				proc.destroy();
-				if (this.cmd == JCmdTools.COMMAND_RCMD_ALL_EXECUTION) {
+				if (this.cmd == CmdUtil.COMMAND_RCMD_ALL_EXECUTION) {
 					continue;
 				}
 
@@ -105,7 +105,7 @@ public class RCRTask extends JCTaskBase {
 				 */
 				try {
 					if (counter == 0) {
-						bean.send(Packet.valueOf(JCmdTools.RCMD_NOREPLY_VAL));
+						bean.send(Packet.valueOf(CmdUtil.RCMD_NOREPLY_VAL));
 					} else {
 						bean.send(Packet.valueOf(buff.toString()));
 					}

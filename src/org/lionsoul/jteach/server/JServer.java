@@ -2,6 +2,7 @@ package org.lionsoul.jteach.server;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -11,8 +12,7 @@ import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.server.task.JSTaskBase;
-import org.lionsoul.jteach.util.JCmdTools;
-import org.lionsoul.jteach.util.JServerLang;
+import org.lionsoul.jteach.util.CmdUtil;
 
 /**
  * JTeach Server
@@ -40,20 +40,29 @@ public class JServer implements Runnable {
 	
 	/* Initialize the JTeach Server */
 	public void initServer() {
-		JServerLang.SERVER_INIT();
+		System.out.println("Initialize Server...");
 
 		try {
 			server = new ServerSocket(PORT);
 			System.out.println("user.dir: "+System.getProperty("user.dir"));
 		} catch (IOException e) {
-			JServerLang.SERVER_INIT_FAILED();
+			log.error("failed To initialize the server, make sure port %s is valid", PORT);
 			System.exit(1);
 		}
 
 		try {
-			JServerLang.MONITOR_INFO();
+			String host = InetAddress.getLocalHost().getHostAddress();
+			/* get the linux's remote host*/
+			if ( "LINUX".equals(JServer.OS) ) {
+				HashMap<String, String> ips = CmdUtil.getNetInterface();
+				String remote = ips.get(CmdUtil.HOST_REMOTE_KEY);
+				if ( remote != null ) {
+					host = remote;
+				}
+			}
+			System.out.printf("Monitor - Host: %s, Port: %s\n", host, PORT);
 		} catch (UnknownHostException e) {
-			JServerLang.GETINFO_FAILED();
+			log.error("failed To get host information due to %s", e.getClass().getName());
 		}
 	}
 	
@@ -64,16 +73,20 @@ public class JServer implements Runnable {
 			JSTask = null;
 		}
 	}
-	
+
+	public static final void printInputAsk() {
+		System.out.print("JTeach>> ");
+	}
+
 	/** run command */
 	public void cmdLoader() {
 		String line, _input;
 		final Scanner reader = new Scanner(System.in);
 		do {
-			JServerLang.INPUT_ASK();
+			printInputAsk();
 			line = reader.nextLine().trim().toLowerCase();
-			arguments = JCmdTools.parseCMD(line);
-			_input = arguments.get(JCmdTools.CMD_KEY);
+			arguments = CmdUtil.parseCMD(line);
+			_input = arguments.get(CmdUtil.CMD_KEY);
 			if (_input == null) {
 				continue;
 			}
@@ -82,29 +95,28 @@ public class JServer implements Runnable {
 			 * JSTask Working thread
 			 * call the _runCommand to look for the class
 			 * then start the thread, and we have to run ST to stop
-			 * before another same thread could start.
-			 */
-			if ( _input.equals(JCmdTools.SB) || _input.equals(JCmdTools.UF)
-					|| _input.equals(JCmdTools.SM) || _input.equals(JCmdTools.RC)) {
+			 * before another same thread could start. */
+			if ( _input.equals(CmdUtil.SB) || _input.equals(CmdUtil.UF)
+					|| _input.equals(CmdUtil.SM) || _input.equals(CmdUtil.RC)) {
 				_runJSTask(_input);
-			} else if ( _input.equals(JCmdTools.LS) ) {
+			} else if ( _input.equals(CmdUtil.LS) ) {
 				/* list all the online JBeans */
 				listBeans();
-			} else if ( _input.equals(JCmdTools.MENU) ) {
+			} else if ( _input.equals(CmdUtil.MENU) ) {
 				/* show the function menu of JTeach */
-				JCmdTools.showCmdMenu();
-			} else if ( _input.equals(JCmdTools.STOP) ) {
+				CmdUtil.showCmdMenu();
+			} else if ( _input.equals(CmdUtil.STOP) ) {
 				/* stop and reset the current working JSTask */
 				if ( JSTask == null ) {
-					System.out.println("no active task running, run menu for help");
+					System.out.println("no active task, run menu for help");
 				} else {
 					JSTask.stop();
 					JSTask = null;
 				}
-			} else if ( _input.equals(JCmdTools.DELE) ) {
+			} else if ( _input.equals(CmdUtil.DELE) ) {
 				/* remove JBean */
 				delete();
-			} else if ( _input.equals(JCmdTools.EXIT) ) {
+			} else if ( _input.equals(CmdUtil.EXIT) ) {
 				exit();
 			} else {
 				System.out.printf("Invalid command %s\n", _input);
@@ -180,8 +192,8 @@ public class JServer implements Runnable {
 	 */
 	public void exit() {
 		if ( arguments != null 
-				&& arguments.get(JCmdTools.EXIT_CLOSE_KEY) != null
-				&& arguments.get(JCmdTools.EXIT_CLOSE_KEY).equals(JCmdTools.EXIT_CLOSE_VAL) ) {
+				&& arguments.get(CmdUtil.EXIT_CLOSE_KEY) != null
+				&& arguments.get(CmdUtil.EXIT_CLOSE_KEY).equals(CmdUtil.EXIT_CLOSE_VAL) ) {
 			synchronized (beanList) {
 				for (JBean b : beanList) {
 					try {
@@ -208,14 +220,14 @@ public class JServer implements Runnable {
 			return;
 		}
 
-		String v = arguments.get(JCmdTools.DELETE_KEY);
+		String v = arguments.get(CmdUtil.DELETE_KEY);
 		if ( v == null ) {
-			JServerLang.DELETE_JBEAN_EMPTY_ARGUMENTS();
+			System.out.println("-+-i : a/Integer: Remove The All/ith client");
 			return;
 		}
 
 		/* remove all the JBean */
-		if ( v.equals(JCmdTools.DELETE_ALL_VAL) ) {
+		if ( v.equals(CmdUtil.DELETE_ALL_VAL) ) {
 			for (JBean b : beanList) {
 				b.clear();
 			}
@@ -225,7 +237,7 @@ public class JServer implements Runnable {
 		} else {
 			/* remove the Specified JBean */
 			if ( !v.matches("^[0-9]{1,}$") ) {
-				JServerLang.DELETE_JBEAN_EMPTY_ARGUMENTS();
+				log.error("invalid client index specified %s", v);
 				return;
 			}
 
@@ -259,7 +271,7 @@ public class JServer implements Runnable {
 			while ( it.hasNext() ) {
 				final JBean b = it.next();
 
-				String num = JCmdTools.formatString(j+"", 2, '0');
+				String num = CmdUtil.formatString(j+"", 2, '0');
 				j++;
 
 				// send the ARP to the client
@@ -326,7 +338,7 @@ public class JServer implements Runnable {
 		final JServer server = new JServer();
 		server.initServer();
 		server.startMonitorThread();
-		JCmdTools.showCmdMenu();
+		CmdUtil.showCmdMenu();
 		server.cmdLoader();
 	}
 

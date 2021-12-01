@@ -1,11 +1,10 @@
 package org.lionsoul.jteach.msg;
 
-import org.lionsoul.jteach.util.JCmdTools;
+import org.lionsoul.jteach.util.CmdUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /*
  * <p>data transfer Packet class.</p>
@@ -40,7 +39,7 @@ public class Packet {
 
         // define the packet attribute byte
         byte attr = 0;
-        if (cmd != JCmdTools.COMMAND_NULL) {
+        if (cmd != CmdUtil.COMMAND_NULL) {
             attr |= HAS_CMD;
         }
 
@@ -76,7 +75,7 @@ public class Packet {
         dos.writeByte(attr);
 
         // check and write the command
-        if (cmd != JCmdTools.COMMAND_NULL) {
+        if (cmd != CmdUtil.COMMAND_NULL) {
             dos.writeInt(cmd);
         }
 
@@ -90,20 +89,20 @@ public class Packet {
     }
 
     /* symbol packet */
-    public static final Packet ARP = new Packet(JCmdTools.SYMBOL_SEND_ARP, JCmdTools.COMMAND_NULL, null);
-    public static final Packet HEARTBEAT = new Packet(JCmdTools.SYMBOL_SEND_HBT, JCmdTools.COMMAND_NULL, null);
+    public static final Packet ARP = new Packet(CmdUtil.SYMBOL_SEND_ARP, CmdUtil.COMMAND_NULL, null);
+    public static final Packet HEARTBEAT = new Packet(CmdUtil.SYMBOL_SEND_HBT, CmdUtil.COMMAND_NULL, null);
 
     /* not a real data packet to transfer between */
-    public static final Packet SOCKET_CLOSED = new Packet(JCmdTools.SYMBOL_SOCKET_CLOSED, JCmdTools.COMMAND_NULL, null);
+    public static final Packet SOCKET_CLOSED = new Packet(CmdUtil.SYMBOL_SOCKET_CLOSED, CmdUtil.COMMAND_NULL, null);
 
     /* command packet */
-    public static final Packet COMMAND_EXIT = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_EXIT, null);
-    public static final Packet COMMAND_TASK_STOP = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_TASK_STOP, null);
-    public static final Packet COMMAND_BROADCAST_START = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_BROADCAST_START, null);
-    public static final Packet COMMAND_UPLOAD_START = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_UPLOAD_START, null);
-    public static final Packet COMMAND_SCREEN_MONITOR = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_SCREEN_MONITOR, null);
-    public static final Packet COMMAND_RCMD_SINGLE_EXECUTE = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_RCMD_SINGLE_EXECUTION, null);
-    public static final Packet COMMAND_RCMD_ALL_EXECUTE = new Packet(JCmdTools.SYMBOL_SEND_CMD, JCmdTools.COMMAND_RCMD_ALL_EXECUTION, null);
+    public static final Packet COMMAND_EXIT = new Packet(CmdUtil.SYMBOL_SEND_CMD, CmdUtil.COMMAND_EXIT, null);
+    public static final Packet COMMAND_TASK_STOP = new Packet(CmdUtil.SYMBOL_SEND_CMD, CmdUtil.COMMAND_TASK_STOP, null);
+    public static final Packet COMMAND_BROADCAST_START = new Packet(CmdUtil.SYMBOL_SEND_CMD, CmdUtil.COMMAND_BROADCAST_START, null);
+    public static final Packet COMMAND_UPLOAD_START = new Packet(CmdUtil.SYMBOL_SEND_CMD, CmdUtil.COMMAND_UPLOAD_START, null);
+    public static final Packet COMMAND_SCREEN_MONITOR = new Packet(CmdUtil.SYMBOL_SEND_CMD, CmdUtil.COMMAND_SCREEN_MONITOR, null);
+    public static final Packet COMMAND_RCMD_SINGLE_EXECUTE = new Packet(CmdUtil.SYMBOL_SEND_CMD, CmdUtil.COMMAND_RCMD_SINGLE_EXECUTION, null);
+    public static final Packet COMMAND_RCMD_ALL_EXECUTE = new Packet(CmdUtil.SYMBOL_SEND_CMD, CmdUtil.COMMAND_RCMD_ALL_EXECUTION, null);
 
     /* create data packet from basic type */
     public static final Packet valueOf(String str) throws IOException {
@@ -111,7 +110,7 @@ public class Packet {
     }
 
     public static final Packet valueOf(byte[] bytes) {
-        return new Packet(JCmdTools.SYMBOL_SEND_DATA, JCmdTools.COMMAND_NULL, bytes);
+        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bytes);
     }
 
     public static final Packet valueOf(String str, long length) throws IOException {
@@ -119,7 +118,7 @@ public class Packet {
         final DataOutputStream dos = new DataOutputStream(bos);
         dos.writeUTF(str);
         dos.writeLong(length);
-        return new Packet(JCmdTools.SYMBOL_SEND_DATA, JCmdTools.COMMAND_NULL, bos.toByteArray());
+        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
     }
 
 }

@@ -1,6 +1,6 @@
 package org.lionsoul.jteach.msg;
 
-import org.lionsoul.jteach.util.JCmdTools;
+import org.lionsoul.jteach.util.CmdUtil;
 
 import java.io.*;
 
@@ -17,7 +17,7 @@ public class StringMessage implements Message {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
         dos.writeUTF(str);
-        return new Packet(JCmdTools.SYMBOL_SEND_DATA, JCmdTools.COMMAND_NULL, bos.toByteArray());
+        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
     }
 
     public static final StringMessage decode(final Packet p) throws IOException {

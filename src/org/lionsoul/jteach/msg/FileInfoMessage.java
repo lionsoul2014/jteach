@@ -1,6 +1,6 @@
 package org.lionsoul.jteach.msg;
 
-import org.lionsoul.jteach.util.JCmdTools;
+import org.lionsoul.jteach.util.CmdUtil;
 
 import java.io.*;
 
@@ -20,7 +20,7 @@ public class FileInfoMessage implements Message {
         final DataOutputStream dos = new DataOutputStream(bos);
         dos.writeLong(length);
         dos.writeUTF(name);
-        return new Packet(JCmdTools.SYMBOL_SEND_DATA, JCmdTools.COMMAND_NULL, bos.toByteArray());
+        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
     }
 
     public static final FileInfoMessage decode(final Packet p) throws IOException {

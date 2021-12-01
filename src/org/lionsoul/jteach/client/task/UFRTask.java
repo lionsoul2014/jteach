@@ -23,7 +23,7 @@ import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.FileInfoMessage;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.util.JClientCfg;
-import org.lionsoul.jteach.util.JCmdTools;
+import org.lionsoul.jteach.util.CmdUtil;
 
 
 /**
@@ -154,7 +154,7 @@ public class UFRTask extends JCTaskBase {
 
 				/* load data packet */
 				final Packet cp = bean.take();
-				if (!cp.isSymbol(JCmdTools.SYMBOL_SEND_DATA)) {
+				if (!cp.isSymbol(CmdUtil.SYMBOL_SEND_DATA)) {
 					log.debug("Ignore symbol %s", cp.symbol);
 					continue;
 				}

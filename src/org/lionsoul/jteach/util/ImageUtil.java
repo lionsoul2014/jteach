@@ -13,11 +13,11 @@ import javax.swing.ImageIcon;
  * quick util.
  * @author  chenxin - chenxin619315@gmail.com
  */
-public class JTeachIcon {
+public class ImageUtil {
 	
 	/** create an icon image */
 	public static ImageIcon Create(String filename) {
-		ImageIcon icon = new ImageIcon(JTeachIcon.class.getResource("/res/images/"+filename));
+		ImageIcon icon = new ImageIcon(ImageUtil.class.getResource("/res/images/"+filename));
 		return icon;
 	}
 	

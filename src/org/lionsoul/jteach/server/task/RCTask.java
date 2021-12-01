@@ -9,8 +9,7 @@ import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.StringMessage;
 import org.lionsoul.jteach.server.JServer;
-import org.lionsoul.jteach.util.JCmdTools;
-import org.lionsoul.jteach.util.JServerLang;
+import org.lionsoul.jteach.util.CmdUtil;
 
 
 /**
@@ -34,14 +33,14 @@ public class RCTask extends JSTaskBase {
 
 	@Override
 	public boolean start() {
-		String str = server.getArguments().get(JCmdTools.RCMD_EXECUTE_KEY);
+		String str = server.getArguments().get(CmdUtil.RCMD_EXECUTE_KEY);
 		if ( str == null ) {
-			JServerLang.RCMD_EXECUTE_EMPTY_ARGUMENTS();
+			System.out.println("-+-i : a/integer: send command to all/ith client");
 			return false;
 		}
 		
 		/* send command to all the JBeans */
-		if ( str.equals(JCmdTools.RCMD_EXECUTE_VAL) ) {
+		if ( str.equals(CmdUtil.RCMD_EXECUTE_VAL) ) {
 			// send start symbol
 			final Iterator<JBean> it = beanList.iterator();
 			while (it.hasNext()) {
@@ -92,7 +91,7 @@ public class RCTask extends JSTaskBase {
 		System.out.printf("-+-All JBeans, Run %s to exit.-+-\n", EXIT_CMD_STR);
 
 		while (true) {
-			JServerLang.RCMD_INPUT_ASK();
+			printInputAsk();
 			line = reader.nextLine().trim().toLowerCase();
 			if ( line.equals("") ) {
 				System.out.printf("type the command, or run %s to exit.\n", EXIT_CMD_STR);
@@ -149,7 +148,7 @@ public class RCTask extends JSTaskBase {
 		System.out.printf("-+-Single JBean, Run %s to exit.-+-\n", EXIT_CMD_STR);
 
 		while ( true ) {
-			JServerLang.RCMD_INPUT_ASK();
+			printInputAsk();
 			line = reader.nextLine().trim().toLowerCase();
 			if (line.equals("")) {
 				System.out.printf("type the command, or run %s to exit.\n", EXIT_CMD_STR);
@@ -181,12 +180,16 @@ public class RCTask extends JSTaskBase {
 				continue;
 			}
 
-			if (msg.str.equals(JCmdTools.RCMD_NOREPLY_VAL)) {
+			if (msg.str.equals(CmdUtil.RCMD_NOREPLY_VAL)) {
 				System.out.println("execution failed or empty return");
 			} else {
 				System.out.println(msg.str);
 			}
 		}
+	}
+
+	public static final void printInputAsk() {
+		System.out.print("JTeach#RC>> ");
 	}
 
 	@Override

@@ -15,8 +15,7 @@ import org.lionsoul.jteach.msg.FileInfoMessage;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
-import org.lionsoul.jteach.util.JCmdTools;
-import org.lionsoul.jteach.util.JServerLang;
+import org.lionsoul.jteach.util.CmdUtil;
 
 
 /**
@@ -133,7 +132,7 @@ public class UFTask extends JSTaskBase {
 			 */
 			float readLen = 0;
 			int counter = 0, len = 0;
-			byte b[] = new byte[1024*JCmdTools.FILE_UPLOAD_ONCE_SIZE];
+			byte b[] = new byte[1024* CmdUtil.FILE_UPLOAD_ONCE_SIZE];
 			while ( (len = bis.read(b, 0, b.length)) > 0 ) {
 				readLen += len;
 				counter++;

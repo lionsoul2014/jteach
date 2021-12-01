@@ -1,7 +1,7 @@
 package org.lionsoul.jteach.msg;
 
 import org.lionsoul.jteach.log.Log;
-import org.lionsoul.jteach.util.JCmdTools;
+import org.lionsoul.jteach.util.CmdUtil;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -44,7 +44,7 @@ public class JBean {
 
 		this.socket = s;
 		// this.socket.setTcpNoDelay(true);
-		this.socket.setSoTimeout(JCmdTools.SO_TIMEOUT);
+		this.socket.setSoTimeout(CmdUtil.SO_TIMEOUT);
 		this.name = socket.getInetAddress().getHostName();
 		this.host = socket.getInetAddress().getHostAddress();
 		this.output = new DataOutputStream(socket.getOutputStream());
@@ -147,7 +147,7 @@ public class JBean {
 			// check and parse the command
 			final int cmd;
 			if ((attr & Packet.HAS_CMD) == 0) {
-				cmd = JCmdTools.COMMAND_NULL;
+				cmd = CmdUtil.COMMAND_NULL;
 			} else {
 				cmd = input.readInt();
 			}
@@ -185,7 +185,7 @@ public class JBean {
 		}
 
 		final Packet p = readPool.poll();
-		if (p.isSymbol(JCmdTools.SYMBOL_SOCKET_CLOSED)) {
+		if (p.isSymbol(CmdUtil.SYMBOL_SOCKET_CLOSED)) {
 			throw new IllegalAccessException("socket clsoed exception");
 		}
 
@@ -199,7 +199,7 @@ public class JBean {
 		}
 
 		final Packet p = readPool.take();
-		if (p.isSymbol(JCmdTools.SYMBOL_SOCKET_CLOSED)) {
+		if (p.isSymbol(CmdUtil.SYMBOL_SOCKET_CLOSED)) {
 			throw new IllegalAccessException("socket closed exception");
 		}
 
@@ -220,10 +220,10 @@ public class JBean {
 					final Packet p = _read();
 
 					/* check and dispatch the specified packet */
-					if (p.isSymbol(JCmdTools.SYMBOL_SEND_ARP)) {
+					if (p.isSymbol(CmdUtil.SYMBOL_SEND_ARP)) {
 						// task level heartbeat
 						continue;
-					} else if (p.isSymbol(JCmdTools.SYMBOL_SEND_HBT)) {
+					} else if (p.isSymbol(CmdUtil.SYMBOL_SEND_HBT)) {
 						// global heartbeat and try to extend the last active at
 						// @Note: already done it in the #_read
 						log.debug("received heartbeat from from client %s", getName());
@@ -259,7 +259,7 @@ public class JBean {
 
 				try {
 					final Packet p = sendPool.take();
-					if (p.isSymbol(JCmdTools.SYMBOL_SOCKET_CLOSED)) {
+					if (p.isSymbol(CmdUtil.SYMBOL_SOCKET_CLOSED)) {
 						log.error("client %s socket closed", getName());
 						break;
 					}
@@ -291,7 +291,7 @@ public class JBean {
 				}
 
 				try {
-					Thread.sleep(JCmdTools.SO_TIMEOUT);
+					Thread.sleep(CmdUtil.SO_TIMEOUT);
 				} catch (InterruptedException e) {
 					// Ignore the interrupted
 				}

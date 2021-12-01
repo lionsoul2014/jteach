@@ -13,7 +13,7 @@ import java.util.Scanner;
  * Offer Some Interface to show message in the console
  * @author chenxin - chenxin619315@gmail.com
  */
-public class JCmdTools {
+public class CmdUtil {
 	
 	/**
 	 * Commands and Symbol
@@ -129,21 +129,21 @@ public class JCmdTools {
 	 */
 	public static void showCmdMenu() {
 		StringBuffer info = new StringBuffer();
-		info.append(JCmdTools.getBaseLine(_WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" JTeach - Multimedia Teaching Software", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" @email:chenxin619315@gmail.com - chenxin", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine("                                 ", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" JTeach Command Menu :", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" ---"+SB+": start the screen broadcast thread", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" ---"+SM+": monitor the specified JBean's screen", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" ---"+UF+": start the file upload thread", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" ---"+RC+": run command on all/specified online JBean", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" ---"+LS+": list all the online students", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" -"+DELE+": remove all/specified online JBean", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" -"+MENU+": show the function menu", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" -"+STOP+": stop the current working thread", _WIDTH)+"\n");
-		info.append(JCmdTools.getFormatLine(" -"+EXIT+": exit the program", _WIDTH)+"\n");
-		info.append(JCmdTools.getBaseLine(_WIDTH)+"\n");
+		info.append(CmdUtil.getBaseLine(_WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" JTeach - Multimedia Teaching Software", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" @email:chenxin619315@gmail.com - chenxin", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine("                                 ", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" JTeach Command Menu :", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" ---"+SB+": start the screen broadcast thread", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" ---"+SM+": monitor the specified JBean's screen", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" ---"+UF+": start the file upload thread", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" ---"+RC+": run command on all/specified online JBean", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" ---"+LS+": list all the online students", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" -"+DELE+": remove all/specified online JBean", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" -"+MENU+": show the function menu", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" -"+STOP+": stop the current working thread", _WIDTH)+"\n");
+		info.append(CmdUtil.getFormatLine(" -"+EXIT+": exit the program", _WIDTH)+"\n");
+		info.append(CmdUtil.getBaseLine(_WIDTH)+"\n");
 		System.out.print(info);
 	}
 	
