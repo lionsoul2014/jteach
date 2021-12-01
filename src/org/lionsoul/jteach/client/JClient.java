@@ -202,7 +202,7 @@ public class JClient extends JFrame implements Runnable {
 				log.debug("%dth try: failed to connect to server by %s:%d\n", counter, ip, PORT);
 			}
 
-			if (++counter > 30) {
+			if (++counter > 600) {
 				timeOut = true;
 				break;
 			}
@@ -220,7 +220,7 @@ public class JClient extends JFrame implements Runnable {
 			JOptionPane.showMessageDialog(null, "fail To Create Socket");
 			return false;
 		} else {
-			log.debug("%dth try: successfully connected to the server by %s:%d\n", counter, ip, PORT);
+			log.debug("%dth try: successfully connected to the server by %s:%d", counter, ip, PORT);
 		}
 
 		return true;

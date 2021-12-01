@@ -9,6 +9,7 @@ import org.lionsoul.jteach.client.JClient;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
+import org.lionsoul.jteach.msg.StringMessage;
 import org.lionsoul.jteach.util.JCmdTools;
 
 
@@ -71,12 +72,19 @@ public class RCRTask implements JCTaskInterface {
 				 * get the command string
 				 * and execute the command
 				 */
-				String command = String.valueOf(p.data);
+				final StringMessage msg;
+				try {
+					msg = StringMessage.decode(p);
+				} catch (IOException e) {
+					log.error("failed to decode string message due to %s", e.getClass());
+					continue;
+				}
+
 				int counter = 0;
 				final StringBuffer buff = new StringBuffer();
 				final Process proc;
 				try {
-					proc = run.exec(command);
+					proc = run.exec(msg.str);
 					final BufferedInputStream in = new BufferedInputStream(proc.getInputStream());
 					final BufferedReader br = new BufferedReader(new InputStreamReader(in));
 
@@ -89,7 +97,7 @@ public class RCRTask implements JCTaskInterface {
 					in.close();
 					br.close();
 				} catch (IOException e) {
-					log.error("failed to exec command %s\n", command);
+					log.error("failed to exec command %s due to %s\n", msg.str, e.getClass().getName());
 					continue;
 				}
 
