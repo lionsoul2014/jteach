@@ -19,7 +19,7 @@ public abstract class JSTaskBase implements Runnable {
 	protected final JServer server;
 	protected final List<JBean> beanList;
 
-	public JSTaskBase(JServer server) {
+	protected JSTaskBase(JServer server) {
 		this.server = server;
 		this.beanList = Collections.synchronizedList(server.copyBeanList());
 	}

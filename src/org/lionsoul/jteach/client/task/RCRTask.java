@@ -23,12 +23,9 @@ public class RCRTask extends JCTaskBase {
 	private static final Log log = Log.getLogger(RCRTask.class);
 
 	private int cmd;
-	private final JClient client;
-	private final JBean bean;
 
 	public RCRTask(JClient client) {
-		this.client = client;
-		this.bean = client.getBean();
+		super(client);
 	}
 
 	@Override

@@ -44,21 +44,15 @@ public class UFRTask extends JCTaskBase {
 	private final JProgressBar pBar;
 	private Thread tThread = null;
 
-	private JClient client;
-	private final JBean bean;
-
 	public UFRTask(JClient client) {
-		this.client = client;
-		this.bean = client.getBean();
+		super(client);
 		this.window = new JFrame();
 		this.infoLabel = new JLabel(INFO_LABEL_TEXT);
 		this.pBar = new JProgressBar(0, 100);
 		initGUI();
 	}
 	
-	/**
-	 * initialize the GUI 
-	 */
+	/** initialize the GUI */
 	private void initGUI() {
 		window.setTitle(W_TILTE);
 		window.setAlwaysOnTop(true);
@@ -73,7 +67,7 @@ public class UFRTask extends JCTaskBase {
 		});
 
 		window.setLayout(new BorderLayout());
-		Container c = window.getContentPane();
+		final Container c = window.getContentPane();
 		infoLabel.setSize(W_SIZE);
 		infoLabel.setOpaque(true);
 		infoLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -88,9 +82,7 @@ public class UFRTask extends JCTaskBase {
 		c.add(pBar, BorderLayout.SOUTH);
 	}
 	
-	/**
-	 * set the value of ProgressBar pBar 
-	 */
+	/** set the value of ProgressBar pBar */
 	private void setBarValue(final int v) {
 		SwingUtilities.invokeLater(() -> pBar.setValue(v));
 	}

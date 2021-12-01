@@ -22,14 +22,11 @@ public class SMSTask extends JCTaskBase {
 	
 	private static final Log log = Log.getLogger(SMSTask.class);
 
-	private int TStatus = T_RUN;
 	private Robot robot = null;
 	public  final Rectangle screenSize;
 
-	private final JClient client;
-	private final JBean bean;
-
 	public SMSTask(JClient client) {
+		super(client);
 		try {
 			robot = new Robot();
 		} catch (AWTException e) {
@@ -39,8 +36,6 @@ public class SMSTask extends JCTaskBase {
 
 		final Dimension winSize = Toolkit.getDefaultToolkit().getScreenSize();
 		this.screenSize = new Rectangle(winSize.width, winSize.height);
-		this.client = client;
-		this.bean = client.getBean();
 	}
 
 	@Override

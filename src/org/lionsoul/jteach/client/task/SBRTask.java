@@ -26,8 +26,6 @@ import org.lionsoul.jteach.util.JTeachIcon;
  */
 public class SBRTask extends JCTaskBase {
 
-	private static final long serialVersionUID = 1L;
-
 	/* Lang package */
 	public static final String title = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From Server";
@@ -44,13 +42,8 @@ public class SBRTask extends JCTaskBase {
 	private final Dimension screenSize;
 	private final Insets insetSize;
 
-
-	private JClient client;
-	private final JBean bean;
-
 	public SBRTask(JClient client) {
-		this.client = client;
-		this.bean = client.getBean();
+		super(client);
 		this.window = new JFrame();
 		this.imgJPanel = new ImageJPanel();
 		this.screenSize = window.getToolkit().getScreenSize();
