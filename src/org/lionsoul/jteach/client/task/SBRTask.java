@@ -55,6 +55,7 @@ public class SBRTask extends JCTaskBase {
 		this.imgJPanel = new ImageJPanel();
 		this.screenSize = window.getToolkit().getScreenSize();
 		this.insetSize = window.getToolkit().getScreenInsets(window.getGraphicsConfiguration());
+		initGUI();
 	}
 
 	private void initGUI() {

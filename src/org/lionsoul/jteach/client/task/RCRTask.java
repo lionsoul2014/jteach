@@ -19,7 +19,6 @@ import org.lionsoul.jteach.util.JCmdTools;
  */
 public class RCRTask extends JCTaskBase {
 	
-	private int TStatus = T_RUN;
 	private static final Runtime run = Runtime.getRuntime();
 	private static final Log log = Log.getLogger(RCRTask.class);
 
@@ -123,10 +122,8 @@ public class RCRTask extends JCTaskBase {
 				log.warn("bean.take were interrupted");
 			}
 		}
-
 		client.resetJCTask();
 		client.notifyCmdMonitor();
-		client.setTipInfo("RCMD Execute Thread Is Overed!");
 	}
 
 }

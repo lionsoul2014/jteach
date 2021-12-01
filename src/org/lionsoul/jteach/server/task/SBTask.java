@@ -3,9 +3,7 @@ package org.lionsoul.jteach.server.task;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
@@ -18,23 +16,19 @@ import org.lionsoul.jteach.server.JServer;
  * Broadcast Sender Task.
  * @author chenxin - chenxin619315@gmail.com
  */
-public class SBTask implements JSTaskInterface,Runnable {
+public class SBTask extends JSTaskBase {
 	
 	public static final String START_TIP = "Broadcast Thread Is Started.(Run stop To Stop It)";
 	public static final String STOPING_TIP = "Broadcast Thread Is Stoping...";
 	public static final String STOPED_TIP = "Broadcast Thread Is Stoped.";
-	public static final String THREAD_NUMBER_TIP = "Thread Numbers: ";
 	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
 	public static final Log log = Log.getLogger(SBTask.class);
 
-	private volatile int TStatus = T_RUN;
-
 	private final Robot robot;
-	private final List<JBean> beanList;
 
 	public SBTask(JServer server) throws AWTException {
+		super(server);
 		robot = new Robot();
-		beanList = Collections.synchronizedList(server.copyBeanList());
 	}
 
 	@Override
@@ -81,7 +75,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 	@Override
 	public void stop() {
 		System.out.println(STOPING_TIP);
-		setTSTATUS(T_STOP);
+		setStatus(T_STOP);
 
 		// send broadcast stop cmd to all the beans;
 		final Iterator<JBean> it = beanList.iterator();
@@ -101,7 +95,7 @@ public class SBTask implements JSTaskInterface,Runnable {
 	@Override
 	public void run() {
 		// BufferedImage B_IMG = null;
-		while ( getTSTATUS() == T_RUN ) {
+		while ( getStatus() == T_RUN ) {
 			//load img
 			final BufferedImage img = robot.createScreenCapture(
 				new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height)
@@ -155,14 +149,6 @@ public class SBTask implements JSTaskInterface,Runnable {
 				e.printStackTrace();
 			}
 		}
-	}
-
-	public synchronized int getTSTATUS() {
-		return TStatus;
-	}
-	
-	public synchronized void setTSTATUS(int s) {
-		TStatus = s;
 	}
 
 }

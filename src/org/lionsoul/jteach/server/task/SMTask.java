@@ -10,7 +10,6 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
-import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -30,9 +29,7 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
@@ -54,9 +51,8 @@ import org.lionsoul.jteach.util.JTeachIcon;
  * Image receive thread for Screen monitor
  * @author chenxin - chenxin619315@gmail.com
  */
-public class SMTask extends JFrame implements JSTaskInterface,Runnable {
+public class SMTask extends JSTaskBase {
 
-	private static final long serialVersionUID = 1L;
 	public static final String W_TITLE = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From JBean";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
@@ -65,43 +61,46 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 
 	public static Point MOUSE_POS = null;
 
-	private int TStatus = T_RUN;
+	private final JFrame window;
+	private final ImageJPanel map;
 
-	private final JServer server;
 	private JBean bean = null;		// monitor machine
-	private final List<JBean> beanList;
-
 	private DataInputStream reader = null;
 	private volatile BufferedImage B_IMG = null;
 
-	private final ImageJPanel map;
 	private Dimension MAP_SIZE = null;
 	private RMIInterface RMIInstance = null;
 	private String control = null;
 	private String broadcast = null;
 	
 	public SMTask(JServer server) {
-		this.setTitle(W_TITLE);
-		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		final Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
-		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		final Dimension wSize = new Dimension(screenSize.width, screenSize.height - screenInsets.bottom - screenInsets.top);
-		this.setSize(wSize);
-		setLayout(new BorderLayout());
-		Container c = getContentPane();
-		
-		//add the map to the JScrollPane
+		super(server);
+		this.window = new JFrame();
 		this.map = new ImageJPanel();
+		initGUI();
+	}
+
+	private void initGUI() {
+		window.setTitle(W_TITLE);
+		window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		final Insets screenInsets = window.getToolkit().getScreenInsets(window.getGraphicsConfiguration());
+		final Dimension screenSize = window.getToolkit().getScreenSize();
+		final Dimension wSize = new Dimension(screenSize.width, screenSize.height - screenInsets.bottom - screenInsets.top);
+		window.setSize(wSize);
+		window.setLayout(new BorderLayout());
+		final Container c = window.getContentPane();
+
+		//add the map to the JScrollPane
 		JScrollPane vBox = new JScrollPane(map);
 		vBox.setSize(wSize);
 		vBox.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		vBox.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		
+
 		c.add(vBox, BorderLayout.CENTER);
 		//this.setUndecorated(true);
-		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		this.setResizable(false);
-		this.addWindowFocusListener(new WindowFocusListener() {
+		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		window.setResizable(false);
+		window.addWindowFocusListener(new WindowFocusListener() {
 			@Override
 			public void windowGainedFocus(WindowEvent e) {
 				map.requestFocus();
@@ -109,9 +108,6 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			@Override
 			public void windowLostFocus(WindowEvent e) {}
 		});
-
-		this.server = server;
-		this.beanList = Collections.synchronizedList(server.copyBeanList());
 	}
 
 	private void repaintImageJPanel() {
@@ -127,8 +123,8 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 	
 	private void _dispose() {
 		RMIInstance = null;
-		setVisible(false);
-		dispose();
+		window.setVisible(false);
+		window.dispose();
 	}
 	
 	/**
@@ -197,8 +193,8 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 			SwingUtilities.invokeLater(new Runnable(){
 				@Override
 				public void run() {
-					setTitle(W_TITLE+"["+bean.getHost()+"]");
-					setVisible(true);
+					window.setTitle(W_TITLE+"["+bean.getHost()+"]");
+					window.setVisible(true);
 				}
 			});
 		} catch (IllegalAccessException e) {
@@ -228,7 +224,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 
 	@Override
 	public void stop() {
-		setTStatus(T_STOP);
+		setStatus(T_STOP);
 
 		try {
 			bean.offer(Packet.COMMAND_TASK_STOP);
@@ -253,7 +249,7 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 
 	@Override
 	public void run() {
-		while ( getTStatus() == T_RUN ) {
+		while ( getStatus() == T_RUN ) {
 			try {
 				/* load symbol */
 				final Packet p = bean.take();
@@ -439,14 +435,6 @@ public class SMTask extends JFrame implements JSTaskInterface,Runnable {
 				System.out.println("-+**Error: key release execute.");
 			}
 		}
-	}
-
-	private int getTStatus() {
-		return TStatus;
-	}
-	
-	private void setTStatus(int s) {
-		TStatus = s;
 	}
 
 }

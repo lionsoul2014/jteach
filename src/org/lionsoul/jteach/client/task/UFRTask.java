@@ -34,29 +34,26 @@ import org.lionsoul.jteach.util.JCmdTools;
  */
 public class UFRTask extends JCTaskBase {
 	
-	private static final long serialVersionUID = 1L;
 	public static final String W_TILTE = "JTeach - FileUpload";
 	public static final String INFO_LABEL_TEXT = "JTeach> Load File Info From Server.";
 	public static final Dimension W_SIZE = new Dimension(450, 80);
 	private static final Log log = Log.getLogger(UFRTask.class);
 	
-	public static final int P_MIN = 0;
-	public static final int P_MAX = 100;
-
 	private final JFrame window;
-	private JLabel infoLabel = null;
-	private JProgressBar pBar = null;
+	private final JLabel infoLabel;
+	private final JProgressBar pBar;
 	private Thread tThread = null;
-
 
 	private JClient client;
 	private final JBean bean;
 
 	public UFRTask(JClient client) {
-		this.window = new JFrame();
-		initGUI();
 		this.client = client;
 		this.bean = client.getBean();
+		this.window = new JFrame();
+		this.infoLabel = new JLabel(INFO_LABEL_TEXT);
+		this.pBar = new JProgressBar(0, 100);
+		initGUI();
 	}
 	
 	/**
@@ -76,9 +73,8 @@ public class UFRTask extends JCTaskBase {
 		});
 
 		window.setLayout(new BorderLayout());
-		infoLabel.setSize(W_SIZE);
 		Container c = window.getContentPane();
-		infoLabel = new JLabel(INFO_LABEL_TEXT);
+		infoLabel.setSize(W_SIZE);
 		infoLabel.setOpaque(true);
 		infoLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		infoLabel.setBounds(0, 5, window.getWidth(), 30);
@@ -86,7 +82,6 @@ public class UFRTask extends JCTaskBase {
 		infoLabel.setForeground(JClientCfg.TIP_FRON_COLOR);
 		c.add(infoLabel, BorderLayout.CENTER);
 		
-		pBar = new JProgressBar(P_MIN, P_MAX);
 		pBar.setBorder(new LineBorder(Color.ORANGE, 1));
 		pBar.setBackground(Color.WHITE);
 		pBar.setStringPainted(true);
@@ -177,7 +172,7 @@ public class UFRTask extends JCTaskBase {
 				readLen += cp.length;
 
 				//bos.flush();
-				setBarValue((int) (readLen * P_MAX / info.length));
+				setBarValue((int) (readLen * 100 / info.length));
 			}
 
 			bos.flush();

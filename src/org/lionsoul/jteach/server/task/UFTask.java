@@ -6,13 +6,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 
 import javax.swing.JFileChooser;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.FileInfoMessage;
 import org.lionsoul.jteach.msg.Packet;
@@ -26,7 +23,7 @@ import org.lionsoul.jteach.util.JServerLang;
  * list all the online JBeans
  * @author chenxin - chenxin619315@gmail.com
  */
-public class UFTask implements JSTaskInterface,Runnable {
+public class UFTask extends JSTaskBase {
 	
 	public static final String BIS_CREATE_ERROR = "Unable to create FileInputStream.";
 	public static final String FILE_READ_ERROR = "Fail to read byte from file.";
@@ -37,14 +34,9 @@ public class UFTask implements JSTaskInterface,Runnable {
 	public static final Log log = Log.getLogger(UFTask.class);
 	
 	public static final int POINT_LENGTH = 60;
-	private int TStatus = T_RUN;
 
-	private final JServer server;
-	private final List<JBean> beanList;
-	
 	public UFTask(JServer server) {
-		this.server = server;
-		this.beanList = Collections.synchronizedList(server.copyBeanList());
+		super(server);
 	}
 
 	@Override
@@ -66,7 +58,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 	@Override
 	public void stop() {
 		System.out.println(STOPING_TIP);
-		setTSTATUS(T_STOP);
+		setStatus(T_STOP);
 
 		/* send stop command to all the beans */
 		final Iterator<JBean> it = beanList.iterator();
@@ -180,7 +172,7 @@ public class UFTask implements JSTaskInterface,Runnable {
 					System.out.print(".");
 				}
 
-				if ( getTSTATUS() != T_RUN ) {
+				if ( getStatus() != T_RUN ) {
 					break;
 				}
 			}
@@ -204,12 +196,4 @@ public class UFTask implements JSTaskInterface,Runnable {
 		JServerLang.INPUT_ASK();
 	}
 	
-	public synchronized int getTSTATUS() {
-		return TStatus;
-	}
-	
-	public synchronized void setTSTATUS(int s) {
-		TStatus = s;
-	}
-
 }

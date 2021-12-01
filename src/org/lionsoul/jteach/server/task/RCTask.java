@@ -1,9 +1,7 @@
 package org.lionsoul.jteach.server.task;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Scanner;
 
 import org.lionsoul.jteach.log.Log;
@@ -20,17 +18,13 @@ import org.lionsoul.jteach.util.JServerLang;
  *
  * @author chenxin - chenxin619315@gmail.com
  */
-public class RCTask implements JSTaskInterface {
+public class RCTask extends JSTaskBase {
 	
 	public static final String EXIT_CMD_STR = ":exit";
 	public static final Log log = Log.getLogger(SBTask.class);
 
-	private final JServer server;
-	private final List<JBean> beanList;
-
 	public RCTask(JServer server) {
-		this.server = server;
-		beanList = Collections.synchronizedList(server.copyBeanList());
+		super(server);
 	}
 
 	@Override
@@ -83,13 +77,11 @@ public class RCTask implements JSTaskInterface {
 		}
 
 		// return false to notify to stop the JSTask
-		return false;
+		return true;
 	}
 
 	@Override
-	public void stop() {
-		
-	}
+	public void stop() {}
 	
 	/**
 	 * run command to all the online machine 
@@ -197,4 +189,8 @@ public class RCTask implements JSTaskInterface {
 		}
 	}
 
+	@Override
+	public void run() {
+
+	}
 }

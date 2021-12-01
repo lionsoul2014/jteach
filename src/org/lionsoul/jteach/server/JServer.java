@@ -10,7 +10,7 @@ import java.util.*;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
-import org.lionsoul.jteach.server.task.JSTaskInterface;
+import org.lionsoul.jteach.server.task.JSTaskBase;
 import org.lionsoul.jteach.util.JCmdTools;
 import org.lionsoul.jteach.util.JServerLang;
 
@@ -30,7 +30,7 @@ public class JServer {
 	public static final int M_OVER = 0;
 	private int STATE = M_RUN;
 	
-	private volatile JSTaskInterface JSTask = null;
+	private volatile JSTaskBase JSTask = null;
 	private final List<JBean> beanList;
 	private HashMap<String, String> arguments = null;
 
@@ -131,7 +131,7 @@ public class JServer {
 			System.out.printf("try to start task %s\n", classname);
 			Class<?> _class = Class.forName(classname);
 			Constructor<?> con = _class.getConstructor(JServer.class);
-			JSTask = (JSTaskInterface) con.newInstance(this);
+			JSTask = (JSTaskBase) con.newInstance(this);
 			if ( !JSTask.start() ) {
 				stopJSTask();
 			}
