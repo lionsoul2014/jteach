@@ -32,7 +32,7 @@ import org.lionsoul.jteach.util.JCmdTools;
  * 
  * @author  chenxin<chenxin619315@gmail.com>
  */
-public class UFRTask extends JFrame implements JCTaskInterface {
+public class UFRTask extends JCTaskBase {
 	
 	private static final long serialVersionUID = 1L;
 	public static final String W_TILTE = "JTeach - FileUpload";
@@ -42,8 +42,8 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 	
 	public static final int P_MIN = 0;
 	public static final int P_MAX = 100;
-	
-	//private int sTatus = T_RUN;
+
+	private final JFrame window;
 	private JLabel infoLabel = null;
 	private JProgressBar pBar = null;
 	private Thread tThread = null;
@@ -53,20 +53,8 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 	private final JBean bean;
 
 	public UFRTask(JClient client) {
-		this.setTitle(W_TILTE);
-		this.setAlwaysOnTop(true);
-		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		this.addWindowListener(new WindowAdapter(){
-			@Override
-			public void windowClosing(WindowEvent e) {
-				stopCTask();
-			}
-		});
-		this.setResizable(false);
-		this.setSize(W_SIZE);
+		this.window = new JFrame();
 		initGUI();
-		this.setLocationRelativeTo(null);
-
 		this.client = client;
 		this.bean = client.getBean();
 	}
@@ -75,12 +63,25 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 	 * initialize the GUI 
 	 */
 	private void initGUI() {
-		setLayout(new BorderLayout());
-		Container c = getContentPane();
+		window.setTitle(W_TILTE);
+		window.setAlwaysOnTop(true);
+		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		window.setResizable(false);
+		window.setLocationRelativeTo(null);
+		window.addWindowListener(new WindowAdapter(){
+			@Override
+			public void windowClosing(WindowEvent e) {
+				stopCTask();
+			}
+		});
+
+		window.setLayout(new BorderLayout());
+		infoLabel.setSize(W_SIZE);
+		Container c = window.getContentPane();
 		infoLabel = new JLabel(INFO_LABEL_TEXT);
 		infoLabel.setOpaque(true);
 		infoLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		infoLabel.setBounds(0, 5, getWidth(), 30);
+		infoLabel.setBounds(0, 5, window.getWidth(), 30);
 		infoLabel.setBackground(JClientCfg.TIP_BG_COLOR);
 		infoLabel.setForeground(JClientCfg.TIP_FRON_COLOR);
 		c.add(infoLabel, BorderLayout.CENTER);
@@ -105,10 +106,9 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 
 	@Override
 	public void startCTask(String...args) {
-		client.setTipInfo("File Receive Thread Is Working.");
 		SwingUtilities.invokeLater(() -> {
-			setVisible(true);
-			requestFocus();
+			window.setVisible(true);
+			window.requestFocus();
 		});
 
 		tThread = new Thread(this);
@@ -117,12 +117,9 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 
 	@Override
 	public void stopCTask() {
-		SwingUtilities.invokeLater(new Runnable(){
-			@Override
-			public void run() {
-				setVisible(false);
-				dispose();
-			}
+		SwingUtilities.invokeLater(() -> {
+			window.setVisible(false);
+			window.dispose();
 		});
 
 		/*
@@ -136,7 +133,6 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 
 		client.resetJCTask();
 		client.notifyCmdMonitor();
-		client.setTipInfo("File Receive Thread Is Overed!");
 	}
 
 	@Override
@@ -195,7 +191,6 @@ public class UFRTask extends JFrame implements JCTaskInterface {
 			log.warn("bean.take was interrupted");
 		}
 
-		setTipInfo("File receive thread was overed.");
 		stopCTask();
 	}
 

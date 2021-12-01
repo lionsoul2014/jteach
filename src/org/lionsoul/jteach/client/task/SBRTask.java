@@ -24,7 +24,7 @@ import org.lionsoul.jteach.util.JTeachIcon;
  * 
  * @author chenxin<chenxin619315@gmail.com>
  */
-public class SBRTask extends JFrame implements JCTaskInterface {
+public class SBRTask extends JCTaskBase {
 
 	private static final long serialVersionUID = 1L;
 
@@ -38,7 +38,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	public static float BIT = 1;
 	public static Dimension IMG_SIZE = null;
 
-	private int TStatus = T_RUN;
+	private final JFrame window;
 	private final ImageJPanel imgJPanel;
 	private volatile ScreenMessage screen = null;
 	private final Dimension screenSize;
@@ -49,19 +49,26 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	private final JBean bean;
 
 	public SBRTask(JClient client) {
-		this.setTitle(title);
-		this.setUndecorated(true);
-		this.setAlwaysOnTop(true);
-		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		this.screenSize = getToolkit().getScreenSize();
-		this.insetSize = getToolkit().getScreenInsets(getGraphicsConfiguration());
-		this.setSize(screenSize);
+		this.client = client;
+		this.bean = client.getBean();
+		this.window = new JFrame();
+		this.imgJPanel = new ImageJPanel();
+		this.screenSize = window.getToolkit().getScreenSize();
+		this.insetSize = window.getToolkit().getScreenInsets(window.getGraphicsConfiguration());
+	}
+
+	private void initGUI() {
+		window.setTitle(title);
+		window.setUndecorated(true);
+		window.setAlwaysOnTop(true);
+		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		window.setSize(screenSize);
 		// this.setBounds(0, 0, screenSize.width, screenSize.height);
 		// this.setExtendedState(JFrame.MAXIMIZED_VERT);
-		this.setLocationRelativeTo(null);
-		this.setResizable(false);
-		this.setLayout(new BorderLayout());
-		this.addWindowListener(new WindowAdapter() {
+		window.setLocationRelativeTo(null);
+		window.setResizable(false);
+		window.setLayout(new BorderLayout());
+		window.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				/* stop the JCTask and dispose the window */
@@ -69,11 +76,7 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 				//_dispose();
 			}
 		});
-
-		this.client = client;
-		this.bean = client.getBean();
-		imgJPanel = new ImageJPanel();
-		getContentPane().add(imgJPanel, BorderLayout.CENTER);
+		window.getContentPane().add(imgJPanel, BorderLayout.CENTER);
 		log.debug("screen size: {w: %d, h: %d}, insets: {t: %d, r: %d, b: %d, l: %d}\n",
 				screenSize.width, screenSize.height,
 				insetSize.top, insetSize.right, insetSize.bottom, insetSize.left);
@@ -132,29 +135,22 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 	
 	/** dispose the JFrame */
 	public void _dispose() {
-		this.setVisible(false);
+		window.setVisible(false);
 		//dispose();
 	}
 
 	@Override
 	public void startCTask(String...args) {
-		client.setTipInfo("Broadcast Thread Is Working");
 		JBean.threadPool.execute(this);
 		SwingUtilities.invokeLater(() -> {
-			setVisible(true);
-			requestFocus();
+			window.setVisible(true);
+			window.requestFocus();
 		});
 	}
 
 	@Override
-	public void stopCTask() {
-		setTSTATUS(T_STOP);
-		//_dispose();
-	}
-
-	@Override
 	public void run() {
-		while ( getTSTATUS() == T_RUN ) {
+		while ( getStatus() == T_RUN ) {
 			try {
 				final Packet p = bean.take();
 
@@ -196,12 +192,4 @@ public class SBRTask extends JFrame implements JCTaskInterface {
 		client.setTipInfo("Broadcast Thread Is Overed!");
 	}
 	
-	public synchronized void setTSTATUS(int s) {
-		TStatus = s;
-	}
-	
-	public synchronized int getTSTATUS() {
-		return TStatus;
-	}
-
 }

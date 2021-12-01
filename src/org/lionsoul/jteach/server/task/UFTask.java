@@ -12,7 +12,9 @@ import java.util.List;
 
 import javax.swing.JFileChooser;
 
+import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import org.lionsoul.jteach.log.Log;
+import org.lionsoul.jteach.msg.FileInfoMessage;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
@@ -35,7 +37,6 @@ public class UFTask implements JSTaskInterface,Runnable {
 	public static final Log log = Log.getLogger(UFTask.class);
 	
 	public static final int POINT_LENGTH = 60;
-	private File file = null;
 	private int TStatus = T_RUN;
 
 	private final JServer server;
@@ -84,21 +85,29 @@ public class UFTask implements JSTaskInterface,Runnable {
 
 	@Override
 	public void run() {
-		JFileChooser chooser = new JFileChooser();
+		final JFileChooser chooser = new JFileChooser();
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(false);
-		int _result = chooser.showOpenDialog(null);
+		final int _result = chooser.showOpenDialog(null);
 		if ( _result != JFileChooser.APPROVE_OPTION ) {
 			server.stopJSTask();
 			return;
 		}
 
 		// create the input stream
-		file = chooser.getSelectedFile();
+		final File file = chooser.getSelectedFile();
 		final BufferedInputStream bis;
 		try {
 			bis = new BufferedInputStream(new FileInputStream(file));
 		} catch (FileNotFoundException e) {
+			return;
+		}
+
+		final Packet p;
+		try {
+			p = new FileInfoMessage(file.length(), file.getName()).encode();
+		} catch (IOException e) {
+			log.error("failed to encode the file info message {%s, %d}", file.getName(), file.length());
 			return;
 		}
 
@@ -109,12 +118,10 @@ public class UFTask implements JSTaskInterface,Runnable {
 				final JBean b = it.next();
 				try {
 					b.offer(Packet.COMMAND_UPLOAD_START);
-					b.offer(Packet.valueOf(file.getName(), file.length()));
+					b.offer(p);
 				} catch (IllegalAccessException e) {
 					b.reportClosedError();
 					it.remove();
-				} catch (IOException e) {
-					e.printStackTrace();
 				}
 			}
 		}

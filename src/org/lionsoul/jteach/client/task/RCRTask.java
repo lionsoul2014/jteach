@@ -17,7 +17,7 @@ import org.lionsoul.jteach.util.JCmdTools;
  * remote command execute handler class
  * @author chenxin - chenxin619315@gmail.com
  */
-public class RCRTask implements JCTaskInterface {
+public class RCRTask extends JCTaskBase {
 	
 	private int TStatus = T_RUN;
 	private static final Runtime run = Runtime.getRuntime();
@@ -40,18 +40,12 @@ public class RCRTask implements JCTaskInterface {
 			cmd = JCmdTools.COMMAND_RCMD_ALL_EXECUTION;
 		}
 
-		client.setTipInfo("RCMD Execute Thread Is Working.");
 		JBean.threadPool.execute(this);
 	}
 
 	@Override
-	public void stopCTask() {
-		setTStatus(T_STOP);
-	}
-
-	@Override
 	public void run() {
-		while ( getTStatus() == T_RUN ) {
+		while ( getStatus() == T_RUN ) {
 			try {
 				/* load a packet */
 				final Packet p = bean.take();
@@ -133,14 +127,6 @@ public class RCRTask implements JCTaskInterface {
 		client.resetJCTask();
 		client.notifyCmdMonitor();
 		client.setTipInfo("RCMD Execute Thread Is Overed!");
-	}
-
-	private synchronized void setTStatus( int t ) {
-		TStatus = t;
-	}
-	
-	private synchronized int getTStatus() {
-		return TStatus;
 	}
 
 }

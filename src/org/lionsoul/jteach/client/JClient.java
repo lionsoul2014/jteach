@@ -1,9 +1,6 @@
 package org.lionsoul.jteach.client;
 
 import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -26,7 +23,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import org.lionsoul.jteach.client.task.JCTaskInterface;
+import org.lionsoul.jteach.client.task.JCTaskBase;
 import org.lionsoul.jteach.client.task.RCRTask;
 import org.lionsoul.jteach.client.task.SBRTask;
 import org.lionsoul.jteach.client.task.SMSTask;
@@ -64,7 +61,7 @@ public class JClient extends JFrame implements Runnable {
 
 	private int T_STATUS = T_RUN;
 	private volatile JBean bean = null;
-	private volatile JCTaskInterface JCTask = null;
+	private volatile JCTaskBase JCTask = null;
 
 	private JClient() {
 		this.setTitle(JClientCfg.W_TITLE);
@@ -329,7 +326,9 @@ public class JClient extends JFrame implements Runnable {
 				if (p.isCommand(JCmdTools.COMMAND_BROADCAST_START)) {
 					setTStatus(T_STOP);
 					JCTask = new SBRTask(this);
+					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
 					JCTask.startCTask();
+					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
 				/*
@@ -341,7 +340,9 @@ public class JClient extends JFrame implements Runnable {
 				else if (p.isCommand(JCmdTools.COMMAND_UPLOAD_START)) {
 					setTStatus(T_STOP);
 					JCTask = new UFRTask(this);
+					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
 					JCTask.startCTask();
+					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
 				/*
@@ -351,7 +352,9 @@ public class JClient extends JFrame implements Runnable {
 				 */
 				else if (p.isCommand(JCmdTools.COMMAND_SCREEN_MONITOR)) {
 					JCTask = new SMSTask(this);
+					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
 					JCTask.startCTask();
+					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
 				/*
@@ -364,7 +367,9 @@ public class JClient extends JFrame implements Runnable {
 						JCmdTools.COMMAND_RCMD_SINGLE_EXECUTION)) {
 					setTStatus(T_STOP);
 					JCTask = new RCRTask(this);
+					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
 					JCTask.startCTask(p.isCommand(JCmdTools.COMMAND_RCMD_ALL_EXECUTION) ? "all" : "single");
+					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
 				/*
@@ -376,6 +381,7 @@ public class JClient extends JFrame implements Runnable {
 				else if (p.isCommand(JCmdTools.COMMAND_TASK_STOP)) {
 					if (JCTask != null) {
 						JCTask.stopCTask();
+						log.debug("task %s stopped by command %s", JCTask.getClass().getName(), p.cmd);
 						JCTask = null;
 					}
 				}

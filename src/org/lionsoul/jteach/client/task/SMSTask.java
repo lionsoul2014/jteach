@@ -18,7 +18,7 @@ import org.lionsoul.jteach.msg.ScreenMessage;
  * 
  * @author chenxin - chenxin619315@gmail.com
  */
-public class SMSTask implements JCTaskInterface {
+public class SMSTask extends JCTaskBase {
 	
 	private static final Log log = Log.getLogger(SMSTask.class);
 
@@ -46,19 +46,12 @@ public class SMSTask implements JCTaskInterface {
 	@Override
 	public void startCTask(String...args) {
 		JBean.threadPool.execute(this);
-		client.setTipInfo("Screen Monitor Thread Is Working.");
 	}
 
 	@Override
-	public void stopCTask() {
-		setTStatus(T_STOP);
-		client.setTipInfo("Screen Monitor Thread Is Overed.");
-	}
-	
-	@Override
 	public void run() {
 		// BufferedImage B_IMG = null;
-		while ( getTStatus() == T_RUN ) {
+		while ( getStatus() == T_RUN ) {
 			try {
 				/* get the screen image */
 				final BufferedImage img = robot.createScreenCapture(screenSize);
@@ -92,14 +85,6 @@ public class SMSTask implements JCTaskInterface {
 				break;
 			}
 		}
-	}
-	
-	public synchronized void setTStatus(int t) {
-		TStatus = t;
-	}
-	
-	public synchronized  int getTStatus() {
-		return TStatus;
 	}
 
 }
