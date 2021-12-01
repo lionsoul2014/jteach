@@ -45,23 +45,6 @@ public class JServerLang {
 		System.out.print("JTeach#RC>> ");
 	}
 
-	public static final void SERVER_ACCEPT_ERROR() {
-		System.out.println("Server Monitor Error, Please Restart Program.");
-	}
-	
-	public static final void UNKNOW_COMMAND() {
-		System.out.println("Unknow Command!");
-	}
-	
-	public static final void PROGRAM_OVERED() {
-		System.out.println("Bye!");
-	}
-	
-	
-	public static final void EMPTY_JBENAS() {
-		System.out.println("Empty Set.");
-	}
-	
 	/**
 	 * remove 
 	 */

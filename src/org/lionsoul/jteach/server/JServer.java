@@ -18,7 +18,7 @@ import org.lionsoul.jteach.util.JServerLang;
  * JTeach Server
  * @author chenxin<chenxin619315@gmail.com>
  */
-public class JServer {
+public class JServer implements Runnable {
 
 	/* Server port */
 	public static int PORT = 55535;
@@ -66,7 +66,7 @@ public class JServer {
 	}
 	
 	/** run command */
-	public void _CmdLoader() {
+	public void cmdLoader() {
 		String line, _input;
 		final Scanner reader = new Scanner(System.in);
 		do {
@@ -94,8 +94,7 @@ public class JServer {
 				/* show the function menu of JTeach */
 				JCmdTools.showCmdMenu();
 			} else if ( _input.equals(JCmdTools.STOP) ) {
-				/* stop the current JSTask working thread
-				 * and reset the JSTask */
+				/* stop and reset the current working JSTask */
 				if ( JSTask == null ) {
 					System.out.println("no active task running, run menu for help");
 				} else {
@@ -108,7 +107,7 @@ public class JServer {
 			} else if ( _input.equals(JCmdTools.EXIT) ) {
 				exit();
 			} else {
-				JServerLang.UNKNOW_COMMAND();
+				System.out.printf("Invalid command %s\n", _input);
 			}
 		} while ( true);
 	}
@@ -116,12 +115,12 @@ public class JServer {
 	/* Find And Load The Task Class */
 	private void _runJSTask(String cmd) {
 		if ( JSTask != null ) {
-			System.out.printf("JSTask %s is running, run stop before continue task %s\n", JSTask.getClass().getName(), cmd);
+			System.out.printf("task %s is running, run stop before continue command %s\n", JSTask.getClass().getName(), cmd);
 			return;
 		}
 
 		if ( beanList.size() == 0 ) {
-			JServerLang.EMPTY_JBENAS();
+			System.out.printf("empty client list");
 			return;
 		}
 
@@ -141,40 +140,38 @@ public class JServer {
 	}
 	
 	/** Start Listening Thread */
-	public void StartMonitorThread() {
+	public void startMonitorThread() {
 		if (server != null) {
-			JBean.threadPool.execute(new ConnectMonitor());
+			JBean.threadPool.execute(this);
 		}
 	}
 	
-	/** Listening Task inner class */
-	private class ConnectMonitor implements Runnable {
-		@Override
-		public void run() {
-			while ( getRunState() == M_RUN ) {
-				try {
-					final Socket s = server.accept();
+	/* Listening task */
+	@Override
+	public void run() {
+		while ( getRunState() == M_RUN ) {
+			try {
+				final Socket s = server.accept();
 
-					/*
-					 * get a Socket from the Socket Queue
-					 * and create new JBean Object to manager it */
-					final JBean bean = new JBean(s);
-					beanList.add(bean);
-					bean.start();
-					log.debug("new client %s connected", bean.getName());
+				/*
+				 * get a Socket from the Socket Queue
+				 * and create new JBean Object to manager it */
+				final JBean bean = new JBean(s);
+				beanList.add(bean);
+				bean.start();
+				log.debug("new client %s connected", bean.getName());
 
-					/* check and add the new client to the running task */
-					if (JSTask != null) {
-						JSTask.addClient(bean);
-					}
-				} catch (IOException e) {
-					JServerLang.SERVER_ACCEPT_ERROR();
-					break;
+				/* check and add the new client to the running task */
+				if (JSTask != null) {
+					JSTask.addClient(bean);
 				}
+			} catch (IOException e) {
+				log.error("server monitor thread stopped due to %s", e.getClass());
+				break;
 			}
 		}
 	}
-	
+
 	/**
 	 * exit the program 
 	 * if EXIT_CLOSE_KEY is pass.
@@ -196,7 +193,7 @@ public class JServer {
 			}
 		}
 
-		JServerLang.PROGRAM_OVERED();
+		System.out.println("Thank you for using jteach, bye!");
 		System.exit(0);
 	}
 	
@@ -328,9 +325,9 @@ public class JServer {
 
 		final JServer server = new JServer();
 		server.initServer();
-		server.StartMonitorThread();
+		server.startMonitorThread();
 		JCmdTools.showCmdMenu();
-		server._CmdLoader();
+		server.cmdLoader();
 	}
 
 }
