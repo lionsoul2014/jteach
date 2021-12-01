@@ -97,7 +97,7 @@ public class JServer {
 				/* stop the current JSTask working thread
 				 * and reset the JSTask */
 				if ( JSTask == null ) {
-					JServerLang.STOP_NULL_THREAD();
+					System.out.println("no active task running, run menu for help");
 				} else {
 					JSTask.stop();
 					JSTask = null;
@@ -116,7 +116,7 @@ public class JServer {
 	/* Find And Load The Task Class */
 	private void _runJSTask(String cmd) {
 		if ( JSTask != null ) {
-			JServerLang.START_THREAD_RUNNING();
+			System.out.printf("JSTask %s is running, run stop before continue task %s\n", JSTask.getClass().getName(), cmd);
 			return;
 		}
 
@@ -203,7 +203,7 @@ public class JServer {
 	/** remove all/ JBean */
 	private void delete() {
 		if ( JSTask != null ) {
-			JServerLang.START_THREAD_RUNNING();
+			System.out.printf("JSTask %s is running, run stop first\n", JSTask.getClass().getName());
 			return;
 		}
 

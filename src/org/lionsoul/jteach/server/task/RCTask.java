@@ -82,8 +82,8 @@ public class RCTask implements JSTaskInterface {
 			}
 		}
 
-		log.debug("remote command execute thread is stopped.");
-		return true;
+		// return false to notify to stop the JSTask
+		return false;
 	}
 
 	@Override

@@ -44,15 +44,7 @@ public class JServerLang {
 	public static final void RCMD_INPUT_ASK() {
 		System.out.print("JTeach#RC>> ");
 	}
-	
-	public static final void START_THREAD_RUNNING() {
-		System.out.println("A JSTask Thread Is Working, Run Stop To Stop It First.");
-	}
 
-	public static final void STOP_NULL_THREAD() {
-		System.out.println("No JSTask Thread Is Working.");
-	}
-	
 	public static final void SERVER_ACCEPT_ERROR() {
 		System.out.println("Server Monitor Error, Please Restart Program.");
 	}
