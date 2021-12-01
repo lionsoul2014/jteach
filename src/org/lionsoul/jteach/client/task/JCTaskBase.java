@@ -8,7 +8,8 @@ public abstract class JCTaskBase implements Runnable {
 	public static final int T_RUN = 1;
 	public static final int T_STOP = 0;
 
-	protected volatile int status;
+	/** task running status and default it to T_RUN */
+	protected volatile int status = T_RUN;
 
 	/** start the working Task */
 	public abstract void startCTask(String...args);
