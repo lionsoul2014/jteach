@@ -32,7 +32,7 @@ public class RCRTask extends JCTaskBase {
 	}
 
 	@Override
-	public void startCTask(String...args) {
+	public void start(String...args) {
 		if (args.length > 0 && "single".equals(args[0])) {
 			cmd = JCmdTools.COMMAND_RCMD_SINGLE_EXECUTION;
 		} else {

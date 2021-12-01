@@ -12,10 +12,10 @@ public abstract class JCTaskBase implements Runnable {
 	protected volatile int status = T_RUN;
 
 	/** start the working Task */
-	public abstract void startCTask(String...args);
+	public abstract void start(String...args);
 	
 	/** stop the working Task */
-	public void stopCTask() {
+	public void stop() {
 		setStatus(T_STOP);
 	}
 

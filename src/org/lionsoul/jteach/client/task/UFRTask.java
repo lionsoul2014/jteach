@@ -68,7 +68,7 @@ public class UFRTask extends JCTaskBase {
 		window.addWindowListener(new WindowAdapter(){
 			@Override
 			public void windowClosing(WindowEvent e) {
-				stopCTask();
+				stop();
 			}
 		});
 
@@ -100,7 +100,7 @@ public class UFRTask extends JCTaskBase {
 	}
 
 	@Override
-	public void startCTask(String...args) {
+	public void start(String...args) {
 		SwingUtilities.invokeLater(() -> {
 			window.setVisible(true);
 			window.requestFocus();
@@ -111,7 +111,7 @@ public class UFRTask extends JCTaskBase {
 	}
 
 	@Override
-	public void stopCTask() {
+	public void stop() {
 		SwingUtilities.invokeLater(() -> {
 			window.setVisible(false);
 			window.dispose();
@@ -140,7 +140,7 @@ public class UFRTask extends JCTaskBase {
 				info = FileInfoMessage.decode(p);
 			} catch (IOException e) {
 				log.error("failed to decode the file info message");
-				stopCTask();
+				stop();
 				return;
 			}
 
@@ -186,7 +186,7 @@ public class UFRTask extends JCTaskBase {
 			log.warn("bean.take was interrupted");
 		}
 
-		stopCTask();
+		stop();
 	}
 
 }

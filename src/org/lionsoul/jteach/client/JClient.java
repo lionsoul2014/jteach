@@ -328,7 +328,7 @@ public class JClient extends JFrame implements Runnable {
 					setTStatus(T_STOP);
 					JCTask = new SBRTask(this);
 					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
-					JCTask.startCTask();
+					JCTask.start();
 					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
@@ -342,7 +342,7 @@ public class JClient extends JFrame implements Runnable {
 					setTStatus(T_STOP);
 					JCTask = new UFRTask(this);
 					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
-					JCTask.startCTask();
+					JCTask.start();
 					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
@@ -354,7 +354,7 @@ public class JClient extends JFrame implements Runnable {
 				else if (p.isCommand(JCmdTools.COMMAND_SCREEN_MONITOR)) {
 					JCTask = new SMSTask(this);
 					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
-					JCTask.startCTask();
+					JCTask.start();
 					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
@@ -369,7 +369,7 @@ public class JClient extends JFrame implements Runnable {
 					setTStatus(T_STOP);
 					JCTask = new RCRTask(this);
 					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
-					JCTask.startCTask(p.isCommand(JCmdTools.COMMAND_RCMD_ALL_EXECUTION) ? "all" : "single");
+					JCTask.start(p.isCommand(JCmdTools.COMMAND_RCMD_ALL_EXECUTION) ? "all" : "single");
 					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
@@ -381,7 +381,7 @@ public class JClient extends JFrame implements Runnable {
 				 */
 				else if (p.isCommand(JCmdTools.COMMAND_TASK_STOP)) {
 					if (JCTask != null) {
-						JCTask.stopCTask();
+						JCTask.stop();
 						log.debug("task %s stopped by command %s", JCTask.getClass().getName(), p.cmd);
 						JCTask = null;
 					}

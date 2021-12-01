@@ -141,7 +141,7 @@ public class SBRTask extends JCTaskBase {
 	}
 
 	@Override
-	public void startCTask(String...args) {
+	public void start(String...args) {
 		JBean.threadPool.execute(this);
 		SwingUtilities.invokeLater(() -> {
 			window.setVisible(true);
