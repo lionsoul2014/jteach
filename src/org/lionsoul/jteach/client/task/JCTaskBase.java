@@ -2,7 +2,6 @@ package org.lionsoul.jteach.client.task;
 
 import org.lionsoul.jteach.client.JClient;
 import org.lionsoul.jteach.msg.JBean;
-import org.lionsoul.jteach.util.JCmdTools;
 
 /**
  * Task Interface for JTeach Client

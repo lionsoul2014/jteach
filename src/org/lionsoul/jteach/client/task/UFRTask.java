@@ -21,7 +21,6 @@ import javax.swing.filechooser.FileSystemView;
 import org.lionsoul.jteach.client.JClient;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.FileInfoMessage;
-import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.util.JClientCfg;
 import org.lionsoul.jteach.util.JCmdTools;
