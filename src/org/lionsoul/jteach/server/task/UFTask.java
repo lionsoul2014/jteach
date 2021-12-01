@@ -192,7 +192,7 @@ public class UFTask extends JSTaskBase {
 		}
 
 		server.stopJSTask();
-		JServerLang.INPUT_ASK();
+		JServer.printInputAsk();
 	}
 	
 }
