@@ -173,7 +173,14 @@ public class RCTask implements JSTaskInterface {
 			bean.offer(Packet.valueOf(line));
 
 			/* get and print the execution response */
-			final Packet p = bean.poll();
+			final Packet p;
+			try {
+				p = bean.take();
+			} catch (InterruptedException e) {
+				log.warn("client %s message take was interrupted", bean.getName());
+				continue;
+			}
+
 			final StringMessage msg;
 			try {
 				msg = StringMessage.decode(p);

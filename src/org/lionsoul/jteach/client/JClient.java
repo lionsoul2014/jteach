@@ -135,13 +135,8 @@ public class JClient extends JFrame implements Runnable {
 		JButton aboutButton = new JButton(JClientCfg.ABOUT_BUTTON_TEXT);
 		aboutButton.setBounds(200, 125, 100, 24);
 		c.add(aboutButton);
-		aboutButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showMessageDialog(null, JClientCfg.ABOUT_INFO, "JTeach:",
-						JOptionPane.INFORMATION_MESSAGE);
-			}
-		});
+		aboutButton.addActionListener(e -> JOptionPane.showMessageDialog(null,
+				JClientCfg.ABOUT_INFO, "JTeach:", JOptionPane.INFORMATION_MESSAGE));
 	}
 	
 	public JButton getConnectionJButton() {
@@ -199,7 +194,7 @@ public class JClient extends JFrame implements Runnable {
 				JOptionPane.showMessageDialog(null, "rmi register error, but it doesn't matter!");
 				break;
 			} catch (IOException e1) {
-				log.debug("%dth try: failed to connect to server by %s:%d\n", counter, ip, PORT);
+				log.debug("%dth try: failed to connect to server by %s:%d", counter, ip, PORT);
 			}
 
 			if (++counter > 600) {
