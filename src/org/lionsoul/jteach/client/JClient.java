@@ -73,10 +73,11 @@ public class JClient extends JFrame implements Runnable {
 			public void windowIconified(WindowEvent e) {
 			}
 		});
-		setSize(JClientCfg.W_SIZE);
-		setResizable(false);
+
+		this.setSize(JClientCfg.W_SIZE);
+		this.setResizable(false);
+		this.setLocationRelativeTo(null);
 		initGUI();
-		setLocationRelativeTo(null);
 		JCmdTools.getNetInterface();
 	}
 	
@@ -95,7 +96,7 @@ public class JClient extends JFrame implements Runnable {
 		tipLabel.setForeground(JClientCfg.TIP_FRON_COLOR);
 		c.add(tipLabel);
 		
-		//server ip
+		// server ip
 		JLabel serverLable = new JLabel(JClientCfg.SERVER_LABLE_TEXT);
 		serverLable.setBounds(15, 55, 80, 24);
 		serverLable.setFont(JClientCfg.LABLE_FONT);
@@ -107,7 +108,7 @@ public class JClient extends JFrame implements Runnable {
 		serverTextField.addActionListener(e -> getConnectionJButton().doClick());
 		c.add(serverTextField);
 		
-		//server port
+		// server port
 		JLabel portLabel = new JLabel(JClientCfg.PORT_LABLE_TEXT);
 		portLabel.setBounds(15, 90, 80, 24);
 		portLabel.setFont(JClientCfg.LABLE_FONT);
