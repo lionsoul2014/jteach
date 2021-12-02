@@ -40,7 +40,7 @@ public abstract class JCTaskBase implements Runnable {
 	@Override
 	public void run() {
 		log.debug("task %s is running ... ", this.getClass().getName());
-		client.setTipInfo(String.format("Task: %s is running", this.getClass().getSimpleName()));
+		client.setTipInfo(String.format("task %s is now running", this.getClass().getSimpleName()));
 		// 1, run the task
 		_run();
 		// 2, task finished and call the exit callback
