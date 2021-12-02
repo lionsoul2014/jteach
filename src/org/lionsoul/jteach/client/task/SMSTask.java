@@ -8,7 +8,6 @@ import javax.swing.JOptionPane;
 
 import org.lionsoul.jteach.client.JClient;
 import org.lionsoul.jteach.log.Log;
-import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
 
@@ -39,12 +38,12 @@ public class SMSTask extends JCTaskBase {
 	}
 
 	@Override
-	public void start(String...args) {
-		JBean.threadPool.execute(this);
+	public boolean _before(String...args) {
+		return true;
 	}
 
 	@Override
-	public void run() {
+	public void _run() {
 		// BufferedImage B_IMG = null;
 		while ( getStatus() == T_RUN ) {
 			try {

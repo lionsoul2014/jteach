@@ -21,8 +21,38 @@ public abstract class JCTaskBase implements Runnable {
 		this.bean = client.getBean();
 	}
 
+	/** initialize worker */
+	protected boolean _before(String... args) {
+		return true;
+	}
+
+	/** do the specified worker */
+	protected abstract void _run();
+
+	/** task overed callback */
+	protected void onExit() {
+		client.resetJCTask();
+		client.notifyCmdMonitor();
+	}
+
+	@Override
+	public void run() {
+		// 1, run the task
+		_run();
+		// 2, task finished and call the exit callback
+		onExit();
+	}
+
 	/** start the working Task */
-	public abstract void start(String...args);
+	public boolean start(String... args) {
+		// run the before initialize worker
+		if (!_before(args)) {
+			return false;
+		}
+
+		JBean.threadPool.execute(this);
+		return true;
+	}
 	
 	/** stop the working Task */
 	public void stop() {

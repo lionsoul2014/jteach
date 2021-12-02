@@ -126,24 +126,18 @@ public class SBRTask extends JCTaskBase {
 	private void repaintImageJPanel() {
 		SwingUtilities.invokeLater(() -> imgJPanel.repaint());
 	}
-	
-	/** dispose the JFrame */
-	public void _dispose() {
-		window.setVisible(false);
-		//dispose();
-	}
 
 	@Override
-	public void start(String...args) {
-		JBean.threadPool.execute(this);
+	public boolean _before(String...args) {
 		SwingUtilities.invokeLater(() -> {
 			window.setVisible(true);
 			window.requestFocus();
 		});
+		return true;
 	}
 
 	@Override
-	public void run() {
+	public void _run() {
 		while ( getStatus() == T_RUN ) {
 			try {
 				final Packet p = bean.take();
@@ -178,12 +172,15 @@ public class SBRTask extends JCTaskBase {
 				log.warn("bean.take was interrupted");
 			}
 		}
-		
-		//dispose the JFrame
-		_dispose();
-		client.resetJCTask();
-		client.notifyCmdMonitor();
-		client.setTipInfo("Broadcast Thread Is Overed!");
 	}
-	
+
+	@Override
+	public void onExit() {
+		SwingUtilities.invokeLater(() -> {
+			window.setVisible(false);
+			window.dispose();
+		});
+		super.onExit();
+	}
+
 }

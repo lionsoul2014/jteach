@@ -91,38 +91,16 @@ public class UFRTask extends JCTaskBase {
 	}
 
 	@Override
-	public void start(String...args) {
+	public boolean _before(String...args) {
 		SwingUtilities.invokeLater(() -> {
 			window.setVisible(true);
 			window.requestFocus();
 		});
-
-		tThread = new Thread(this);
-		tThread.start();
+		return true;
 	}
 
 	@Override
-	public void stop() {
-		SwingUtilities.invokeLater(() -> {
-			window.setVisible(false);
-			window.dispose();
-		});
-
-		/*
-		 * when client mean to exit the file receive thread
-		 * the byte[] load thread must be over at the same time
-		 * tThread.interrupt could finish this
-		 */
-		if ( tThread != null ) {
-			tThread.interrupt();
-		}
-
-		client.resetJCTask();
-		client.notifyCmdMonitor();
-	}
-
-	@Override
-	public void run() {
+	public void _run() {
 		FileSystemView fsv = FileSystemView.getFileSystemView();
 		try {
 			final Packet p = bean.take();
@@ -145,10 +123,9 @@ public class UFRTask extends JCTaskBase {
 			 * then put them in bos BufferedOutputStream for to save them in file */
 			long readLen = 0;
 			while (readLen < info.length) {
-				/* could exit the loop through thread.interrupt) */
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e) {
+				/* check the running status */
+				if (getStatus() == T_STOP) {
+					log.debug("task stop");
 					break;
 				}
 
@@ -176,8 +153,15 @@ public class UFRTask extends JCTaskBase {
 		} catch (InterruptedException e) {
 			log.warn("bean.take was interrupted");
 		}
+	}
 
-		stop();
+	@Override
+	public void onExit() {
+		SwingUtilities.invokeLater(() -> {
+			window.setVisible(false);
+			window.dispose();
+		});
+		super.onExit();
 	}
 
 }

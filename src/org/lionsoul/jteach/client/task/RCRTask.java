@@ -29,18 +29,17 @@ public class RCRTask extends JCTaskBase {
 	}
 
 	@Override
-	public void start(String...args) {
+	public boolean _before(String...args) {
 		if (args.length > 0 && "single".equals(args[0])) {
 			cmd = CmdUtil.COMMAND_RCMD_SINGLE_EXECUTION;
 		} else {
 			cmd = CmdUtil.COMMAND_RCMD_ALL_EXECUTION;
 		}
-
-		JBean.threadPool.execute(this);
+		return true;
 	}
 
 	@Override
-	public void run() {
+	public void _run() {
 		while ( getStatus() == T_RUN ) {
 			try {
 				/* load a packet */
@@ -119,8 +118,6 @@ public class RCRTask extends JCTaskBase {
 				log.warn("bean.take were interrupted");
 			}
 		}
-		client.resetJCTask();
-		client.notifyCmdMonitor();
 	}
 
 }
