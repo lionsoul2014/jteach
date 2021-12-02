@@ -66,7 +66,7 @@ public class JServer implements Runnable {
 		}
 	}
 	
-	/** reset JSTask */
+	/** stop the current running JSTask */
 	public void stopJSTask() {
 		if (JSTask != null) {
 			JSTask.stop();
@@ -74,9 +74,23 @@ public class JServer implements Runnable {
 		}
 	}
 
+	/** reset the JSTask */
+	public void resetJSTask() {
+		JSTask = null;
+	}
+
 	public static final void printInputAsk() {
 		System.out.print("JTeach>> ");
 	}
+
+	public static final void setTipInfo(String format, Object... args) {
+		final StringBuffer sb = new StringBuffer();
+		sb.append("\n");
+		sb.append(String.format(format, args));
+		sb.append("\n");
+		System.out.print(sb);
+	}
+
 
 	/** run command */
 	public void cmdLoader() {

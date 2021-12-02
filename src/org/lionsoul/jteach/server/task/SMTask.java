@@ -142,12 +142,7 @@ public class SMTask extends JSTaskBase {
 	}
 
 	@Override
-	public void addClient(JBean bean) {
-
-	}
-	
-	@Override
-	public boolean start() {
+	public boolean _before() {
 		String str = server.getArguments().get(CmdUtil.SCREEN_MONITOR_KEY);
 		if ( str == null ) {
 			System.out.println("-+-i : Integer: Monitor the specifier client's screen");
@@ -223,31 +218,17 @@ public class SMTask extends JSTaskBase {
 
 	@Override
 	public void stop() {
-		setStatus(T_STOP);
-
 		try {
 			bean.offer(Packet.COMMAND_TASK_STOP);
 		} catch (IllegalAccessException e) {
 			bean.reportClosedError();
 		}
-		
-		// send stop symbol
-		final Iterator<JBean> it = beanList.iterator();
-		while (it.hasNext()) {
-			final JBean b = it.next();
-			try {
-				b.offer(Packet.COMMAND_TASK_STOP);
-			} catch (IllegalAccessException e) {
-				b.reportClosedError();
-				it.remove();
-			}
-		}
 
-		log.info("screen monitor thread stopped!");
+		super.stop();
 	}
 
 	@Override
-	public void run() {
+	public void _run() {
 		while ( getStatus() == T_RUN ) {
 			try {
 				/* load symbol */
@@ -274,6 +255,12 @@ public class SMTask extends JSTaskBase {
 
 		_dispose();
 	}
+
+	public void onExit() {
+		_dispose();
+		super.onExit();
+	}
+
 
 	/** screen image show JPanel */
 	private class ImageJPanel extends JPanel implements

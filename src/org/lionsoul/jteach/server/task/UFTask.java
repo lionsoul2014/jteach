@@ -39,43 +39,17 @@ public class UFTask extends JSTaskBase {
 	}
 
 	@Override
-	public void addClient(JBean bean) {
-		// Ignore the new client bean
-	}
-
-	@Override
-	public boolean start() {
+	public boolean _before() {
 		if (beanList.size() == 0) {
 			log.debug("task abort due to empty client list");
 			return false;
 		}
 
-		JBean.threadPool.execute(this);
 		return true;
 	}
 
 	@Override
-	public void stop() {
-		System.out.println(STOPING_TIP);
-		setStatus(T_STOP);
-
-		/* send stop command to all the beans */
-		final Iterator<JBean> it = beanList.iterator();
-		while (it.hasNext()) {
-			final JBean b = it.next();
-			try {
-				b.offer(Packet.COMMAND_TASK_STOP);
-			} catch (IllegalAccessException e) {
-				b.reportClosedError();
-				it.remove();
-			}
-		}
-
-		System.out.println(STOPED_TIP);
-	}
-
-	@Override
-	public void run() {
+	public void _run() {
 		final JFileChooser chooser = new JFileChooser();
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(false);
@@ -190,9 +164,6 @@ public class UFTask extends JSTaskBase {
 			} catch (IOException e) {
 			}
 		}
-
-		server.stopJSTask();
-		JServer.printInputAsk();
 	}
 	
 }

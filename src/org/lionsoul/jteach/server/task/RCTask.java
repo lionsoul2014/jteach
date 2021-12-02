@@ -22,25 +22,44 @@ public class RCTask extends JSTaskBase {
 	public static final String EXIT_CMD_STR = ":exit";
 	public static final Log log = Log.getLogger(SBTask.class);
 
+	private JBean bean;
 	public RCTask(JServer server) {
 		super(server);
 	}
 
 	@Override
-	public void addClient(JBean bean) {
-		// ignore the new client bean
-	}
-
-	@Override
-	public boolean start() {
-		String str = server.getArguments().get(CmdUtil.RCMD_EXECUTE_KEY);
-		if ( str == null ) {
+	public boolean _before() {
+		final String args = server.getArguments().get(CmdUtil.RCMD_EXECUTE_KEY);
+		if ( args == null ) {
 			System.out.println("-+-i : a/integer: send command to all/ith client");
 			return false;
 		}
-		
+
+		if (args.equals(CmdUtil.COMMAND_RCMD_ALL_EXECUTION)) {
+			bean = null;
+		} else {
+			if (args.matches("^[0-9]{1,}$") == false) {
+				JServer.setTipInfo("invalid index %s for rc command", args);
+				return false;
+			}
+
+			int index = Integer.parseInt(args);
+			if ( index < 0 || index >= server.beanCount() ) {
+				JServer.setTipInfo("index %d out of bounds", index);
+				return false;
+			}
+
+			bean = beanList.get(index);
+		}
+
+		return true;
+	}
+
+	@Override
+	public void _run() {
+
 		/* send command to all the JBeans */
-		if ( str.equals(CmdUtil.RCMD_EXECUTE_VAL) ) {
+		if (bean == null) {
 			// send start symbol
 			final Iterator<JBean> it = beanList.iterator();
 			while (it.hasNext()) {
@@ -54,33 +73,20 @@ public class RCTask extends JSTaskBase {
 			}
 			executeToAll();
 		} else {
-			if (str.matches("^[0-9]{1,}$") == false) {
-				log.error("invalid index %s for rc command", str);
-				return false;
-			}
-
-			int index = Integer.parseInt(str);
-			if ( index < 0 || index >= server.beanCount() ) {
-				log.error("index %d out of bounds", index);
-				return false;
-			}
-
-			final JBean bean = beanList.get(index);
 			try {
 				bean.offer(Packet.COMMAND_RCMD_SINGLE_EXECUTE);
 				execute(bean);
 			} catch (IOException | IllegalAccessException e) {
-				log.error("failed start command execution on bean %s", bean.getHost());
-				return false;
+				JServer.setTipInfo("failed start command execution on bean %s", bean.getHost());
+				return;
 			}
 		}
-
-		// return false to notify to stop the JSTask
-		return true;
 	}
 
 	@Override
-	public void stop() {}
+	public void stop() {
+		// do nothing here
+	}
 	
 	/**
 	 * run command to all the online machine 
@@ -192,8 +198,4 @@ public class RCTask extends JSTaskBase {
 		System.out.print("JTeach#RC>> ");
 	}
 
-	@Override
-	public void run() {
-
-	}
 }

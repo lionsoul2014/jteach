@@ -47,13 +47,11 @@ public class SBTask extends JSTaskBase {
 	}
 
 	@Override
-	public boolean start() {
+	public boolean _before() {
 		if (beanList.size() == 0) {
 			log.debug("empty client list");
 			return false;
 		}
-
-		System.out.println(START_TIP);
 
 		// send broadcast start cmd to all the beans;
 		final Iterator<JBean> it = beanList.iterator();
@@ -67,33 +65,11 @@ public class SBTask extends JSTaskBase {
 			}
 		}
 
-		// start image catch thread
-		JBean.threadPool.execute(this);
 		return true;
 	}
 
 	@Override
-	public void stop() {
-		System.out.println(STOPING_TIP);
-		setStatus(T_STOP);
-
-		// send broadcast stop cmd to all the beans;
-		final Iterator<JBean> it = beanList.iterator();
-		while ( it.hasNext() ) {
-			final JBean bean = it.next();
-			try {
-				bean.offer(Packet.COMMAND_TASK_STOP);
-			} catch (IllegalAccessException e) {
-				bean.reportClosedError();
-				it.remove();
-			}
-		}
-
-		System.out.println(STOPED_TIP);
-	}
-
-	@Override
-	public void run() {
+	public void _run() {
 		// BufferedImage B_IMG = null;
 		while ( getStatus() == T_RUN ) {
 			//load img
