@@ -183,7 +183,7 @@ public class JClient extends JFrame implements Runnable {
 				}
 
 				log.debug("client connected to server %s:%d", ip, PORT);
-				setTipInfo("Connected, Wait Symbol From Server.");
+				setTipInfo("Connected, Waiting symbol from server");
 				break;
 			} catch (UnknownHostException e1) {
 				JOptionPane.showMessageDialog(null, "invalid Server IP.");
@@ -310,6 +310,7 @@ public class JClient extends JFrame implements Runnable {
 			try {
 				/* Message symbol */
 				// bean.getSocket().setSoTimeout(0);
+				setTipInfo("Waiting symbol from server");
 				log.debug("waiting for data packet from server ... ");
 				final Packet p = bean.take();
 				if (p.symbol != CmdUtil.SYMBOL_SEND_CMD) {
@@ -327,9 +328,7 @@ public class JClient extends JFrame implements Runnable {
 				if (p.isCommand(CmdUtil.COMMAND_BROADCAST_START)) {
 					setTStatus(T_STOP);
 					JCTask = new SBRTask(this);
-					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
 					JCTask.start();
-					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
 				/*
@@ -341,9 +340,7 @@ public class JClient extends JFrame implements Runnable {
 				else if (p.isCommand(CmdUtil.COMMAND_UPLOAD_START)) {
 					setTStatus(T_STOP);
 					JCTask = new UFRTask(this);
-					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
 					JCTask.start();
-					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
 				/*
@@ -353,9 +350,7 @@ public class JClient extends JFrame implements Runnable {
 				 */
 				else if (p.isCommand(CmdUtil.COMMAND_SCREEN_MONITOR)) {
 					JCTask = new SMSTask(this);
-					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
 					JCTask.start();
-					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
 				/*
@@ -368,9 +363,7 @@ public class JClient extends JFrame implements Runnable {
 						CmdUtil.COMMAND_RCMD_SINGLE_EXECUTION)) {
 					setTStatus(T_STOP);
 					JCTask = new RCRTask(this);
-					log.debug("try to start task %s by command %s", JCTask.getClass().getName(), p.cmd);
 					JCTask.start(p.isCommand(CmdUtil.COMMAND_RCMD_ALL_EXECUTION) ? "all" : "single");
-					log.debug("task %s stopped", JCTask.getClass().getName());
 				}
 
 				/*
@@ -382,7 +375,6 @@ public class JClient extends JFrame implements Runnable {
 				else if (p.isCommand(CmdUtil.COMMAND_TASK_STOP)) {
 					if (JCTask != null) {
 						JCTask.stop();
-						log.debug("task %s stopped by command %s", JCTask.getClass().getName(), p.cmd);
 						JCTask = null;
 					}
 				}

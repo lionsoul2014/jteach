@@ -1,6 +1,7 @@
 package org.lionsoul.jteach.client.task;
 
 import org.lionsoul.jteach.client.JClient;
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 
 /**
@@ -10,6 +11,7 @@ import org.lionsoul.jteach.msg.JBean;
 public abstract class JCTaskBase implements Runnable {
 	public static final int T_RUN = 1;
 	public static final int T_STOP = 0;
+	public static final Log log = Log.getLogger(JCTaskBase.class);
 
 	/** task running status and default it to T_RUN */
 	protected volatile int status = T_RUN;
@@ -37,10 +39,13 @@ public abstract class JCTaskBase implements Runnable {
 
 	@Override
 	public void run() {
+		log.debug("task %s is running ... ", this.getClass().getName());
+		client.setTipInfo(String.format("Task: %s", this.getClass().getName()));
 		// 1, run the task
 		_run();
 		// 2, task finished and call the exit callback
 		onExit();
+		log.debug("task %s stopped", this.getClass().getName());
 	}
 
 	/** start the working Task */
