@@ -82,7 +82,7 @@ public class RCTask extends JSTaskBase {
 				bean == null ? "All" : "Single", EXIT_CMD_STR);
 
 		while ( true ) {
-			server.println("JTeach#RC>> ");
+			server.print("JTeach#RC>> ");
 			line = reader.nextLine().trim().toLowerCase();
 			if (line.equals("")) {
 				server.println("type the command, or run %s to exit.", EXIT_CMD_STR);

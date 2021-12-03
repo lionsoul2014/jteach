@@ -204,7 +204,7 @@ public class JClient extends JFrame implements Runnable {
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				log.warn("sleep interrupted by %s", e.getClass().getName());
 			}
 		}
 
