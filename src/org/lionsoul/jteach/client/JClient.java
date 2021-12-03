@@ -137,7 +137,7 @@ public class JClient extends JFrame implements Runnable {
 
 	/* check and reconnect to the server */
 	public boolean connect() {
-		if (bean != null && bean.isClosed() == false) {
+		if (bean != null && !bean.isClosed()) {
 			return true;
 		}
 
@@ -189,7 +189,7 @@ public class JClient extends JFrame implements Runnable {
 				log.debug("%dth try: failed to connect to server by %s:%d", counter, ip, PORT);
 			}
 
-			if (++counter > 600) {
+			if (++counter > 120) {
 				timeOut = true;
 				break;
 			}

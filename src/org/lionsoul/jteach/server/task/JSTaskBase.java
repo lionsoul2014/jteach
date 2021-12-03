@@ -51,7 +51,7 @@ public abstract class JSTaskBase implements Runnable {
 
 	@Override
 	public void run() {
-		server.lnPrintln(String.format("task %s is now running", this.getClass().getSimpleName()));
+		server.println(String.format("task %s is now running", this.getClass().getName()));
 		// 1, run the task
 		_run();
 		// 2, task finished and call the exit callback
