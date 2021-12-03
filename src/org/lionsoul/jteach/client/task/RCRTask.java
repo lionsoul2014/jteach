@@ -73,7 +73,7 @@ public class RCRTask extends JCTaskBase {
 				final StringBuffer buff = new StringBuffer();
 				final Process proc;
 				try {
-					log.debug("try to execute command %s", msg.str);
+					log.debug("try to execute command '%s'", msg.str);
 					proc = run.exec(msg.str);
 					final BufferedInputStream in = new BufferedInputStream(proc.getInputStream());
 					final BufferedReader br = new BufferedReader(new InputStreamReader(in));

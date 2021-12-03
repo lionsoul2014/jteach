@@ -9,7 +9,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.Point;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -20,9 +19,6 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
@@ -31,7 +27,6 @@ import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.util.Iterator;
 
-import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -39,6 +34,7 @@ import javax.swing.SwingUtilities;
 
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
+import org.lionsoul.jteach.msg.ScreenMessage;
 import org.lionsoul.jteach.rmi.RMIInterface;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
@@ -58,16 +54,14 @@ public class SMTask extends JSTaskBase {
 	public static final Image MOUSE_CURSOR = ImageUtil.Create("m_plan.png").getImage();
 	public static final Log log = Log.getLogger(UFTask.class);
 
-	public static Point MOUSE_POS = null;
-
 	private final JFrame window;
 	private final ImageJPanel map;
 
-	private JBean bean = null;		// monitor machine
-	private DataInputStream reader = null;
-	private volatile BufferedImage B_IMG = null;
+	private final Dimension screenSize;
+	private volatile ScreenMessage screen = null;
 
-	private Dimension MAP_SIZE = null;
+	private JBean bean = null;		// monitor machine
+
 	private RMIInterface RMIInstance = null;
 	private String control = null;
 	private String broadcast = null;
@@ -76,6 +70,7 @@ public class SMTask extends JSTaskBase {
 		super(server);
 		this.window = new JFrame();
 		this.map = new ImageJPanel();
+		this.screenSize = window.getToolkit().getScreenSize();
 		initGUI();
 	}
 
@@ -83,9 +78,9 @@ public class SMTask extends JSTaskBase {
 		window.setTitle(W_TITLE);
 		window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		final Insets screenInsets = window.getToolkit().getScreenInsets(window.getGraphicsConfiguration());
-		final Dimension screenSize = window.getToolkit().getScreenSize();
 		final Dimension wSize = new Dimension(screenSize.width, screenSize.height - screenInsets.bottom - screenInsets.top);
-		window.setSize(wSize);
+		window.setSize(screenSize);
+		window.setUndecorated(true);
 		window.setLayout(new BorderLayout());
 		final Container c = window.getContentPane();
 
@@ -96,7 +91,6 @@ public class SMTask extends JSTaskBase {
 		vBox.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
 		c.add(vBox, BorderLayout.CENTER);
-		//this.setUndecorated(true);
 		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		window.setResizable(false);
 		window.addWindowFocusListener(new WindowFocusListener() {
@@ -110,11 +104,7 @@ public class SMTask extends JSTaskBase {
 	}
 
 	private void repaintImageJPanel() {
-		SwingUtilities.invokeLater(() -> {
-			map.setPreferredSize(MAP_SIZE);
-			map.setSize(MAP_SIZE);
-			map.repaint();
-		});
+		SwingUtilities.invokeLater(() -> map.repaint());
 	}
 	
 	private void _dispose() {
@@ -221,19 +211,31 @@ public class SMTask extends JSTaskBase {
 				/* load symbol */
 				final Packet p = bean.take();
 
-				/* format the byte data to a BufferedImage */
-				B_IMG = ImageIO.read(new ByteArrayInputStream(p.data));
-				if (MAP_SIZE == null) {
-					MAP_SIZE = new Dimension(B_IMG.getWidth(), B_IMG.getHeight());
+				/* Check the symbol type */
+				if (p.symbol == CmdUtil.SYMBOL_SEND_CMD) {
+					if (p.cmd == CmdUtil.COMMAND_TASK_STOP) {
+						log.debug("task is overed by stop command");
+						break;
+					}
+					log.debug("Ignore command %d", p.cmd);
+					continue;
+				} else if (p.symbol != CmdUtil.SYMBOL_SEND_DATA) {
+					log.debug("Ignore symbol %s", p.symbol);
+					continue;
 				}
 
-				/*repaint the Image JPanel*/
+				/* decode the packet to the ScreenMessage */
+				try {
+					screen = ScreenMessage.decode(p);
+				} catch (IOException e) {
+					log.error("failed to decode the screen message");
+					continue;
+				}
+
+				/* repaint the Image JPanel */
 				repaintImageJPanel();
 			} catch (InterruptedException e) {
 				server.println(log.getWarn("client %s message take were interrupted", bean.getName()));
-			} catch (IOException e) {
-				server.println(log.getError("client %s went offline due to %s\n", bean.getName(), e.getClass().getName()));
-				break;
 			} catch (IllegalAccessException e) {
 				server.println(bean.getClosedError());
 				break;
@@ -270,16 +272,15 @@ public class SMTask extends JSTaskBase {
 		protected void paintComponent(Graphics g) {
 			g.setColor(Color.BLACK);
 			g.fillRect(0, 0, getWidth(), getHeight());
-			if ( B_IMG == null ) {
+			if (screen == null) {
 				g.setColor(Color.WHITE);
 				g.setFont(IFONT);
-				FontMetrics m = getFontMetrics(IFONT);
-				g.drawString(EMTPY_INFO,
-						(getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
+				final FontMetrics m = getFontMetrics(IFONT);
+				g.drawString(EMTPY_INFO, (getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
 			} else {
-				g.drawImage(B_IMG, 0, 0, null);
+				g.drawImage(screen.img, 0, 0, null);
 				/* Draw the Mouse */
-				g.drawImage(MOUSE_CURSOR, MOUSE_POS.x, MOUSE_POS.y, null);
+				g.drawImage(MOUSE_CURSOR, screen.mouse.x, screen.mouse.y, null);
 			}
 		}
 
