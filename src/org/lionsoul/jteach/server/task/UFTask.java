@@ -95,12 +95,14 @@ public class UFTask extends JSTaskBase {
 			 * then send the byte[] to all the JBeans
 			 * till all the bytes were sent out
 			 */
-			float readLen = 0;
+			double readLen = 0;
 			int counter = 0, len = 0;
 			byte b[] = new byte[1024* CmdUtil.FILE_UPLOAD_ONCE_SIZE];
 			while ( (len = bis.read(b, 0, b.length)) > 0 ) {
 				readLen += len;
 				counter++;
+
+				final Packet dp = Packet.valueOf(b, 0, len);
 
 				// do the chunked data send
 				boolean checkSize = false;
@@ -109,7 +111,7 @@ public class UFTask extends JSTaskBase {
 					while (it.hasNext()) {
 						final JBean bean = it.next();
 						try {
-							bean.offer(Packet.valueOf(b));
+							bean.put(dp);
 						} catch (IllegalAccessException e) {
 							checkSize = true;
 							bean.reportClosedError();
@@ -127,7 +129,7 @@ public class UFTask extends JSTaskBase {
 
 				/* file transmission progress bar */
 				if ( counter % POINT_LENGTH == 0 ) {
-					server.println("%dKiB - %d%%", (int)(readLen/1024), (int)(readLen/file.length()*100));
+					server.println("%dKiB - %f%%", (int)(readLen/1024), readLen/file.length()*100);
 					counter = 0;
 				} else if ( readLen == file.length() ) {
 					server.println("%dKiB - 100%%", (int)(readLen/1024));

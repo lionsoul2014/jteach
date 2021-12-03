@@ -29,10 +29,15 @@ public class Packet {
     public final byte attr;
     public final int cmd;
 
+    public final int offset;
     public final int length;
     public final byte[] data;
 
     public Packet(byte symbol, int cmd, byte[] data) {
+        this(symbol, cmd, data, 0, data == null ? 0 : data.length);
+    }
+
+    public Packet(byte symbol, int cmd, byte[] data, int offset, int length) {
         this.symbol = symbol;
         this.cmd = cmd;
         this.data = data;
@@ -43,10 +48,9 @@ public class Packet {
             attr |= HAS_CMD;
         }
 
-        if (data == null || data.length == 0) {
-            this.length = 0;
-        } else {
-            this.length = data.length;
+        this.offset = offset;
+        this.length = length;
+        if (data != null) {
             attr |= HAS_DATA;
         }
 
@@ -80,9 +84,9 @@ public class Packet {
         }
 
         // check and write the data
-        if (this.length > 0) {
+        if (data != null) {
             dos.writeInt(length);
-            dos.write(data);
+            dos.write(data, offset, length);
         }
 
         return bos.toByteArray();
@@ -111,6 +115,10 @@ public class Packet {
 
     public static final Packet valueOf(byte[] bytes) {
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bytes);
+    }
+
+    public static final Packet valueOf(byte[] bytes, int off, int length) {
+        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bytes, off, length);
     }
 
     public static final Packet valueOf(String str, long length) throws IOException {

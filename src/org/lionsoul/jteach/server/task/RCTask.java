@@ -124,7 +124,7 @@ public class RCTask extends JSTaskBase {
 					while ( it.hasNext() ) {
 						final JBean bean = it.next();
 						try {
-							bean.offer(d);
+							bean.put(d);
 						} catch (IllegalAccessException e) {
 							bean.reportClosedError();
 							it.remove();
@@ -135,7 +135,7 @@ public class RCTask extends JSTaskBase {
 				/* get and print the execution response */
 				final Packet p;
 				try {
-					bean.offer(d);
+					bean.put(d);
 					p = bean.take();
 				} catch (InterruptedException e) {
 					server.println(log.getWarn("client %s message offer/take was interrupted", bean.getName()));

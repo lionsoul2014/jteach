@@ -41,7 +41,6 @@ public class UFRTask extends JCTaskBase {
 	private final JFrame window;
 	private final JLabel infoLabel;
 	private final JProgressBar pBar;
-	private Thread tThread = null;
 
 	public UFRTask(JClient client) {
 		super(client);
@@ -140,14 +139,14 @@ public class UFRTask extends JCTaskBase {
 
 				bos.write(cp.data, 0, cp.length);
 				readLen += cp.length;
+				log.debug("%d/%d = %d", readLen, file.length, (int)((readLen/(double)file.length) * 100));
 
 				//bos.flush();
-				setBarValue((int) (readLen / file.length) * 100);
+				setBarValue((int)((readLen/(double)file.length) * 100));
 			}
 
 			bos.flush();
 			bos.close();
-			tThread = null;
 		} catch (IOException e) {
 			log.error("task is overed due to %s", e.getClass().getName());
 		} catch (IllegalAccessException e) {

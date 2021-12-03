@@ -17,6 +17,7 @@ public abstract class JCTaskBase implements Runnable {
 	protected volatile int status = T_RUN;
 	protected final JClient client;
 	protected final JBean bean;
+	private final Object lock = new Object();
 
 	protected JCTaskBase(JClient client) {
 		this.client = client;
@@ -28,12 +29,18 @@ public abstract class JCTaskBase implements Runnable {
 		return true;
 	}
 
+	/** return true for the start will wait until the task is over */
+	protected boolean _wait() {
+		return false;
+	}
+
 	/** do the specified worker */
 	protected abstract void _run();
 
 	/** task overed callback */
 	protected void onExit() {
 		client.resetJCTask();
+		log.debug("task %s stopped", this.getClass().getName());
 		client.notifyCmdMonitor();
 	}
 
@@ -45,7 +52,12 @@ public abstract class JCTaskBase implements Runnable {
 		_run();
 		// 2, task finished and call the exit callback
 		onExit();
-		log.debug("task %s stopped", this.getClass().getName());
+		// 3, check and notify the wait lock
+		if (_wait()) {
+			synchronized (lock) {
+				lock.notify();
+			}
+		}
 	}
 
 	/** start the working Task */
@@ -56,6 +68,17 @@ public abstract class JCTaskBase implements Runnable {
 		}
 
 		JBean.threadPool.execute(this);
+		if (_wait()) {
+			synchronized (lock) {
+				try {
+					lock.wait();
+				} catch (InterruptedException e) {
+					stop();
+					return false;
+				}
+			}
+		}
+
 		return true;
 	}
 	

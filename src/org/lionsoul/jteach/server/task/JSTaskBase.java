@@ -20,13 +20,11 @@ public abstract class JSTaskBase implements Runnable {
 	protected volatile int status = T_RUN;
 	protected final JServer server;
 	protected final List<JBean> beanList;
-	protected final Thread wThread;
 	protected final Object lock = new Object();
 
 	protected JSTaskBase(JServer server) {
 		this.server = server;
 		this.beanList = Collections.synchronizedList(server.copyBeanList());
-		this.wThread = new Thread(this);
 	}
 
 	/** initialize worker */
@@ -72,7 +70,7 @@ public abstract class JSTaskBase implements Runnable {
 			return false;
 		}
 
-		wThread.start();
+		JBean.threadPool.execute(this);
 		if (_wait()) {
 			synchronized (lock) {
 				try {
