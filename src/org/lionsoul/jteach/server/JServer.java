@@ -308,9 +308,9 @@ public class JServer implements Runnable {
 				// send the ARP to the client
 				try {
 					b.offer(Packet.ARP);
-					println("client {index: %s, host: %s}\n", num, b.getHost());
+					println("client {index: %s, host: %s}", num, b.getHost());
 				} catch (IllegalAccessException e) {
-					println("client {index: %s, host: %s} was removed\n", num, b.getHost());
+					println("client {index: %s, host: %s} was removed", num, b.getHost());
 					it.remove();
 				}
 			}

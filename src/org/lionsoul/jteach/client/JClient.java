@@ -212,7 +212,7 @@ public class JClient extends JFrame implements Runnable {
 		if (timeOut) {
 			JOptionPane.showMessageDialog(null, "fail To Create Socket");
 			return false;
-		} else {
+		} else if (counter > 0) {
 			log.debug("%dth try: successfully connected to the server by %s:%d", counter, ip, PORT);
 		}
 
