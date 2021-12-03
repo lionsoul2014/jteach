@@ -2,25 +2,14 @@ package org.lionsoul.jteach.server.task;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowFocusListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
@@ -31,7 +20,6 @@ import java.util.Iterator;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 import org.lionsoul.jteach.log.Log;
@@ -57,9 +45,9 @@ public class SMTask extends JSTaskBase {
 	public static final Log log = Log.getLogger(UFTask.class);
 
 	private final JFrame window;
-	private final ImageJPanel map;
-
+	private final ImageJPanel mapJPanel;
 	private final Dimension screenSize;
+	private final Insets insetSize;
 	private volatile ScreenMessage screen = null;
 
 	private JBean bean = null;		// monitor machine
@@ -71,42 +59,33 @@ public class SMTask extends JSTaskBase {
 	public SMTask(JServer server) {
 		super(server);
 		this.window = new JFrame();
-		this.map = new ImageJPanel();
+		this.mapJPanel = new ImageJPanel();
 		this.screenSize = window.getToolkit().getScreenSize();
+		this.insetSize  = window.getToolkit().getScreenInsets(window.getGraphicsConfiguration());
 		initGUI();
 	}
 
 	private void initGUI() {
 		window.setTitle(W_TITLE);
 		window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		// final Insets screenInsets = window.getToolkit().getScreenInsets(window.getGraphicsConfiguration());
-		// final Dimension wSize = new Dimension(screenSize.width, screenSize.height - screenInsets.bottom - screenInsets.top);
 		window.setSize(screenSize);
 		window.setUndecorated(true);
 		window.setLayout(new BorderLayout());
-		final Container c = window.getContentPane();
-
-		//add the map to the JScrollPane
-		JScrollPane vBox = new JScrollPane(map);
-		vBox.setSize(screenSize);
-		vBox.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		vBox.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-
-		c.add(vBox, BorderLayout.CENTER);
 		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		window.setResizable(false);
-		window.addWindowFocusListener(new WindowFocusListener() {
+		window.addWindowListener(new WindowAdapter() {
 			@Override
-			public void windowGainedFocus(WindowEvent e) {
-				map.requestFocus();
+			public void windowClosing(WindowEvent e) {
+				/* stop the JCTask and dispose the window */
+				//stopCTask();
+				//_dispose();
 			}
-			@Override
-			public void windowLostFocus(WindowEvent e) {}
 		});
+		window.getContentPane().add(mapJPanel, BorderLayout.CENTER);
 	}
 
 	private void repaintImageJPanel() {
-		SwingUtilities.invokeLater(() -> map.repaint());
+		SwingUtilities.invokeLater(() -> mapJPanel.repaint());
 	}
 	
 	private void _dispose() {
@@ -283,8 +262,8 @@ public class SMTask extends JSTaskBase {
 			}
 
 			/* draw the screen image */
-			final int dst_w = getWidth();
-			final int dst_h = getHeight();
+			final int dst_w = getWidth() - insetSize.left - insetSize.right;
+			final int dst_h = getHeight() - insetSize.top - insetSize.bottom;
 			final BufferedImage img = ImageUtil.resize_2(screen.img, dst_w, dst_h);
 			g.drawImage(img, 0, 0, null);
 

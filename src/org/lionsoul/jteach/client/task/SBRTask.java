@@ -102,8 +102,8 @@ public class SBRTask extends JCTaskBase {
 			}
 			
 			/* Draw the image */
-			final int dst_w = getWidth();
-			final int dst_h = getHeight();
+			final int dst_w = getWidth() - insetSize.left - insetSize.right;
+			final int dst_h = getHeight() - insetSize.top - insetSize.bottom;
 			final BufferedImage img = ImageUtil.resize_2(screen.img, dst_w, dst_h);
 			g.drawImage(img, 0, 0, dst_w, dst_h, null);
 
