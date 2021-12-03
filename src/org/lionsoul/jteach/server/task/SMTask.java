@@ -19,6 +19,8 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
@@ -51,7 +53,7 @@ public class SMTask extends JSTaskBase {
 	public static final String W_TITLE = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From JBean";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
-	public static final Image MOUSE_CURSOR = ImageUtil.Create("m_plan.png").getImage();
+	public static final Image MOUSE_IMG = ImageUtil.Create("m_plan.png").getImage();
 	public static final Log log = Log.getLogger(UFTask.class);
 
 	private final JFrame window;
@@ -77,8 +79,8 @@ public class SMTask extends JSTaskBase {
 	private void initGUI() {
 		window.setTitle(W_TITLE);
 		window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		final Insets screenInsets = window.getToolkit().getScreenInsets(window.getGraphicsConfiguration());
-		final Dimension wSize = new Dimension(screenSize.width, screenSize.height - screenInsets.bottom - screenInsets.top);
+		// final Insets screenInsets = window.getToolkit().getScreenInsets(window.getGraphicsConfiguration());
+		// final Dimension wSize = new Dimension(screenSize.width, screenSize.height - screenInsets.bottom - screenInsets.top);
 		window.setSize(screenSize);
 		window.setUndecorated(true);
 		window.setLayout(new BorderLayout());
@@ -86,7 +88,7 @@ public class SMTask extends JSTaskBase {
 
 		//add the map to the JScrollPane
 		JScrollPane vBox = new JScrollPane(map);
-		vBox.setSize(wSize);
+		vBox.setSize(screenSize);
 		vBox.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		vBox.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
@@ -277,11 +279,19 @@ public class SMTask extends JSTaskBase {
 				g.setFont(IFONT);
 				final FontMetrics m = getFontMetrics(IFONT);
 				g.drawString(EMTPY_INFO, (getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
-			} else {
-				g.drawImage(screen.img, 0, 0, null);
-				/* Draw the Mouse */
-				g.drawImage(MOUSE_CURSOR, screen.mouse.x, screen.mouse.y, null);
+				return;
 			}
+
+			/* draw the screen image */
+			final int dst_w = getWidth();
+			final int dst_h = getHeight();
+			final BufferedImage img = ImageUtil.resize_2(screen.img, dst_w, dst_h);
+			g.drawImage(img, 0, 0, null);
+
+			/* draw the mouse */
+			final int x = Math.round(screen.mouse.x * ((float)dst_w/screen.img.getWidth()));
+			final int y = Math.round(screen.mouse.y * ((float)dst_h/screen.img.getHeight()));
+			g.drawImage(MOUSE_IMG, x, y, null);
 		}
 
 		/**
