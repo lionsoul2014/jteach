@@ -111,7 +111,7 @@ public class UFTask extends JSTaskBase {
 					while (it.hasNext()) {
 						final JBean bean = it.next();
 						try {
-							bean.put(dp);
+							bean.send(dp);
 						} catch (IllegalAccessException e) {
 							checkSize = true;
 							bean.reportClosedError();
