@@ -262,10 +262,18 @@ public class JServer implements Runnable {
 
 		/* remove all the JBean */
 		if ( v.equals(CmdUtil.DELETE_ALL_VAL) ) {
-			for (JBean b : beanList) {
-				b.clear();
+			synchronized (beanList) {
+				final Iterator<JBean> it = beanList.iterator();
+				while (it.hasNext()) {
+					final JBean b = it.next();
+					try {
+						b.offer(Packet.COMMAND_EXIT);
+					} catch (IllegalAccessException e) {
+						println(b.getClosedError());
+						it.remove();
+					}
+				}
 			}
-
 			beanList.clear();
 			println("all clients cleared");
 		} else {
@@ -279,6 +287,12 @@ public class JServer implements Runnable {
 			if ( index < 0 || index >= beanList.size() ) {
 				println("Index out of bounds %d", index);
 			} else {
+				final JBean bean = beanList.get(index);
+				try {
+					bean.offer(Packet.COMMAND_EXIT);
+				} catch (IllegalAccessException e) {
+					println(bean.getClosedError());
+				}
 				beanList.remove(index);
 				println("client on index %d removed", index);
 			}

@@ -108,7 +108,7 @@ public class SBTask extends JSTaskBase {
 					try {
 						// append the Message
 						// to the current bean
-						bean.offer(p);
+						bean.put(p);
 					} catch (IllegalAccessException e) {
 						server.println(bean.getClosedError());
 						it.remove();
