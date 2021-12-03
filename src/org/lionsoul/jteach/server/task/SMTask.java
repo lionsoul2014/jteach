@@ -204,12 +204,13 @@ public class SMTask extends JSTaskBase {
 
 	@Override
 	public void stop() {
-		try {
-			bean.offer(Packet.COMMAND_TASK_STOP);
-		} catch (IllegalAccessException e) {
-			server.println(bean.getClosedError());
+		if (bean != null) {
+			try {
+				bean.offer(Packet.COMMAND_TASK_STOP);
+			} catch (IllegalAccessException e) {
+				server.println(bean.getClosedError());
+			}
 		}
-
 		super.stop();
 	}
 
@@ -238,8 +239,6 @@ public class SMTask extends JSTaskBase {
 				break;
 			}
 		}
-
-		_dispose();
 	}
 
 	public void onExit() {

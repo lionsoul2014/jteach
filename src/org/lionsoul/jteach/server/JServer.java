@@ -65,19 +65,6 @@ public class JServer implements Runnable {
 			log.error("failed To get host information due to %s", e.getClass().getName());
 		}
 	}
-	
-	/** stop the current running JSTask */
-	public void stopJSTask() {
-		if (JSTask != null) {
-			JSTask.stop();
-			JSTask = null;
-		}
-	}
-
-	/** reset the JSTask */
-	public void resetJSTask() {
-		JSTask = null;
-	}
 
 	public final void printInputAsk() {
 		System.out.print("JTeach>> ");
@@ -100,6 +87,11 @@ public class JServer implements Runnable {
 
 	public final void println(String format, Object... args) {
 		final String str = format(false, format, args);
+		System.out.println(str);
+		System.out.flush();
+	}
+
+	public final void println(String str) {
 		System.out.println(str);
 		System.out.flush();
 	}
@@ -174,14 +166,25 @@ public class JServer implements Runnable {
 			Class<?> _class = Class.forName(classname);
 			Constructor<?> con = _class.getConstructor(JServer.class);
 			JSTask = (JSTaskBase) con.newInstance(this);
-			if ( !JSTask.start() ) {
-				stopJSTask();
-			}
+			JSTask.start();
 		} catch (Exception e) {
 			println("failed to start task %s due to %s", classname, e.getClass().getName());
 		}
 	}
-	
+
+	/** stop the current running JSTask */
+	public void stopJSTask() {
+		if (JSTask != null) {
+			JSTask.stop();
+			JSTask = null;
+		}
+	}
+
+	/** reset the JSTask */
+	public void resetJSTask() {
+		JSTask = null;
+	}
+
 	/** Start Listening Thread */
 	public void startMonitorThread() {
 		if (server != null) {

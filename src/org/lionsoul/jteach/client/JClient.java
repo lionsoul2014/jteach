@@ -70,8 +70,7 @@ public class JClient extends JFrame implements Runnable {
 			public void windowClosing(WindowEvent e) {
 				close();
 			}
-			public void windowIconified(WindowEvent e) {
-			}
+			public void windowIconified(WindowEvent e) {}
 		});
 
 		this.setSize(JClientCfg.W_SIZE);
@@ -123,12 +122,7 @@ public class JClient extends JFrame implements Runnable {
 		connectButton = new JButton(JClientCfg.CONNECT_BUTTON_TEXT);
 		connectButton.setBounds(30, 125, 100, 24);
 		c.add(connectButton);
-		connectButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JBean.threadPool.execute(new Thread(() -> connect()));
-			}
-		});
+		connectButton.addActionListener(e -> JBean.threadPool.execute(new Thread(() -> connect())));
 		
 		JButton aboutButton = new JButton(JClientCfg.ABOUT_BUTTON_TEXT);
 		aboutButton.setBounds(200, 125, 100, 24);
@@ -397,6 +391,7 @@ public class JClient extends JFrame implements Runnable {
 
 		if (reConnect) {
 			log.debug("client is now offline cus of error, reconnecting ... ");
+			setTipInfo("offline, reconnecting ...");
 			connect();
 		}
 	}

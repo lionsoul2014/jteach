@@ -20,15 +20,23 @@ public abstract class JSTaskBase implements Runnable {
 	protected volatile int status;
 	protected final JServer server;
 	protected final List<JBean> beanList;
+	protected final Thread wThread;
+	protected final Object lock = new Object();
 
 	protected JSTaskBase(JServer server) {
 		this.server = server;
 		this.beanList = Collections.synchronizedList(server.copyBeanList());
+		this.wThread = new Thread(this);
 	}
 
 	/** initialize worker */
 	protected boolean _before() {
 		return true;
+	}
+
+	/** return true for the start will wait until the task is over */
+	protected boolean _wait() {
+		return false;
 	}
 
 	/** do the specified worker */
@@ -37,7 +45,7 @@ public abstract class JSTaskBase implements Runnable {
 	/** task overed callback */
 	protected void onExit() {
 		server.resetJSTask();
-		server.lnPrintln(String.format("task %s stopped", this.getClass().getSimpleName()));
+		server.println(String.format("task %s stopped", this.getClass().getName()));
 		server.printInputAsk();
 	}
 
@@ -48,16 +56,34 @@ public abstract class JSTaskBase implements Runnable {
 		_run();
 		// 2, task finished and call the exit callback
 		onExit();
+		// 3, check and notify the wait lock
+		if (_wait()) {
+			synchronized (lock) {
+				lock.notify();
+			}
+		}
 	}
 
 	/** start the Task */
 	public boolean start() {
 		// run the before initialize worker
 		if (!_before()) {
+			server.resetJSTask();
 			return false;
 		}
 
-		JBean.threadPool.execute(this);
+		wThread.start();
+		if (_wait()) {
+			synchronized (lock) {
+				try {
+					lock.wait();
+				} catch (InterruptedException e) {
+					stop();
+					return false;
+				}
+			}
+		}
+
 		return true;
 	}
 
@@ -82,8 +108,6 @@ public abstract class JSTaskBase implements Runnable {
 				it.remove();
 			}
 		}
-
-		server.println("task %s stopped", this.getClass().getName());
 	}
 
 	public final void setStatus(int status) {
