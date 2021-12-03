@@ -127,10 +127,10 @@ public class UFTask extends JSTaskBase {
 
 				/* file transmission progress bar */
 				if ( counter % POINT_LENGTH == 0 ) {
-					server.println("%dKiB - %d%%\n", (int)(readLen/1024), readLen/file.length()*100);
+					server.println("%dKiB - %d%%", (int)(readLen/1024), (int)(readLen/file.length()*100));
 					counter = 0;
 				} else if ( readLen == file.length() ) {
-					server.println("%dKiB - 100%%\n", (int)(readLen/1024));
+					server.println("%dKiB - 100%%", (int)(readLen/1024));
 				} else {
 					server.print(".");
 				}

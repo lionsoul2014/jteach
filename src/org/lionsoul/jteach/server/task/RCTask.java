@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Scanner;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.JBean;

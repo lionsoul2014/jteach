@@ -142,7 +142,7 @@ public class UFRTask extends JCTaskBase {
 				readLen += cp.length;
 
 				//bos.flush();
-				setBarValue((int) (readLen * 100 / file.length));
+				setBarValue((int) (readLen / file.length) * 100);
 			}
 
 			bos.flush();

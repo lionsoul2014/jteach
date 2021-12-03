@@ -17,7 +17,7 @@ public abstract class JSTaskBase implements Runnable {
 	public static final int T_RUN = 1;
 	public static final int T_STOP = 0;
 
-	protected volatile int status;
+	protected volatile int status = T_RUN;
 	protected final JServer server;
 	protected final List<JBean> beanList;
 	protected final Thread wThread;
