@@ -57,6 +57,7 @@ public class UFRTask extends JCTaskBase {
 		window.setAlwaysOnTop(true);
 		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		window.setResizable(false);
+		window.setSize(W_SIZE);
 		window.setLocationRelativeTo(null);
 		window.addWindowListener(new WindowAdapter(){
 			@Override
@@ -104,25 +105,26 @@ public class UFRTask extends JCTaskBase {
 		FileSystemView fsv = FileSystemView.getFileSystemView();
 		try {
 			final Packet p = bean.take();
-			final FileInfoMessage info;
+			final FileInfoMessage file;
 			try {
-				info = FileInfoMessage.decode(p);
+				file = FileInfoMessage.decode(p);
 			} catch (IOException e) {
 				log.error("failed to decode the file info message");
 				stop();
 				return;
 			}
 
-			setTipInfo("File:" + info.name + ", size:" + info.length / 1024 + "K");
+			setTipInfo("Receiving file " + file.name);
+			log.debug("file: %s, size: %dKiB", file.name, (file.length / 1024));
 			final BufferedOutputStream bos = new BufferedOutputStream(
-					new FileOutputStream(fsv.getHomeDirectory() + "/" + info.name));
+					new FileOutputStream(fsv.getHomeDirectory() + "/" + file.name));
 
 			
 			/* byte array
 			 * get the byte from socket and store them in byte array b
 			 * then put them in bos BufferedOutputStream for to save them in file */
 			long readLen = 0;
-			while (readLen < info.length) {
+			while (readLen < file.length) {
 				/* check the running status */
 				if (getStatus() == T_STOP) {
 					log.debug("task stop");
@@ -140,7 +142,7 @@ public class UFRTask extends JCTaskBase {
 				readLen += cp.length;
 
 				//bos.flush();
-				setBarValue((int) (readLen * 100 / info.length));
+				setBarValue((int) (readLen * 100 / file.length));
 			}
 
 			bos.flush();
@@ -149,7 +151,7 @@ public class UFRTask extends JCTaskBase {
 		} catch (IOException e) {
 			log.error("task is overed due to %s", e.getClass().getName());
 		} catch (IllegalAccessException e) {
-			bean.reportClosedError();
+			log.error(bean.getClosedError());
 		} catch (InterruptedException e) {
 			log.warn("bean.take was interrupted");
 		}

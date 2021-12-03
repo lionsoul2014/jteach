@@ -87,8 +87,8 @@ public class UFTask extends JSTaskBase {
 			/* create a buffer InputStream */
 			server.println("File Information:");
 			server.println("-+---name: %s", file.getName());
-			server.println("-+---size: %dKiB - %d\n", file.length()/1024, file.length());
-			server.println("sending file %s", file.getAbsolutePath());
+			server.println("-+---size: %dKiB - %d", file.length()/1024, file.length());
+			server.println("sending file %s ... ", file.getAbsolutePath());
 
 			/*
 			 * read b.length byte from the buffer InputStream
