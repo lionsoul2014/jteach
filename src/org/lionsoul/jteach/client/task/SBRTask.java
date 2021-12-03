@@ -12,7 +12,6 @@ import javax.swing.SwingUtilities;
 
 import org.lionsoul.jteach.client.JClient;
 import org.lionsoul.jteach.log.Log;
-import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
 import org.lionsoul.jteach.util.CmdUtil;
@@ -30,11 +29,8 @@ public class SBRTask extends JCTaskBase {
 	public static final String title = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From Server";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
-	public static Image MOUSE_CURSOR = ImageUtil.Create("m_pen.png").getImage();
+	public static Image MOUSE_IMG = ImageUtil.Create("m_pen.png").getImage();
 	public static final Log log = Log.getLogger(SBRTask.class);
-
-	public static float BIT = 1;
-	public static Dimension IMG_SIZE = null;
 
 	private final JFrame window;
 	private final ImageJPanel imgJPanel;
@@ -105,13 +101,6 @@ public class SBRTask extends JCTaskBase {
 				return;
 			}
 			
-			if ( IMG_SIZE == null ) {
-				BIT = Math.max(
-					(float)screen.img.getWidth()/screenSize.width,
-					(float)screen.img.getHeight()/screenSize.height
-				);
-			}
-			
 			/* Draw the image */
 			final int dst_w = getWidth();
 			final int dst_h = getHeight();
@@ -119,7 +108,9 @@ public class SBRTask extends JCTaskBase {
 			g.drawImage(img, 0, 0, dst_w, dst_h, null);
 
 			/* Draw the Mouse */
-			g.drawImage(MOUSE_CURSOR, (int)(screen.mouse.x/BIT), (int) (screen.mouse.y/BIT), null);
+			final int x = Math.round(screen.mouse.x * ((float)dst_w/screen.img.getWidth()));
+			final int y = Math.round(screen.mouse.y * (float)dst_h/screen.img.getHeight());
+			g.drawImage(MOUSE_IMG, x, y, null);
 		}
 	}
 	

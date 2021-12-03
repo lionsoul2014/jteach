@@ -70,6 +70,12 @@ public class SMSTask extends JCTaskBase {
 
 				/* send the image byte data to server */
 				bean.send(p);
+
+				try {
+					Thread.sleep(16);
+				} catch (InterruptedException e) {
+					log.debug("sleep interrupted");
+				}
 			} catch (IOException e) {
 				log.error("task is overed due to %s", e.getClass().getName());
 				bean.clear();
