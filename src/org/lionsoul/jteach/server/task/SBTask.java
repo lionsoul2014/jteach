@@ -18,9 +18,6 @@ import org.lionsoul.jteach.server.JServer;
  */
 public class SBTask extends JSTaskBase {
 	
-	public static final String START_TIP = "Broadcast Thread Is Started.(Run stop To Stop It)";
-	public static final String STOPING_TIP = "Broadcast Thread Is Stoping...";
-	public static final String STOPED_TIP = "Broadcast Thread Is Stoped.";
 	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
 	public static final Log log = Log.getLogger(SBTask.class);
 
@@ -36,20 +33,20 @@ public class SBTask extends JSTaskBase {
 		try {
 			boolean res = bean.offer(Packet.COMMAND_BROADCAST_START);
 			if ( !res ) {
-				log.error("failed to add new client %s", bean.getHost());
+				server.lnPrintln(log.getDebug("failed to add new client %s", bean.getHost()));
 			} else {
 				beanList.add(bean);
-				log.debug("add a new client %s", bean.getHost());
+				server.lnPrintln(log.getDebug("add a new client %s", bean.getHost()));
 			}
 		} catch (IllegalAccessException e) {
-			bean.reportClosedError();
+			server.lnPrintln(bean.getClosedError());
 		}
 	}
 
 	@Override
 	public boolean _before() {
 		if (beanList.size() == 0) {
-			log.debug("empty client list");
+			server.println("empty client list");
 			return false;
 		}
 
@@ -94,7 +91,7 @@ public class SBTask extends JSTaskBase {
 			try {
 				p = new ScreenMessage(MouseInfo.getPointerInfo().getLocation(), img).encode();
 			} catch (IOException e) {
-				log.error("failed to decode screen image");
+				server.println(log.getError("failed to decode screen image"));
 				continue;
 			}
 
@@ -113,7 +110,7 @@ public class SBTask extends JSTaskBase {
 						// to the current bean
 						bean.offer(p);
 					} catch (IllegalAccessException e) {
-						bean.reportClosedError();
+						server.println(bean.getClosedError());
 						it.remove();
 					}
 				}
@@ -122,7 +119,7 @@ public class SBTask extends JSTaskBase {
 			try {
 				Thread.sleep(16);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				server.println(log.getWarn("sleep interrupted due to %s", e.getClass().getName()));
 			}
 		}
 	}

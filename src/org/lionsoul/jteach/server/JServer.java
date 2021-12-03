@@ -40,11 +40,11 @@ public class JServer implements Runnable {
 	
 	/* Initialize the JTeach Server */
 	public void initServer() {
-		System.out.println("Initialize Server...");
+		println("Initialize Server...");
 
 		try {
 			server = new ServerSocket(PORT);
-			System.out.println("user.dir: "+System.getProperty("user.dir"));
+			println("user.dir: "+System.getProperty("user.dir"));
 		} catch (IOException e) {
 			log.error("failed To initialize the server, make sure port %s is valid", PORT);
 			System.exit(1);
@@ -60,7 +60,7 @@ public class JServer implements Runnable {
 					host = remote;
 				}
 			}
-			System.out.printf("Monitor - Host: %s, Port: %s\n", host, PORT);
+			println("Monitor - Host: %s, Port: %s", host, PORT);
 		} catch (UnknownHostException e) {
 			log.error("failed To get host information due to %s", e.getClass().getName());
 		}
@@ -79,18 +79,36 @@ public class JServer implements Runnable {
 		JSTask = null;
 	}
 
-	public static final void printInputAsk() {
+	public final void printInputAsk() {
 		System.out.print("JTeach>> ");
 	}
 
-	public static final void setTipInfo(String format, Object... args) {
+	public final String format(boolean newLine, String format, Object... args) {
 		final StringBuffer sb = new StringBuffer();
-		sb.append("\n");
+		if (newLine) {
+			sb.append("\n");
+		}
 		sb.append(String.format(format, args));
-		sb.append("\n");
-		System.out.print(sb);
+		return sb.toString();
 	}
 
+	public final void print(String format, Object... args) {
+		final String str = format(false, format, args);
+		System.out.print(str);
+		System.out.flush();
+	}
+
+	public final void println(String format, Object... args) {
+		final String str = format(false, format, args);
+		System.out.println(str);
+		System.out.flush();
+	}
+
+	public final void lnPrintln(String format, Object... args) {
+		final String str = format(true, format, args);
+		System.out.println(str);
+		System.out.flush();
+	}
 
 	/** run command */
 	public void cmdLoader() {
@@ -122,7 +140,7 @@ public class JServer implements Runnable {
 			} else if ( _input.equals(CmdUtil.STOP) ) {
 				/* stop and reset the current working JSTask */
 				if ( JSTask == null ) {
-					System.out.println("no active task, run menu for help");
+					println("no active task, run menu for help");
 				} else {
 					JSTask.stop();
 					JSTask = null;
@@ -133,7 +151,7 @@ public class JServer implements Runnable {
 			} else if ( _input.equals(CmdUtil.EXIT) ) {
 				exit();
 			} else {
-				System.out.printf("Invalid command %s\n", _input);
+				println("invalid command %s", _input);
 			}
 		} while ( true);
 	}
@@ -141,19 +159,18 @@ public class JServer implements Runnable {
 	/* Find And Load The Task Class */
 	private void _runJSTask(String cmd) {
 		if ( JSTask != null ) {
-			System.out.printf("task %s is running, run stop before continue command %s\n", JSTask.getClass().getName(), cmd);
+			println("task %s is running, run stop before continue command %s", JSTask.getClass().getName(), cmd);
 			return;
 		}
 
 		if ( beanList.size() == 0 ) {
-			System.out.printf("empty client list");
+			println("empty client list");
 			return;
 		}
 
 		final String classname = "org.lionsoul.jteach.server.task."+cmd.toUpperCase()+"Task";
 		try {
-			//JServerLang.TASK_PATH_INFO(classname);
-			System.out.printf("try to start task %s\n", classname);
+			println("try to start task %s", classname);
 			Class<?> _class = Class.forName(classname);
 			Constructor<?> con = _class.getConstructor(JServer.class);
 			JSTask = (JSTaskBase) con.newInstance(this);
@@ -161,7 +178,7 @@ public class JServer implements Runnable {
 				stopJSTask();
 			}
 		} catch (Exception e) {
-			System.out.printf("failed to start task %s due to %s\n", classname, e.getClass().getName());
+			println("failed to start task %s due to %s", classname, e.getClass().getName());
 		}
 	}
 	
@@ -185,14 +202,14 @@ public class JServer implements Runnable {
 				final JBean bean = new JBean(s);
 				beanList.add(bean);
 				bean.start();
-				log.debug("new client %s connected", bean.getName());
+				lnPrintln("new client %s connected", bean.getName());
 
 				/* check and add the new client to the running task */
 				if (JSTask != null) {
 					JSTask.addClient(bean);
 				}
 			} catch (IOException e) {
-				log.error("server monitor thread stopped due to %s", e.getClass());
+				lnPrintln("server monitor thread stopped due to %s", e.getClass());
 				break;
 			}
 		}
@@ -219,14 +236,14 @@ public class JServer implements Runnable {
 			}
 		}
 
-		System.out.println("Thank you for using jteach, bye!");
+		println("Thank you for using jteach, bye!");
 		System.exit(0);
 	}
 	
 	/** remove all/ JBean */
 	private void delete() {
 		if ( JSTask != null ) {
-			System.out.printf("JSTask %s is running, run stop first\n", JSTask.getClass().getName());
+			println("JSTask %s is running, run stop first\n", JSTask.getClass().getName());
 			return;
 		}
 
@@ -236,7 +253,7 @@ public class JServer implements Runnable {
 
 		String v = arguments.get(CmdUtil.DELETE_KEY);
 		if ( v == null ) {
-			System.out.println("-+-i : a/Integer: Remove The All/ith client");
+			println("-+-i : a/Integer: Remove The All/ith client");
 			return;
 		}
 
@@ -247,20 +264,20 @@ public class JServer implements Runnable {
 			}
 
 			beanList.clear();
-			log.debug("all clients cleared");
+			println("all clients cleared");
 		} else {
 			/* remove the Specified JBean */
 			if ( !v.matches("^[0-9]{1,}$") ) {
-				log.error("invalid client index specified %s", v);
+				println("invalid client index specified %s", v);
 				return;
 			}
 
 			int index = Integer.parseInt(v);
 			if ( index < 0 || index >= beanList.size() ) {
-				log.debug("Index out of bounds %d", index);
+				println("Index out of bounds %d", index);
 			} else {
 				beanList.remove(index);
-				log.debug("client on index %d removed", index);
+				println("client on index %d removed", index);
 			}
 		}
 	}
@@ -291,10 +308,9 @@ public class JServer implements Runnable {
 				// send the ARP to the client
 				try {
 					b.offer(Packet.ARP);
-					System.out.printf("client {index: %s, host: %s}\n", num, b.getHost());
+					println("client {index: %s, host: %s}\n", num, b.getHost());
 				} catch (IllegalAccessException e) {
-					// b.reportClosedError();
-					System.out.printf("client {index: %s, host: %s} was removed\n", num, b.getHost());
+					println("client {index: %s, host: %s} was removed\n", num, b.getHost());
 					it.remove();
 				}
 			}

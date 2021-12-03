@@ -33,16 +33,7 @@ public class Log {
         return new Log(baseClass);
     }
 
-    private void print(int level, String format, Object... args) {
-        if (level < DEBUG || level > ERROR) {
-            throw new IndexOutOfBoundsException("invalid level index " + level);
-        }
-
-        // level filter
-        if (level < this.level) {
-            return;
-        }
-
+    public String format(int level, String format, Object... args) {
         // append the datetime
         final StringBuffer sb = new StringBuffer();
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss");
@@ -51,20 +42,49 @@ public class Log {
         // append the class name
         sb.append(baseClass.getName()).append(' ');
         sb.append(String.format(format, args));
-        System.out.println(sb);
+        return sb.toString();
+    }
+
+    public void print(int level, String format, Object... args) {
+        if (level < DEBUG || level > ERROR) {
+            throw new IndexOutOfBoundsException("invalid level index " + level);
+        }
+
+        // level filter
+        if (level < Log.level) {
+            return;
+        }
+
+        System.out.println(format(level, format, args));
         System.out.flush();
+    }
+
+    public String getDebug(String format, Object... args) {
+        return format(DEBUG, format, args);
     }
 
     public void debug(String format, Object... args) {
         print(DEBUG, format, args);
     }
 
+    public String getInfo(String format, Object... args) {
+        return format(INFO, format, args);
+    }
+
     public void info(String format, Object... args) {
         print(INFO, format, args);
     }
 
+    public String getWarn(String format, Object... args) {
+        return format(WARN, format, args);
+    }
+
     public void warn(String format, Object... args) {
         print(WARN, format, args);
+    }
+
+    public String getError(String format, Object... args) {
+        return format(ERROR, format, args);
     }
 
     public void error(String format, Object... args) {

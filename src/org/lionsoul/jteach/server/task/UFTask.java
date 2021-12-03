@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.Iterator;
 
 import javax.swing.JFileChooser;
@@ -24,14 +23,7 @@ import org.lionsoul.jteach.util.CmdUtil;
  */
 public class UFTask extends JSTaskBase {
 	
-	public static final String BIS_CREATE_ERROR = "Unable to create FileInputStream.";
-	public static final String FILE_READ_ERROR = "Fail to read byte from file.";
-	public static final String FILE_TRASMIT_START = "File trasimit started";
-	
-	public static final String STOPING_TIP = "File Upload Thread Is Stoping...";
-	public static final String STOPED_TIP = "File Upload Thread Is Stoped.";
 	public static final Log log = Log.getLogger(UFTask.class);
-	
 	public static final int POINT_LENGTH = 60;
 
 	public UFTask(JServer server) {
@@ -41,7 +33,7 @@ public class UFTask extends JSTaskBase {
 	@Override
 	public boolean _before() {
 		if (beanList.size() == 0) {
-			log.debug("task abort due to empty client list");
+			server.println("empty client list");
 			return false;
 		}
 
@@ -72,7 +64,7 @@ public class UFTask extends JSTaskBase {
 		try {
 			p = new FileInfoMessage(file.length(), file.getName()).encode();
 		} catch (IOException e) {
-			log.error("failed to encode the file info message {%s, %d}", file.getName(), file.length());
+			server.println(log.getError("failed to encode the file info message {%s, %d}", file.getName(), file.length()));
 			return;
 		}
 
@@ -93,11 +85,10 @@ public class UFTask extends JSTaskBase {
 
 		try {
 			/* create a buffer InputStream */
-			System.out.println("File Information:");
-			System.out.println("-+---name:"+file.getName());
-			System.out.println("-+---size:"+file.length()/1024+"K - "+file.length());
-			System.out.println(FILE_TRASMIT_START);
-			DecimalFormat format = new DecimalFormat("0.00");
+			server.println("File Information:");
+			server.println("-+---name: %s", file.getName());
+			server.println("-+---size: %dKiB - %d\n", file.length()/1024, file.length());
+			server.println("sending file %s", file.getAbsolutePath());
 
 			/*
 			 * read b.length byte from the buffer InputStream
@@ -129,32 +120,31 @@ public class UFTask extends JSTaskBase {
 
 				// check the bean list size
 				if (checkSize && beanList.size() == 0) {
-					log.debug("task is overed due to empty client list");
+					server.println("task is overed due to empty client list");
 					break;
 				}
 
 
 				/* file transmission progress bar */
 				if ( counter % POINT_LENGTH == 0 ) {
-					System.out.println( (int) (readLen/1024)+"K - "
-							+format.format(readLen/file.length()*100)+"%");
+					server.println("%dKiB - %d%%\n", (int)(readLen/1024), readLen/file.length()*100);
 					counter = 0;
 				} else if ( readLen == file.length() ) {
-					System.out.println((int) (readLen / 1024) + "K - 100%");
+					server.println("%dKiB - 100%%\n", (int)(readLen/1024));
 				} else {
-					System.out.print(".");
+					server.print(".");
 				}
 
 				if ( getStatus() != T_RUN ) {
 					break;
 				}
 			}
-			log.info("file transfer completed.");
+			server.println("file send completed");
 			bis.close();
 		} catch (FileNotFoundException e) {
-			System.out.println(BIS_CREATE_ERROR);
+			server.println(log.getError("aborted due to %s", e.getClass().getName()));
 		} catch (IOException e) {
-			System.out.println(FILE_READ_ERROR);
+			server.println(log.getError("aborted due to %s", e.getClass().getName()));
 		}
 
 		// check and close the buffer input stream

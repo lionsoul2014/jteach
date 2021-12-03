@@ -327,7 +327,11 @@ public class JBean {
 	}
 	
 	public void reportClosedError() {
-		log.error("connect to client %s closed", getName());
+		System.out.println(getClosedError());
+	}
+
+	public String getClosedError() {
+		return log.getError("connection to client %s closed", getName());
 	}
 
 	public String toString() {

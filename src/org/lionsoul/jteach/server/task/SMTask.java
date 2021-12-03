@@ -110,13 +110,10 @@ public class SMTask extends JSTaskBase {
 	}
 
 	private void repaintImageJPanel() {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				map.setPreferredSize(MAP_SIZE);
-				map.setSize(MAP_SIZE);
-				map.repaint();
-			}
+		SwingUtilities.invokeLater(() -> {
+			map.setPreferredSize(MAP_SIZE);
+			map.setSize(MAP_SIZE);
+			map.repaint();
 		});
 	}
 	
@@ -145,18 +142,18 @@ public class SMTask extends JSTaskBase {
 	public boolean _before() {
 		String str = server.getArguments().get(CmdUtil.SCREEN_MONITOR_KEY);
 		if ( str == null ) {
-			System.out.println("-+-i : Integer: Monitor the specifier client's screen");
+			server.println("-+-i : Integer: Monitor the specifier client's screen");
 			return false;
 		}
 
-		if ( str.matches("^[0-9]{1,}$") == false ) {
-			log.error("invalid client index %s", str);
+		if (!str.matches("^[0-9]{1,}$")) {
+			server.println("invalid client index %s", str);
 			return false;
 		}
 
 		int index = Integer.parseInt(str);
 		if (index < 0 || index >= beanList.size()) {
-			log.error("index %d out of bounds", index);
+			server.println("index %d out of bounds", index);
 			return false;
 		}
 		
@@ -167,32 +164,22 @@ public class SMTask extends JSTaskBase {
 		if ( control != null && control.equals(CmdUtil.REMOTE_CONTROL_VAL) ) {
 			try {
 				getRMIInstance(bean.getHost());
-			} catch (MalformedURLException e) {
-				log.error("failed to load RMIServer instance.");
-				return false;
-			} catch (RemoteException e) {
-				log.error("failed to load RMIServer instance.");
-				return false;
-			} catch (NotBoundException e) {
-				log.error("failed to load RMIServer instance.");
+			} catch (MalformedURLException | RemoteException | NotBoundException e) {
+				server.println("failed to load RMIServer instance due to %s", e.getClass().getName());
 				return false;
 			}
 		}
 
 		/* send start symbol and the image data receive thread */
 		try {
-			// bean.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_SCREEN_MONITOR_CMD);
 			bean.offer(Packet.COMMAND_SCREEN_MONITOR);
 			JBean.threadPool.execute(this);
-			SwingUtilities.invokeLater(new Runnable(){
-				@Override
-				public void run() {
-					window.setTitle(W_TITLE+"["+bean.getHost()+"]");
-					window.setVisible(true);
-				}
+			SwingUtilities.invokeLater(() -> {
+				window.setTitle(W_TITLE+"["+bean.getHost()+"]");
+				window.setVisible(true);
 			});
 		} catch (IllegalAccessException e) {
-			bean.reportClosedError();
+			server.println(bean.getClosedError());
 			return false;
 		}
 
@@ -204,7 +191,6 @@ public class SMTask extends JSTaskBase {
 			while ( it.hasNext() ) {
 				final JBean b = it.next();
 				try {
-					// b.send(JCmdTools.SEND_CMD_SYMBOL, JCmdTools.SERVER_BROADCAST_START_CMD);
 					b.offer(Packet.COMMAND_BROADCAST_START);
 				} catch (IllegalAccessException e) {
 					b.reportClosedError();
@@ -221,7 +207,7 @@ public class SMTask extends JSTaskBase {
 		try {
 			bean.offer(Packet.COMMAND_TASK_STOP);
 		} catch (IllegalAccessException e) {
-			bean.reportClosedError();
+			server.println(bean.getClosedError());
 		}
 
 		super.stop();
@@ -243,12 +229,12 @@ public class SMTask extends JSTaskBase {
 				/*repaint the Image JPanel*/
 				repaintImageJPanel();
 			} catch (InterruptedException e) {
-				log.warn("client %s message take were interrupted", bean.getName());
+				server.println(log.getWarn("client %s message take were interrupted", bean.getName()));
 			} catch (IOException e) {
-				log.error("client %s went offline due to %s\n", bean.getName(), e.getClass().getName());
+				server.println(log.getError("client %s went offline due to %s\n", bean.getName(), e.getClass().getName()));
 				break;
 			} catch (IllegalAccessException e) {
-				bean.reportClosedError();
+				server.println(bean.getClosedError());
 				break;
 			}
 		}

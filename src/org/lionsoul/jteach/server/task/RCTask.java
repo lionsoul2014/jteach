@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Scanner;
 
+import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.JBean;
@@ -31,36 +32,13 @@ public class RCTask extends JSTaskBase {
 	public boolean _before() {
 		final String args = server.getArguments().get(CmdUtil.RCMD_EXECUTE_KEY);
 		if ( args == null ) {
-			System.out.println("-+-i : a/integer: send command to all/ith client");
+			server.println("-+-i : a/integer: send command to all/ith client");
 			return false;
 		}
 
-		if (args.equals(CmdUtil.COMMAND_RCMD_ALL_EXECUTION)) {
+		if (args.equals(CmdUtil.SERVER_RCMD_ALL)) {
 			bean = null;
-		} else {
-			if (args.matches("^[0-9]{1,}$") == false) {
-				JServer.setTipInfo("invalid index %s for rc command", args);
-				return false;
-			}
-
-			int index = Integer.parseInt(args);
-			if ( index < 0 || index >= server.beanCount() ) {
-				JServer.setTipInfo("index %d out of bounds", index);
-				return false;
-			}
-
-			bean = beanList.get(index);
-		}
-
-		return true;
-	}
-
-	@Override
-	public void _run() {
-
-		/* send command to all the JBeans */
-		if (bean == null) {
-			// send start symbol
+			// send start symbol to all beans
 			final Iterator<JBean> it = beanList.iterator();
 			while (it.hasNext()) {
 				final JBean bean = it.next();
@@ -71,14 +49,104 @@ public class RCTask extends JSTaskBase {
 					it.remove();
 				}
 			}
-			executeToAll();
 		} else {
+			if (!args.matches("^[0-9]{1,}$")) {
+				server.println("invalid index %s for rc command", args);
+				return false;
+			}
+
+			int index = Integer.parseInt(args);
+			if ( index < 0 || index >= server.beanCount() ) {
+				server.println("index %d out of bounds", index);
+				return false;
+			}
+
+			bean = beanList.get(index);
+
 			try {
 				bean.offer(Packet.COMMAND_RCMD_SINGLE_EXECUTE);
-				execute(bean);
-			} catch (IOException | IllegalAccessException e) {
-				JServer.setTipInfo("failed start command execution on bean %s", bean.getHost());
-				return;
+			} catch (IllegalAccessException e) {
+				server.println("failed start command execution on bean %s", bean.getHost());
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	@Override
+	public void _run() {
+		String line;
+		final Scanner reader = new Scanner(System.in);
+		server.println("-+-%s JBean, Run %s to exit.-+-",
+				bean == null ? "All" : "Single", EXIT_CMD_STR);
+
+		while ( true ) {
+			server.println("JTeach#RC>> ");
+			line = reader.nextLine().trim().toLowerCase();
+			if (line.equals("")) {
+				server.println("type the command, or run %s to exit.", EXIT_CMD_STR);
+				continue;
+			}
+
+			/* exit the remote command execute thread */
+			if (line.equals(EXIT_CMD_STR)) {
+				break;
+			}
+
+			final Packet d;
+			try {
+				d = Packet.valueOf(line);
+			} catch (IOException e) {
+				server.println(log.getError("failed to encode StringMessage %s", line));
+				continue;
+			}
+
+			if (bean == null) {
+				if (beanList.size() == 0) {
+					server.println(log.getDebug("task overed due to empty clients"));
+					break;
+				}
+
+				synchronized (beanList) {
+					final Iterator<JBean> it = beanList.iterator();
+					while ( it.hasNext() ) {
+						final JBean bean = it.next();
+						try {
+							bean.offer(d);
+						} catch (IllegalAccessException e) {
+							bean.reportClosedError();
+							it.remove();
+						}
+					}
+				}
+			} else {
+				/* get and print the execution response */
+				final Packet p;
+				try {
+					bean.offer(d);
+					p = bean.take();
+				} catch (InterruptedException e) {
+					server.println(log.getWarn("client %s message offer/take was interrupted", bean.getName()));
+					continue;
+				} catch (IllegalAccessException e) {
+					server.println(bean.getClosedError());
+					break;
+				}
+
+				final StringMessage msg;
+				try {
+					msg = StringMessage.decode(p);
+				} catch (IOException e) {
+					server.println(log.getError("failed to decode the string packet"));
+					continue;
+				}
+
+				if (msg.str.equals(CmdUtil.RCMD_NOREPLY_VAL)) {
+					server.println("execution failed or empty return");
+				} else {
+					server.println(msg.str);
+				}
 			}
 		}
 	}
@@ -86,116 +154,6 @@ public class RCTask extends JSTaskBase {
 	@Override
 	public void stop() {
 		// do nothing here
-	}
-	
-	/**
-	 * run command to all the online machine 
-	 */
-	private void executeToAll() {
-		String line;
-		final Scanner reader = new Scanner(System.in);
-		System.out.printf("-+-All JBeans, Run %s to exit.-+-\n", EXIT_CMD_STR);
-
-		while (true) {
-			printInputAsk();
-			line = reader.nextLine().trim().toLowerCase();
-			if ( line.equals("") ) {
-				System.out.printf("type the command, or run %s to exit.\n", EXIT_CMD_STR);
-				continue;
-			}
-
-			if (beanList.size() == 0) {
-				log.debug("task is overed due to empty clients");
-				break;
-			}
-
-			final boolean exit;
-			final Packet p;
-			if (line.equals(EXIT_CMD_STR)) {
-				exit = true;
-				p = Packet.COMMAND_TASK_STOP;
-			} else {
-				exit = false;
-				try {
-					p = Packet.valueOf(line);
-				} catch (IOException e) {
-					log.error("failed to encode StringMessage %s\n", line);
-					continue;
-				}
-			}
-
-			synchronized (beanList) {
-				final Iterator<JBean> it = beanList.iterator();
-				while ( it.hasNext() ) {
-					final JBean bean = it.next();
-					try {
-						bean.offer(p);
-					} catch (IllegalAccessException e) {
-						bean.reportClosedError();
-						it.remove();
-					}
-				}
-			}
-
-			// check and exit the current task
-			if (exit) {
-				break;
-			}
-		}
-	}
-	
-	
-	/**
-	 * run command to the specified client
-	 */
-	private void execute(final JBean bean) throws IOException, IllegalAccessException {
-		String line;
-		final Scanner reader = new Scanner(System.in);
-		System.out.printf("-+-Single JBean, Run %s to exit.-+-\n", EXIT_CMD_STR);
-
-		while ( true ) {
-			printInputAsk();
-			line = reader.nextLine().trim().toLowerCase();
-			if (line.equals("")) {
-				System.out.printf("type the command, or run %s to exit.\n", EXIT_CMD_STR);
-				continue;
-			}
-			
-			/* exit the remote command execute thread */
-			if (line.equals(EXIT_CMD_STR)) {
-				bean.offer(Packet.COMMAND_TASK_STOP);
-				break;
-			}
-
-			bean.offer(Packet.valueOf(line));
-
-			/* get and print the execution response */
-			final Packet p;
-			try {
-				p = bean.take();
-			} catch (InterruptedException e) {
-				log.warn("client %s message take was interrupted", bean.getName());
-				continue;
-			}
-
-			final StringMessage msg;
-			try {
-				msg = StringMessage.decode(p);
-			} catch (IOException e) {
-				log.error("failed to decode the string packet");
-				continue;
-			}
-
-			if (msg.str.equals(CmdUtil.RCMD_NOREPLY_VAL)) {
-				System.out.println("execution failed or empty return");
-			} else {
-				System.out.println(msg.str);
-			}
-		}
-	}
-
-	public static final void printInputAsk() {
-		System.out.print("JTeach#RC>> ");
 	}
 
 }
