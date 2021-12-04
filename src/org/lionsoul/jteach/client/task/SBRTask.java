@@ -166,12 +166,12 @@ public class SBRTask extends JCTaskBase {
 	}
 
 	@Override
-	public void onExit() {
+	public void _exit() {
 		SwingUtilities.invokeLater(() -> {
 			window.setVisible(false);
 			window.dispose();
 		});
-		super.onExit();
+		super._exit();
 	}
 
 }

@@ -38,10 +38,14 @@ public abstract class JCTaskBase implements Runnable {
 	protected abstract void _run();
 
 	/** task overed callback */
-	protected void onExit() {
+	protected void _exit() {
 		client.resetJCTask();
 		log.debug("task %s stopped", this.getClass().getName());
 		client.notifyCmdMonitor();
+		/* notify to exit the lock.wait */
+		synchronized (lock) {
+			lock.notify();
+		}
 	}
 
 	@Override
@@ -51,13 +55,7 @@ public abstract class JCTaskBase implements Runnable {
 		// 1, run the task
 		_run();
 		// 2, task finished and call the exit callback
-		onExit();
-		// 3, check and notify the wait lock
-		if (_wait()) {
-			synchronized (lock) {
-				lock.notify();
-			}
-		}
+		_exit();
 	}
 
 	/** start the working Task */
@@ -73,7 +71,6 @@ public abstract class JCTaskBase implements Runnable {
 				try {
 					lock.wait();
 				} catch (InterruptedException e) {
-					stop();
 					return false;
 				}
 			}

@@ -79,12 +79,6 @@ public class RCTask extends JSTaskBase {
 	}
 
 	@Override
-	public void onExit() {
-		server.resetJSTask();
-		server.println(String.format("task %s stopped", this.getClass().getName()));
-	}
-
-	@Override
 	public void _run() {
 		String line;
 		final Scanner reader = new Scanner(System.in);
@@ -101,7 +95,6 @@ public class RCTask extends JSTaskBase {
 
 			/* exit the remote command execute thread */
 			if (line.equals(EXIT_CMD_STR)) {
-				stop();
 				break;
 			}
 

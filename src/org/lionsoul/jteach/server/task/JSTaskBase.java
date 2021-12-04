@@ -21,6 +21,7 @@ public abstract class JSTaskBase implements Runnable {
 	protected final JServer server;
 	protected final List<JBean> beanList;
 	protected final Object lock = new Object();
+	protected volatile boolean fromStop = false;
 
 	protected JSTaskBase(JServer server) {
 		this.server = server;
@@ -41,10 +42,28 @@ public abstract class JSTaskBase implements Runnable {
 	protected abstract void _run();
 
 	/** task overed callback */
-	protected void onExit() {
+	protected void _exit() {
+		// send broadcast stop cmd to all the beans;
+		final Iterator<JBean> it = beanList.iterator();
+		while ( it.hasNext() ) {
+			final JBean bean = it.next();
+			try {
+				bean.offer(Packet.COMMAND_TASK_STOP);
+			} catch (IllegalAccessException e) {
+				bean.reportClosedError();
+				it.remove();
+			}
+		}
+
 		server.resetJSTask();
 		server.println(String.format("task %s stopped", this.getClass().getName()));
-		server.printInputAsk();
+
+		/* notify to exit the lock.wait */
+		if (fromStop || _wait()) {
+			synchronized (lock) {
+				lock.notifyAll();
+			}
+		}
 	}
 
 	@Override
@@ -52,13 +71,7 @@ public abstract class JSTaskBase implements Runnable {
 		// 1, run the task
 		_run();
 		// 2, task finished and call the exit callback
-		onExit();
-		// 3, check and notify the wait lock
-		if (_wait()) {
-			synchronized (lock) {
-				lock.notifyAll();
-			}
-		}
+		_exit();
 	}
 
 	/** start the Task */
@@ -76,7 +89,7 @@ public abstract class JSTaskBase implements Runnable {
 				try {
 					lock.wait();
 				} catch (InterruptedException e) {
-					stop();
+					server.println("start lock.wait interrupted");
 					return false;
 				}
 			}
@@ -93,17 +106,13 @@ public abstract class JSTaskBase implements Runnable {
 	/** stop the working Task */
 	public void stop() {
 		server.println("stop task %s ... ", this.getClass().getName());
+		fromStop = true;
 		setStatus(T_STOP);
-
-		// send broadcast stop cmd to all the beans;
-		final Iterator<JBean> it = beanList.iterator();
-		while ( it.hasNext() ) {
-			final JBean bean = it.next();
+		synchronized (lock) {
 			try {
-				bean.offer(Packet.COMMAND_TASK_STOP);
-			} catch (IllegalAccessException e) {
-				bean.reportClosedError();
-				it.remove();
+				lock.wait();
+			} catch (InterruptedException e) {
+				server.println("stop lock.wait interrupted");
 			}
 		}
 	}

@@ -224,9 +224,9 @@ public class SMTask extends JSTaskBase {
 		}
 	}
 
-	public void onExit() {
+	public void _exit() {
 		_dispose();
-		super.onExit();
+		super._exit();
 	}
 
 
