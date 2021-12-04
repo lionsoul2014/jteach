@@ -33,9 +33,9 @@ public class ScreenMessage implements Message {
         dos.writeInt(height);
         long start = System.currentTimeMillis();
         // ImageIO.write(img, "jpeg", bos);
-        final DataBufferByte buffer = (DataBufferByte) img.getData().getDataBuffer();
+        final DataBufferByte buffer = (DataBufferByte) img.getRaster().getDataBuffer();
         bos.write(buffer.getData());
-        System.out.printf("end write, type: %d, cost: %dms\n", img.getType(), System.currentTimeMillis() - start);
+        System.out.printf("end write, type: %d, length: %d, cost: %dms\n", img.getType(), bos.size(), System.currentTimeMillis() - start);
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
     }
 
@@ -44,8 +44,8 @@ public class ScreenMessage implements Message {
         final DataInputStream dis = new DataInputStream(bis);
         final int x = dis.readInt(), y = dis.readInt();
         final int w = dis.readInt(), h = dis.readInt();
-        final BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        img.setData(Raster.createRaster(img.getSampleModel(), new DataBufferByte(p.data, 16, p.data.length - 16), new Point()));
+        final BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
+        img.setData(Raster.createRaster(img.getSampleModel(), new DataBufferByte(p.data, p.data.length - 16, 16), new Point()));
         return new ScreenMessage(new Point(x, y), img);
     }
 

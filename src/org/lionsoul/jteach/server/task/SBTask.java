@@ -80,6 +80,12 @@ public class SBTask extends JSTaskBase {
 	public void _run() {
 		// BufferedImage B_IMG = null;
 		while ( getStatus() == T_RUN ) {
+			/* check and the client list */
+			if (beanList.size() == 0) {
+				server.println(log.getInfo("task overed due to empty client list"));
+				break;
+			}
+
 			// grab screen capture
 			long start = System.currentTimeMillis();
 			final BufferedImage img;
