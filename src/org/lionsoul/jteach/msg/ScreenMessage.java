@@ -54,7 +54,7 @@ public class ScreenMessage implements Message {
             len += count;
         }
 
-        System.out.printf("end write, l: %d, cl: %d, cost: %dms\n", imgData.length, len, System.currentTimeMillis() - start);
+        // System.out.printf("end write, l: %d, cl: %d, cost: %dms\n", imgData.length, len, System.currentTimeMillis() - start);
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
     }
 
