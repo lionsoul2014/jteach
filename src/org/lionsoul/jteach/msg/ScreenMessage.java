@@ -5,6 +5,8 @@ import org.lionsoul.jteach.util.CmdUtil;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.awt.image.Raster;
 import java.io.*;
 
 public class ScreenMessage implements Message {
@@ -23,14 +25,22 @@ public class ScreenMessage implements Message {
         final DataOutputStream dos = new DataOutputStream(bos);
         dos.writeInt(mouse.x);
         dos.writeInt(mouse.y);
-        ImageIO.write(img, "jpeg", bos);
+        long start = System.currentTimeMillis();
+        // ImageIO.write(img, "jpeg", bos);
+        final DataBufferByte buffer = (DataBufferByte) img.getRaster().getDataBuffer();
+        bos.write(buffer.getData());
+        System.out.printf("end write, cost: %dms\n", System.currentTimeMillis() - start);
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
     }
 
     public static final ScreenMessage decode(final Packet p) throws IOException {
         final ByteArrayInputStream bis = new ByteArrayInputStream(p.data);
         final DataInputStream dis = new DataInputStream(bis);
-        return new ScreenMessage(new Point(dis.readInt(), dis.readInt()), ImageIO.read(bis));
+        final int w = dis.readInt();
+        final int h = dis.readInt();
+        final BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
+        img.setData(Raster.createRaster(img.getSampleModel(), new DataBufferByte(p.data, 8, p.data.length - 8), new Point()));
+        return new ScreenMessage(new Point(dis.readInt(), dis.readInt()), img);
     }
 
 }

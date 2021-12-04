@@ -325,7 +325,15 @@ public class JBean {
 		readPool.addFirst(Packet.SOCKET_CLOSED);
 		sendPool.addFirst(Packet.SOCKET_CLOSED);
 	}
-	
+
+	public int readPoolSize() {
+		return readPool.size();
+	}
+
+	public int sendPoolSize() {
+		return sendPool.size();
+	}
+
 	public void reportClosedError() {
 		System.out.println(getClosedError());
 	}
