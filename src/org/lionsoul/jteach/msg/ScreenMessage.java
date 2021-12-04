@@ -1,5 +1,6 @@
 package org.lionsoul.jteach.msg;
 
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.util.CmdUtil;
 
 import javax.imageio.ImageIO;
@@ -13,6 +14,8 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 public class ScreenMessage implements Message {
+
+    private static final Log log = Log.getLogger(ScreenMessage.class);
 
     public final Point mouse;
     public final int width;
@@ -34,9 +37,9 @@ public class ScreenMessage implements Message {
         dos.writeInt(mouse.y);
         dos.writeInt(width);
         dos.writeInt(height);
-        long start = System.currentTimeMillis();
 
         // ImageIO.write(img, "jpeg", bos);
+        long start = System.currentTimeMillis();
         final DataBufferByte imgBuffer = (DataBufferByte) img.getRaster().getDataBuffer();
         final byte[] imgData = imgBuffer.getData();
 
@@ -54,7 +57,7 @@ public class ScreenMessage implements Message {
             len += count;
         }
 
-        // System.out.printf("end write, l: %d, cl: %d, cost: %dms\n", imgData.length, len, System.currentTimeMillis() - start);
+        log.debug("end write, l: %d, cl: %d, cost: %dms\n", imgData.length, len, System.currentTimeMillis() - start);
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
     }
 

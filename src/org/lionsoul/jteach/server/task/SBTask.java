@@ -87,7 +87,7 @@ public class SBTask extends JSTaskBase {
 			}
 
 			// grab screen capture
-			// long start = System.currentTimeMillis();
+			long start = System.currentTimeMillis();
 			final BufferedImage img;
 			try {
 				final Java2DFrameConverter converter = new Java2DFrameConverter();
@@ -102,7 +102,7 @@ public class SBTask extends JSTaskBase {
 			// 	new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height)
 			// );
 
-			// log.info("end grab, cost: %dms", System.currentTimeMillis() - start);
+			log.debug("end grab, cost: %dms", System.currentTimeMillis() - start);
 
 			/*
 			 * we need to check the image
@@ -117,7 +117,7 @@ public class SBTask extends JSTaskBase {
 
 
 			/* encode the screen message */
-			// start = System.currentTimeMillis();
+			start = System.currentTimeMillis();
 			final Packet p;
 			try {
 				p = new ScreenMessage(MouseInfo.getPointerInfo().getLocation(), img).encode();
@@ -125,14 +125,15 @@ public class SBTask extends JSTaskBase {
 				server.println(log.getError("failed to decode screen image"));
 				continue;
 			}
-			// log.info("end encode, cost: %dms", System.currentTimeMillis() - start);
+
+			log.debug("end encode, cost: %dms", System.currentTimeMillis() - start);
 
 			// remember the current img as the last
 			// image the for the next round
 			// B_IMG = img;
 
 			/* send the image data to the clients */
-			// start = System.currentTimeMillis();
+			start = System.currentTimeMillis();
 			synchronized (beanList) {
 				final Iterator<JBean> it = beanList.iterator();
 				while (it.hasNext()) {
@@ -147,7 +148,8 @@ public class SBTask extends JSTaskBase {
 					}
 				}
 			}
-			// log.info("end send, cost: %dms", System.currentTimeMillis() - start);
+
+			log.debug("end send, cost: %dms", System.currentTimeMillis() - start);
 
 			// try {
 			// 	Thread.sleep(16);
