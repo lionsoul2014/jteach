@@ -44,7 +44,10 @@ public class ScreenMessage implements Message {
         int len = 0;
         final Deflater deflater = new Deflater();
         deflater.setInput(imgData);
-        final byte[] buffer = new byte[1024];
+        // deflater.setLevel(Deflater.BEST_COMPRESSION);
+        deflater.setLevel(Deflater.DEFLATED);
+        deflater.finish();
+        final byte[] buffer = new byte[8192];
         while (!deflater.finished()) {
             int count = deflater.deflate(buffer);
             bos.write(buffer, 0, count);
@@ -64,8 +67,8 @@ public class ScreenMessage implements Message {
         // decompress the data
         final Inflater inflater = new Inflater();
         inflater.setInput(p.data, 16, p.data.length - 16);
-        final byte[] buffer = new byte[1024];
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream(p.data.length);
+        final byte[] buffer = new byte[8192];
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream(p.data.length * 2);
         while (!inflater.finished()) {
             int count = 0;
             try {
