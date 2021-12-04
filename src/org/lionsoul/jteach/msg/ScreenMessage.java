@@ -8,6 +8,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.Raster;
 import java.io.*;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 public class ScreenMessage implements Message {
 
@@ -32,10 +35,23 @@ public class ScreenMessage implements Message {
         dos.writeInt(width);
         dos.writeInt(height);
         long start = System.currentTimeMillis();
+
         // ImageIO.write(img, "jpeg", bos);
-        final DataBufferByte buffer = (DataBufferByte) img.getRaster().getDataBuffer();
-        bos.write(buffer.getData());
-        System.out.printf("end write, type: %d, length: %d, cost: %dms\n", img.getType(), bos.size(), System.currentTimeMillis() - start);
+        final DataBufferByte imgBuffer = (DataBufferByte) img.getRaster().getDataBuffer();
+        final byte[] imgData = imgBuffer.getData();
+
+        // compress the data
+        int len = 0;
+        final Deflater deflater = new Deflater();
+        deflater.setInput(imgData);
+        final byte[] buffer = new byte[1024];
+        while (!deflater.finished()) {
+            int count = deflater.deflate(buffer);
+            bos.write(buffer, 0, count);
+            len += count;
+        }
+
+        System.out.printf("end write, l: %d, cl: %d, cost: %dms\n", imgData.length, len, System.currentTimeMillis() - start);
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
     }
 
@@ -44,8 +60,27 @@ public class ScreenMessage implements Message {
         final DataInputStream dis = new DataInputStream(bis);
         final int x = dis.readInt(), y = dis.readInt();
         final int w = dis.readInt(), h = dis.readInt();
+
+        // decompress the data
+        final Inflater inflater = new Inflater();
+        inflater.setInput(p.data, 16, p.data.length - 16);
+        final byte[] buffer = new byte[1024];
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream(p.data.length);
+        while (!inflater.finished()) {
+            int count = 0;
+            try {
+                count = inflater.inflate(buffer);
+            } catch (DataFormatException e) {
+                throw new IOException("image inflate error");
+            }
+
+            bos.write(buffer, 0, count);
+        }
+
+        final byte[] imgData = bos.toByteArray();
         final BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
-        img.setData(Raster.createRaster(img.getSampleModel(), new DataBufferByte(p.data, p.data.length - 16, 16), new Point()));
+        img.setData(Raster.createRaster(img.getSampleModel(), new DataBufferByte(imgData, imgData.length), new Point()));
+
         return new ScreenMessage(new Point(x, y), img);
     }
 
