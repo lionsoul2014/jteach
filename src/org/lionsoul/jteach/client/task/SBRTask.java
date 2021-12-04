@@ -29,7 +29,7 @@ public class SBRTask extends JCTaskBase {
 	public static final String title = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From Server";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
-	public static Image MOUSE_IMG = ImageUtil.Create("m_pen.png").getImage();
+	public static Image CURSOR = ImageUtil.Create("cursor_01.png").getImage();
 	public static final Log log = Log.getLogger(SBRTask.class);
 
 	private final JFrame window;
@@ -110,7 +110,7 @@ public class SBRTask extends JCTaskBase {
 			/* Draw the Mouse */
 			final int x = Math.round(screen.mouse.x * ((float)dst_w/screen.img.getWidth()));
 			final int y = Math.round(screen.mouse.y * (float)dst_h/screen.img.getHeight());
-			g.drawImage(MOUSE_IMG, x, y, null);
+			g.drawImage(CURSOR, x, y, null);
 		}
 	}
 	

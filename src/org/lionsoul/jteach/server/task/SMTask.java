@@ -41,7 +41,7 @@ public class SMTask extends JSTaskBase {
 	public static final String W_TITLE = "JTeach - Remote Window";
 	public static final String EMTPY_INFO = "Loading Image Resource From JBean";
 	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
-	public static final Image MOUSE_IMG = ImageUtil.Create("m_plan.png").getImage();
+	public static final Image CURSOR = ImageUtil.Create("cursor_02.png").getImage();
 	public static final Log log = Log.getLogger(UFTask.class);
 
 	private final JFrame window;
@@ -270,7 +270,7 @@ public class SMTask extends JSTaskBase {
 			/* draw the mouse */
 			final int x = Math.round(screen.mouse.x * ((float)dst_w/screen.img.getWidth()));
 			final int y = Math.round(screen.mouse.y * ((float)dst_h/screen.img.getHeight()));
-			g.drawImage(MOUSE_IMG, x, y, null);
+			g.drawImage(CURSOR, x, y, null);
 		}
 
 		/**
