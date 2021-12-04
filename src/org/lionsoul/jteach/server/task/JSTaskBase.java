@@ -57,6 +57,9 @@ public abstract class JSTaskBase implements Runnable {
 
 		server.resetJSTask();
 		server.println(String.format("task %s stopped", this.getClass().getName()));
+		if (!fromStop && !_wait()) {
+			server.printInputAsk();
+		}
 
 		/* notify to exit the lock.wait */
 		synchronized (lock) {
