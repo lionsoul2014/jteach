@@ -1,5 +1,7 @@
 package org.lionsoul.jteach.capture;
 
+import org.lionsoul.jteach.config.TaskConfig;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
@@ -7,8 +9,8 @@ public class RobotScreenCapture extends ScreenCapture {
 
     private final Robot robot;
 
-    public RobotScreenCapture(Rectangle rect) throws AWTException {
-        super(rect);
+    public RobotScreenCapture(Rectangle rect, TaskConfig config) throws AWTException {
+        super(rect, config);
         robot = new Robot();
     }
 

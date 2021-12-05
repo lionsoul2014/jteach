@@ -41,7 +41,7 @@ public class ScreenMessage implements Message {
             final DataBufferByte imgBuffer = (DataBufferByte) img.getRaster().getDataBuffer();
             bos.write(imgBuffer.getData());
         } else {
-            ImageIO.write(img, "jpg", bos);
+            ImageIO.write(img, "jpeg", bos);
         }
 
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
@@ -59,7 +59,7 @@ public class ScreenMessage implements Message {
         if (driver == ScreenCapture.FFMPEG_DRIVER) {
             img = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
             img.setData(Raster.createRaster(img.getSampleModel(),
-                    new DataBufferByte(p.data, p.length - 16, 16), new Point()));
+                    new DataBufferByte(p.data, p.length - 20, 20), new Point()));
         } else {
             img = ImageIO.read(bis);
         }

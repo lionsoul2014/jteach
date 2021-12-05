@@ -3,6 +3,7 @@ package org.lionsoul.jteach.capture;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
+import org.lionsoul.jteach.config.TaskConfig;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -11,9 +12,9 @@ public class FFmpegFrameCapture extends ScreenCapture {
 
     private final FFmpegFrameGrabber frameGrabber;
 
-    public FFmpegFrameCapture(Rectangle rect) throws FFmpegFrameGrabber.Exception {
-        super(rect);
-        frameGrabber = FFmpegFrameGrabber.createDefault(":1.0+0,0");
+    public FFmpegFrameCapture(Rectangle rect, TaskConfig config) throws FFmpegFrameGrabber.Exception {
+        super(rect, config);
+        frameGrabber = FFmpegFrameGrabber.createDefault(config.display+".0+0,0");
         frameGrabber.setFormat("x11grab");
         frameGrabber.setImageWidth(rect.width);
         frameGrabber.setImageHeight(rect.height);

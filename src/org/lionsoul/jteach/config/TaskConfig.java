@@ -2,6 +2,8 @@ package org.lionsoul.jteach.config;
 
 import org.lionsoul.jteach.capture.ScreenCapture;
 
+import java.util.zip.Deflater;
+
 public class TaskConfig {
 
     /* display device */
@@ -32,7 +34,7 @@ public class TaskConfig {
     }
 
     public static TaskConfig createDefault() {
-        return new TaskConfig(":1", 6, ScreenCapture.FFMPEG_DRIVER);
+        return new TaskConfig(":1", Deflater.BEST_COMPRESSION, ScreenCapture.FFMPEG_DRIVER);
     }
 
 }

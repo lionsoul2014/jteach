@@ -175,7 +175,8 @@ public class JServer implements Runnable {
 			JSTask = (JSTaskBase) con.newInstance(this);
 			JSTask.start();
 		} catch (Exception e) {
-			println("failed to start task %s due to %s", classname, e.getClass().getName());
+			e.printStackTrace();
+			println(log.getError("failed to start task %s due to %s", classname, e.getClass().getName()));
 		}
 	}
 
@@ -361,7 +362,7 @@ public class JServer implements Runnable {
 	}
 	
 	public static void main(String[] args) {
-		Log.setLevel(Log.INFO);	// default log level to info
+		Log.setLevel(Log.DEBUG);	// default log level to info
 		final TaskConfig config = TaskConfig.createDefault();
 		for (int j = 0; j < args.length; j++) {
 			if ("--port".equals(args[j])) {

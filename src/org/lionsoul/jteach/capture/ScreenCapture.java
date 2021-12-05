@@ -1,5 +1,7 @@
 package org.lionsoul.jteach.capture;
 
+import org.lionsoul.jteach.config.TaskConfig;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
@@ -8,9 +10,11 @@ public abstract class ScreenCapture {
     public static final int FFMPEG_DRIVER = 2;
 
     protected final Rectangle rect;
+    protected final TaskConfig config;
 
-    public ScreenCapture(Rectangle rect) {
+    public ScreenCapture(Rectangle rect, TaskConfig config) {
         this.rect = rect;
+        this.config = config;
     }
 
     public Rectangle getRect() {

@@ -29,8 +29,8 @@ public class SBTask extends JSTaskBase {
 		super(server);
 		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		this.capture = Factory.create(server.config.captureDriver,
-				new Rectangle(0, 0, screenSize.width, screenSize.height));
-		log.debug("%s initialized with driver: %s, rect: %s", capture.getDriverName(), capture.getRect());
+				new Rectangle(0, 0, screenSize.width, screenSize.height), server.config);
+		log.debug("initialized with driver: %s, rect: %s", capture.getDriverName(), capture.getRect());
 	}
 
 	@Override
@@ -121,6 +121,7 @@ public class SBTask extends JSTaskBase {
 
 			/* send the image data to the clients */
 			start = System.currentTimeMillis();
+			p.setAutoCompress(true).setCompressLevel(server.config.compressLevel);
 			synchronized (beanList) {
 				final Iterator<JBean> it = beanList.iterator();
 				while (it.hasNext()) {
