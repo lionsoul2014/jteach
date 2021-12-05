@@ -362,7 +362,7 @@ public class JServer implements Runnable {
 	}
 	
 	public static void main(String[] args) {
-		Log.setLevel(Log.DEBUG);	// default log level to info
+		Log.setLevel(Log.INFO);	// default log level to info
 		final TaskConfig config = TaskConfig.createDefault();
 		for (int j = 0; j < args.length; j++) {
 			if ("--port".equals(args[j])) {
