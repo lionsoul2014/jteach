@@ -51,8 +51,8 @@ public class JBean {
 		this.input  = new DataInputStream(socket.getInputStream());
 
 		/* create the message pool */
-		this.sendPool = new LinkedBlockingDeque(12);
-		this.readPool = new LinkedBlockingDeque(12);
+		this.sendPool = new LinkedBlockingDeque(5);
+		this.readPool = new LinkedBlockingDeque(5);
 	}
 
 	public void start() {
