@@ -22,6 +22,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import org.lionsoul.jteach.capture.ScreenCapture;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
@@ -251,9 +252,10 @@ public class SMTask extends JSTaskBase {
 
 		@Override
 		protected void paintComponent(Graphics g) {
+			final ScreenMessage msg = screen;
 			g.setColor(Color.BLACK);
 			g.fillRect(0, 0, getWidth(), getHeight());
-			if (screen == null) {
+			if (msg == null) {
 				g.setColor(Color.WHITE);
 				g.setFont(IFONT);
 				final FontMetrics m = getFontMetrics(IFONT);
@@ -264,13 +266,15 @@ public class SMTask extends JSTaskBase {
 			/* draw the screen image */
 			final int dst_w = getWidth() - insetSize.left - insetSize.right;
 			final int dst_h = getHeight() - insetSize.top - insetSize.bottom;
-			final BufferedImage img = ImageUtil.resize_2(screen.img, dst_w, dst_h);
+			final BufferedImage img = ImageUtil.resize_2(msg.img, dst_w, dst_h);
 			g.drawImage(img, 0, 0, null);
 
 			/* draw the mouse */
-			final int x = Math.round(screen.mouse.x * ((float)dst_w/screen.img.getWidth()));
-			final int y = Math.round(screen.mouse.y * ((float)dst_h/screen.img.getHeight()));
-			g.drawImage(CURSOR, x, y, null);
+			if (msg.driver == ScreenCapture.ROBOT_DRIVER) {
+				final int x = Math.round(msg.mouse.x * ((float)dst_w/msg.img.getWidth()));
+				final int y = Math.round(msg.mouse.y * ((float)dst_h/msg.img.getHeight()));
+				g.drawImage(CURSOR, x, y, null);
+			}
 		}
 
 		/**

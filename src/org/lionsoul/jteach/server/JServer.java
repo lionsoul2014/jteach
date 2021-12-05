@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.zip.Deflater;
 
+import org.lionsoul.jteach.config.TaskConfig;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
@@ -29,9 +30,7 @@ public class JServer implements Runnable {
 	public static final Log log = Log.getLogger(JServer.class);
 
 	/* config item need by the task running */
-	public static String display;							/* display device for screen capture */
-	public static int compress_level = Deflater.DEFLATED;	/* message compress level */
-	public static int screen_capture_driver = ScreenCapture.FFMPEG_DRIVER;
+	public final TaskConfig config;
 
 	public static final int M_RUN = 1;
 	public static final int M_OVER = 0;
@@ -41,7 +40,8 @@ public class JServer implements Runnable {
 	private final List<JBean> beanList;
 	private HashMap<String, String> arguments = null;
 
-	private JServer() {
+	private JServer(TaskConfig config) {
+		this.config = config;
 		beanList = Collections.synchronizedList(new ArrayList<>());
 	}
 	
@@ -362,6 +362,7 @@ public class JServer implements Runnable {
 	
 	public static void main(String[] args) {
 		Log.setLevel(Log.INFO);	// default log level to info
+		final TaskConfig config = TaskConfig.createDefault();
 		for (int j = 0; j < args.length; j++) {
 			if ("--port".equals(args[j])) {
 				if (j+1 >= args.length) {
@@ -397,7 +398,7 @@ public class JServer implements Runnable {
 					System.out.println("missing value for --display option");
 					return;
 				}
-				JServer.display = args[j+1];
+				config.setDisplay(args[j+1]);
 			} else if ("--compress-level".equals(args[j])) {
 				if (j+1 >= args.length) {
 					System.out.println("missing value for --compress-level option");
@@ -408,7 +409,7 @@ public class JServer implements Runnable {
 					System.out.printf("invalid compress level %s specified\n", args[j+1]);
 					return;
 				}
-				JServer.compress_level = level;
+				config.setCompressLevel(level);
 			} else if ("--capture-driver".equals(args[j])) {
 				if (j+1 >= args.length) {
 					System.out.println("missing value for --capture-driver option");
@@ -417,9 +418,9 @@ public class JServer implements Runnable {
 
 				final String str = args[j+1];
 				if ("robot".equals(str)) {
-					JServer.screen_capture_driver = ScreenCapture.ROBOT_DRIVER;
+					config.setCaptureDriver(ScreenCapture.ROBOT_DRIVER);
 				} else if ("ffmpeg".equals(str)) {
-					JServer.screen_capture_driver = ScreenCapture.FFMPEG_DRIVER;
+					config.setCaptureDriver(ScreenCapture.FFMPEG_DRIVER);
 				} else {
 					System.out.printf("invalid capture-driver specified %s\n", str);
 					return;
@@ -427,7 +428,7 @@ public class JServer implements Runnable {
 			}
 		}
 
-		final JServer server = new JServer();
+		final JServer server = new JServer(config);
 		server.initServer();
 		server.startMonitorThread();
 		CmdUtil.showCmdMenu();

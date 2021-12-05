@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.lionsoul.jteach.capture.Factory;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
@@ -27,7 +28,7 @@ public class SBTask extends JSTaskBase {
 	public SBTask(JServer server) throws CaptureException {
 		super(server);
 		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		this.capture = ScreenCapture.create(JServer.screen_capture_driver,
+		this.capture = Factory.create(server.config.captureDriver,
 				new Rectangle(0, 0, screenSize.width, screenSize.height));
 		log.debug("%s initialized with driver: %s, rect: %s", capture.getDriverName(), capture.getRect());
 	}
@@ -106,7 +107,7 @@ public class SBTask extends JSTaskBase {
 			start = System.currentTimeMillis();
 			final Packet p;
 			try {
-				p = new ScreenMessage(MouseInfo.getPointerInfo().getLocation(), img).encode();
+				p = new ScreenMessage(capture.getDriver(), MouseInfo.getPointerInfo().getLocation(), img).encode();
 			} catch (IOException e) {
 				server.println(log.getError("failed to decode screen image"));
 				continue;

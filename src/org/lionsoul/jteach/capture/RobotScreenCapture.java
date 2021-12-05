@@ -13,6 +13,11 @@ public class RobotScreenCapture extends ScreenCapture {
     }
 
     @Override
+    public int getDriver() {
+        return ScreenCapture.ROBOT_DRIVER;
+    }
+
+    @Override
     public String getDriverName() {
         return "robot";
     }

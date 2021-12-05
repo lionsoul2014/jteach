@@ -31,7 +31,7 @@ public class Packet {
     public static final int HAS_COMPRESSED = 0x01 << 2;
 
     public final byte symbol;
-    public final byte attr;
+    public byte attr;
     public final int cmd;
 
     public final int offset;
@@ -62,10 +62,6 @@ public class Packet {
         this.length = length;
         if (data != null) {
             attr |= HAS_DATA;
-            // define the compress bit mask
-            if (autoCompress && this.length >= minCompressBytes) {
-                attr |= HAS_COMPRESSED;
-            }
         }
 
         this.attr = attr;
@@ -102,6 +98,12 @@ public class Packet {
     public byte[] encode() throws IOException {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
+
+        /* check and define the compress bit mask */
+        if ((attr & HAS_DATA) != 0 && autoCompress
+                && length >= minCompressBytes) {
+            attr |= HAS_COMPRESSED;
+        }
 
         // write the symbol char
         dos.writeByte(symbol);
@@ -146,7 +148,7 @@ public class Packet {
      * read a Packet from the input stream .
      * the caller should handle the resource racing of the read operation.
      */
-    public static final Packet decode(DataInputStream input) throws IOException {
+    public static Packet decode(DataInputStream input) throws IOException {
         final byte symbol = input.readByte();
         final byte attr = input.readByte();
 

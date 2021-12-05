@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import javax.swing.JOptionPane;
 
+import org.lionsoul.jteach.capture.ScreenCapture;
 import org.lionsoul.jteach.client.JClient;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
@@ -59,7 +60,7 @@ public class SMSTask extends JCTaskBase {
 				/* encode the screen image */
 				final Packet p;
 				try {
-					p = new ScreenMessage(MouseInfo.getPointerInfo().getLocation(), img).encode();
+					p = new ScreenMessage(ScreenCapture.ROBOT_DRIVER, MouseInfo.getPointerInfo().getLocation(), img).encode();
 				} catch (IOException e) {
 					log.error("failed to decode screen image");
 					continue;

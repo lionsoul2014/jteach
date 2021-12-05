@@ -21,6 +21,11 @@ public class FFmpegFrameCapture extends ScreenCapture {
     }
 
     @Override
+    public int getDriver() {
+        return ScreenCapture.FFMPEG_DRIVER;
+    }
+
+    @Override
     public String getDriverName() {
         return "ffmpeg";
     }
