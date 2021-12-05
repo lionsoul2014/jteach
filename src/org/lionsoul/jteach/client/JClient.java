@@ -136,6 +136,7 @@ public class JClient extends JFrame implements Runnable {
 	/* check and reconnect to the server */
 	public boolean connect() {
 		if (bean != null && !bean.isClosed()) {
+			log.debug("client %s connected to server", bean.getHost());
 			return true;
 		}
 

@@ -58,7 +58,7 @@ public class JBean {
 	public void start() {
 		threadPool.execute(new ReadTask());
 		threadPool.execute(new SendTask());
-		threadPool.execute(new HeartBeartTask());
+		threadPool.execute(new HeartBeatTask());
 	}
 
 	public void stop() {
@@ -135,46 +135,10 @@ public class JBean {
 
 		synchronized (input) {
 			socket.setSoTimeout(0);
-			final byte symbol = input.readByte();
-			final byte attr = input.readByte();
-
+			final Packet p = Packet.decode(input);
 			// update the last read at
 			lastReadAt = System.currentTimeMillis();
-			// if (!JCmdTools.validSymbol(symbol)) {
-			// 	throw new UnknownSymbolException("unknown symbol " + symbol);
-			// }
-
-			// check and parse the command
-			final int cmd;
-			if ((attr & Packet.HAS_CMD) == 0) {
-				cmd = CmdUtil.COMMAND_NULL;
-			} else {
-				cmd = input.readInt();
-			}
-
-			// check and receive the data
-			final byte[] data;
-			if ((attr & Packet.HAS_DATA) == 0) {
-				data = null;
-			} else {
-				/* the length of the data */
-				final int dLen = input.readInt();
-
-				/* read the byte data into the buffer
-				 * cause cannot read all the data by once when the data is large */
-				data = new byte[dLen];
-				int rLen = 0;
-				while (rLen < dLen) {
-					final int size = input.read(data, rLen, dLen - rLen);
-					if (size > 0) {
-						rLen += size;
-					} else {
-						break;
-					}
-				}
-			}
-
-			return new Packet(symbol, cmd, data);
+			return p;
 		}
 	}
 
@@ -186,7 +150,7 @@ public class JBean {
 
 		final Packet p = readPool.poll();
 		if (p.isSymbol(CmdUtil.SYMBOL_SOCKET_CLOSED)) {
-			throw new IllegalAccessException("socket clsoed exception");
+			throw new IllegalAccessException("socket closed exception");
 		}
 
 		return p;
@@ -281,7 +245,7 @@ public class JBean {
 	}
 
 	/** Heartbeat thread */
-	private class HeartBeartTask implements Runnable {
+	private class HeartBeatTask implements Runnable {
 		@Override
 		public void run() {
 			while (true) {

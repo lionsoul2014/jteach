@@ -1,20 +1,17 @@
 package org.lionsoul.jteach.server.task;
 
 import java.awt.*;
-import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.sql.SQLSyntaxErrorException;
 import java.util.Iterator;
 
-import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.Java2DFrameConverter;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
+import org.lionsoul.jteach.capture.CaptureException;
+import org.lionsoul.jteach.capture.ScreenCapture;
 
 
 /**
@@ -22,21 +19,17 @@ import org.lionsoul.jteach.server.JServer;
  * @author chenxin - chenxin619315@gmail.com
  */
 public class SBTask extends JSTaskBase {
-	
-	public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
+
 	public static final Log log = Log.getLogger(SBTask.class);
 
-	private final Robot robot;
-	private final FFmpegFrameGrabber frameGrabber;
+	private final ScreenCapture capture;
 
-	public SBTask(JServer server) throws AWTException, FFmpegFrameGrabber.Exception {
+	public SBTask(JServer server) throws CaptureException {
 		super(server);
-		robot = new Robot();
-		frameGrabber = FFmpegFrameGrabber.createDefault(":1.0+0,0");
-		frameGrabber.setFormat("x11grab");
-		frameGrabber.setImageWidth(SCREEN_SIZE.width);
-		frameGrabber.setImageHeight(SCREEN_SIZE.height);
-		frameGrabber.start();
+		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		this.capture = ScreenCapture.create(JServer.screen_capture_driver,
+				new Rectangle(0, 0, screenSize.width, screenSize.height));
+		log.debug("%s initialized with driver: %s, rect: %s", capture.getDriverName(), capture.getRect());
 	}
 
 	@Override
@@ -90,18 +83,11 @@ public class SBTask extends JSTaskBase {
 			long start = System.currentTimeMillis();
 			final BufferedImage img;
 			try {
-				final Java2DFrameConverter converter = new Java2DFrameConverter();
-				final Frame image = frameGrabber.grab();
-				img = converter.getBufferedImage(image, 1.0D, false, null);
-			} catch (FFmpegFrameGrabber.Exception e) {
-				server.println(log.getError("failed to grabImage due to %s", getClass().getName()));
+				img = capture.capture();
+			} catch (CaptureException e) {
+				server.println(log.getError("failed to capture screen due to %s", e.getClass().getName()));
 				continue;
 			}
-
-			// final BufferedImage img = robot.createScreenCapture(
-			// 	new Rectangle(SCREEN_SIZE.width, SCREEN_SIZE.height)
-			// );
-
 			log.debug("end grab, cost: %dms", System.currentTimeMillis() - start);
 
 			/*
