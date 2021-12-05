@@ -113,7 +113,7 @@ public class Packet {
         }
 
         // check and write the data
-        if (data == null) {
+        if ((attr & HAS_DATA) == 0) {
             return bos.toByteArray();
         }
 
@@ -130,8 +130,8 @@ public class Packet {
             final ByteArrayOutputStream tBos = new ByteArrayOutputStream(length - offset);
             final byte[] buffer = new byte[8192];
             while (!deflater.finished()) {
-                int count = deflater.deflate(buffer);
-                bos.write(buffer, 0, count);
+                final int count = deflater.deflate(buffer);
+                tBos.write(buffer, 0, count);
             }
 
             final byte[] compressData = tBos.toByteArray();
