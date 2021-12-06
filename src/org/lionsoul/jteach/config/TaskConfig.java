@@ -53,6 +53,19 @@ public class TaskConfig {
         this.imgFormat = imgFormat;
     }
 
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer();
+        sb.append('[');
+        sb.append("display: ").append(display).append(", ");
+        sb.append("compressLevel: ").append(compressLevel).append(", ");
+        sb.append("captureDriver: ").append(captureDriver).append(", ");
+        sb.append("imgEncodePolicy: ").append(imgEncodePolicy).append(", ");
+        sb.append("imgFormat: ").append(imgFormat);
+        sb.append(']');
+        return sb.toString();
+    }
+
     public static TaskConfig createDefault() {
         return new TaskConfig(":1", Deflater.BEST_COMPRESSION, ScreenCapture.FFMPEG_DRIVER, ScreenCapture.DATABUFFER_POLICY, "jpeg");
     }
