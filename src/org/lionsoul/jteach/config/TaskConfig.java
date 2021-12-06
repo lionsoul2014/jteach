@@ -67,7 +67,7 @@ public class TaskConfig {
     }
 
     public static TaskConfig createDefault() {
-        return new TaskConfig(":1", Deflater.BEST_COMPRESSION, ScreenCapture.FFMPEG_DRIVER, ScreenCapture.DATABUFFER_POLICY, "jpeg");
+        return new TaskConfig(":1", Deflater.BEST_COMPRESSION, ScreenCapture.FFMPEG_DRIVER, ScreenCapture.IMAGEIO_POLICY, "jpeg");
     }
 
 }
