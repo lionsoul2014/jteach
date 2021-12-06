@@ -44,7 +44,8 @@ public class Packet {
     }
 
     public Packet(byte symbol, int cmd, byte[] input, PacketConfig config) {
-        this(symbol, cmd, input, 0, input == null ? 0 : input.length, config);
+        this(symbol, cmd, input, 0, input == null ? 0 : input.length,
+                config == null ? PacketConfig.Default : config);
     }
 
     public Packet(byte symbol, int cmd, byte[] input, int offset, int length) {
@@ -55,7 +56,7 @@ public class Packet {
         this.symbol = symbol;
         this.cmd = cmd;
         this.input = input;
-        this.config = config == null ? PacketConfig.Default : config;
+        this.config = config;
 
         // define the packet attribute byte
         byte attr = 0;
