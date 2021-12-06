@@ -44,29 +44,35 @@ public class CmdUtil {
 	public static final int COMMAND_NULL = -1;
 	public static final int COMMAND_EXIT = 0;
 	public static final int COMMAND_TASK_STOP = 1;
+	public static final int COMMAND_TASK_START = 2;
+	public static final int COMMAND_TASK_RUNNING = 3;
+	public static final int COMMAND_TASK_PAUSED = 4;
+	public static final int COMMAND_TASK_EXITED = 4;
 	public static final int COMMAND_BROADCAST_START = 2;
 	public static final int COMMAND_UPLOAD_START = 3;
 	public static final int COMMAND_SCREEN_MONITOR = 4;
 	public static final int COMMAND_RCMD_SINGLE_EXECUTION = 5;
 	public static final int COMMAND_RCMD_ALL_EXECUTION = 6;
-	public static final int[] COMMAND_LIST = new int[] {
-		COMMAND_EXIT,
-		COMMAND_TASK_STOP,
-		COMMAND_BROADCAST_START,
-		COMMAND_UPLOAD_START,
-		COMMAND_SCREEN_MONITOR,
-		COMMAND_RCMD_SINGLE_EXECUTION,
-		COMMAND_RCMD_ALL_EXECUTION
-	};
-
 	public static final boolean validCommand(byte cmd) {
-		for (int c : COMMAND_LIST) {
-			if (cmd == c) {
-				return true;
-			}
+		if (cmd >= COMMAND_NULL && cmd <= COMMAND_RCMD_ALL_EXECUTION) {
+			return true;
 		}
 		return false;
 	}
+
+	/* task type */
+	public static final short TASK_BROADCAST = 1;
+	public static final short TASK_FILE_UPLOAD = 2;
+	public static final short TASK_SCREEN_MONITOR = 3;
+	public static final short TASK_RCMD_SINGLE_EXECUTION = 4;
+	public static final short TASK_RCMD_ALL_EXECUTION = 5;
+	public static final boolean validTask(short task) {
+		if (task >= TASK_BROADCAST && task <= TASK_RCMD_ALL_EXECUTION) {
+			return true;
+		}
+		return false;
+	}
+
 
 
 	//public static final int HEART_BEAT_DATA = 0xff;
