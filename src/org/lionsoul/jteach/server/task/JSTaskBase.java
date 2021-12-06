@@ -48,7 +48,7 @@ public abstract class JSTaskBase implements Runnable {
 		while ( it.hasNext() ) {
 			final JBean bean = it.next();
 			try {
-				bean.offer(Packet.COMMAND_TASK_STOP);
+				bean.put(Packet.COMMAND_TASK_STOP);
 			} catch (IllegalAccessException e) {
 				bean.reportClosedError();
 				it.remove();
