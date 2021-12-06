@@ -2,10 +2,7 @@ package org.lionsoul.jteach.msg;
 
 import org.lionsoul.jteach.util.CmdUtil;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -95,7 +92,7 @@ public class Packet {
         return false;
     }
 
-    public byte[] encode() throws IOException {
+    public BytePacket encode() throws IOException {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
 
@@ -116,7 +113,7 @@ public class Packet {
 
         // check and write the data
         if ((attr & HAS_DATA) == 0) {
-            return bos.toByteArray();
+            return BytePacket.wrap(bos.toByteArray());
         }
 
         if ((attr & HAS_COMPRESSED) == 0) {
@@ -141,13 +138,17 @@ public class Packet {
             bos.write(compressData);
         }
 
-        return bos.toByteArray();
+        return BytePacket.wrap(bos.toByteArray());
     }
 
-    /*
+    /** decode the message from byte array input */
+    public static Packet decode(byte[] input) throws IOException {
+        return decode(new DataInputStream(new ByteArrayInputStream(input)));
+    }
+
+    /**
      * read a Packet from the input stream .
-     * the caller should handle the resource racing of the read operation.
-     */
+     * the caller should handle the resource racing of the read operation. */
     public static Packet decode(DataInputStream input) throws IOException {
         final byte symbol = input.readByte();
         final byte attr = input.readByte();
@@ -241,6 +242,39 @@ public class Packet {
         dos.writeUTF(str);
         dos.writeLong(length);
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
+    }
+
+
+    /** return the symbol from a byte input packet */
+    public static byte getSymbol(byte[] input) {
+        return input[0];
+    }
+
+    /** return the attribute from the byte input packet */
+    public static byte getAttr(byte[] input) {
+        return input[1];
+    }
+
+    /** return the command from the byte input packet */
+    public static int getCommand(byte[] input) {
+        final byte attr = input[1];
+        return (attr & HAS_CMD) == 0 ? CmdUtil.COMMAND_NULL : input[2];
+    }
+
+    /** return the data length from the byte input packet */
+    public static int getDataLen(byte[] input) {
+        final byte attr = input[1];
+        if ((attr & HAS_DATA) == 0) {
+            return 0;
+        }
+
+        int i = 2;
+        if ((attr & HAS_CMD) != 0) {
+            i += 4;
+        }
+
+        return ((input[i] << 24) + (input[i+1] << 16)
+                + (input[i+2] << 8) + (input[i+3] << 0));
     }
 
 }
