@@ -55,6 +55,7 @@ public class Packet {
         this.symbol = symbol;
         this.cmd = cmd;
         this.input = input;
+        this.config = config == null ? PacketConfig.Default : config;
 
         // define the packet attribute byte
         byte attr = 0;
@@ -73,7 +74,6 @@ public class Packet {
         }
 
         this.attr = attr;
-        this.config = config == null ? PacketConfig.Default : config;
         this.data= encode();
     }
 

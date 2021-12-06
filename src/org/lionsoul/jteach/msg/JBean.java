@@ -230,7 +230,7 @@ public class JBean {
 
 					/* lock the socket and send the message data */
 					synchronized (output) {
-						output.write(p.input);
+						output.write(p.data);
 						output.flush();
 					}
 				} catch (InterruptedException e) {
