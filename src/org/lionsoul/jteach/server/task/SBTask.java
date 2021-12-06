@@ -14,6 +14,7 @@ import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
 import org.lionsoul.jteach.capture.CaptureException;
 import org.lionsoul.jteach.capture.ScreenCapture;
+import org.lionsoul.jteach.util.ImageUtil;
 
 
 /**
@@ -75,7 +76,7 @@ public class SBTask extends JSTaskBase {
 
 	@Override
 	public void _run() {
-		// BufferedImage B_IMG = null;
+		BufferedImage B_IMG = null;
 		while ( getStatus() == T_RUN ) {
 			/* check and the client list */
 			if (beanList.size() == 0) {
@@ -92,18 +93,20 @@ public class SBTask extends JSTaskBase {
 				server.println(log.getError("failed to capture screen due to %s", e.getClass().getName()));
 				continue;
 			}
-			log.debug("end grab, cost: %dms", System.currentTimeMillis() - start);
 
 			/*
-			 * we need to check the image
+			 * check and filter the duplicate image
 			 * if over 98% of the picture is the same
-			 * and there is no necessary to send the picture
-			 */
-			// if ( B_IMG == null ) {
-			// 	B_IMG = img;
-			// } else if (JTeachIcon.ImageEquals(B_IMG, img) ) {
-			// 	continue;
-			// }
+			 * and there is no necessary to send the picture */
+			if (server.config.filterDupImg) {
+				if ( B_IMG == null ) {
+					B_IMG = img;
+				} else if (ImageUtil.ImageEquals(B_IMG, img) ) {
+					log.debug("ignore duplicate image");
+					continue;
+				}
+			}
+			log.debug("end grab, cost: %dms", System.currentTimeMillis() - start);
 
 
 			/* encode the screen message */
@@ -120,9 +123,8 @@ public class SBTask extends JSTaskBase {
 
 			log.debug("end encode, cost: %dms", System.currentTimeMillis() - start);
 
-			// remember the current img as the last
-			// image the for the next round
-			// B_IMG = img;
+			// remember img as the last image the for the next round
+			B_IMG = img;
 
 			/* send the image data to the clients */
 			start = System.currentTimeMillis();

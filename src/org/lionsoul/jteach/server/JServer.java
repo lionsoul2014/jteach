@@ -448,6 +448,21 @@ public class JServer implements Runnable {
 				}
 
 				config.setImgFormat(args[j+1]);
+			} else if ("--filter-dup-img".equals(args[j])) {
+				if (j + 1 >= args.length) {
+					System.out.println("missing value for --filter-dup-img option");
+					return;
+				}
+
+				final String str = args[j + 1].toLowerCase();
+				if (str.equals("true") || str.equals("1") || str.equals("yes")) {
+					config.setFilterDupImg(true);
+				} else if (str.equals("false") || str.equals("0") || str.equals("no")) {
+					config.setFilterDupImg(false);
+				} else {
+					System.out.printf("invalid detect-dup-img specified %s\n", str);
+					return;
+				}
 			}
 		}
 
