@@ -19,10 +19,20 @@
 			<include name="*.jar" />
 		</fileset>
 	</path>
+
+	<pathconvert property="quote.classpath" pathsep=" ">
+		<mapper>
+			<chainedmapper>
+				<flattenmapper />
+				<globmapper from="*" to="lib/*" />
+			</chainedmapper>
+		</mapper>
+		<path refid="classpath" />
+	</pathconvert>
 	
 	<!--build-->
 	<target name="build" description="Compile main source java files">
-		<javac destdir="${classes}" includes="**/*" encoding="utf-8">
+		<javac destdir="${classes}" includes="**/*" encoding="utf-8" includeantruntime="false">
 			<src path="${sources}"/>
 			<classpath refid="classpath"/>
 		</javac>
@@ -34,42 +44,38 @@
 	
 	<!--Archive-->
 	<target name="dist" depends="build" description="Compress the java class files to jar">
-		<delete file="${jars}/*.jar" />
 		<tstamp>
 			<format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss" />
 		</tstamp>
+		<delete>
+			<fileset dir="${jars}" includes="*.jar"/>
+		</delete>
 		<jar jarfile="${jars}/jteach-server-${version}.jar" basedir="${classes}">
 			<include name="**/*"/>
 			<exclude name="org/lionsoul/jteach/client/**/*"/>
-			<!--manifest information setting-->
 			<manifest>
 				<attribute name="Built-By" value="Lion" />
 				<attribute name="Implementation-Version" value="${version}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Main-Class" value="org.lionsoul.jteach.server.JServer"/>
-				<attribute name="Class-Path" value=""/>
+				<attribute name="Class-Path" value="${quote.classpath}"/>
 			</manifest>
 		</jar>
 		<jar jarfile="${jars}/jteach-client-${version}.jar" basedir="${classes}">
 			<include name="**/*"/>
 			<exclude name="org/lionsoul/jteach/server/**/*"/>
-			<!-- manifest information setting -->
 			<manifest>
 				<attribute name="Built-By" value="Lion" />
 				<attribute name="Implementation-Version" value="${version}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Main-Class" value="org.lionsoul.jteach.client.JClient"/>
-				<attribute name="Class-Path" value="./lib/*.jar"/>
+				<attribute name="Class-Path" value=""/>
 			</manifest>
-			<zipfileset src="${lib.dir}">
-				<include name="*.jar"/>
-			</zipfileset>
 		</jar>
 	</target>
 	
 	<!--Java Document-->
 	<target name="all" depends="dist">
-		<echo message="------------------------Making Jteach Document------------------------"/>
 		<javadoc packagenames="org.lionsoul.jteach.*" sourcepath="${sources}"
 			destdir="${api}" bottom="${bottom}" charset="UTF-8" author="true">
 			<classpath>
@@ -79,7 +85,6 @@
 	</target>
 	
 	<target name="usage">
-		<echo message="*** jteach ANT Build Script ***"/>
 		<echo message="Usage: "/>
 		<echo message="   ant [target]"/>
 		<echo message=""/>     
