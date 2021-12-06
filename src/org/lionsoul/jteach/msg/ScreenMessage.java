@@ -17,13 +17,27 @@ public class ScreenMessage implements Message {
     public final int width;
     public final int height;
     public final BufferedImage img;
+    public final int encodePolicy;
 
-    public ScreenMessage(int driver, final Point mouse, final BufferedImage img) {
+    private String format;
+
+
+    public ScreenMessage(int driver, final Point mouse, final BufferedImage img, int encodePolicy) {
         this.driver = driver;
         this.mouse = mouse;
         this.img = img;
         this.width = img.getWidth();
         this.height = img.getHeight();
+        this.encodePolicy = encodePolicy;
+        this.format = "jpeg";
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String str) {
+        this.format = str;
     }
 
     @Override
@@ -40,13 +54,14 @@ public class ScreenMessage implements Message {
         dos.writeInt(mouse.y);
         dos.writeInt(width);
         dos.writeInt(height);
+        dos.writeInt(encodePolicy);
 
         // encode the image
-        if (driver == ScreenCapture.FFMPEG_DRIVER) {
+        if (encodePolicy == ScreenCapture.DATABUFFER_POLICY) {
             final DataBufferByte imgBuffer = (DataBufferByte) img.getRaster().getDataBuffer();
             bos.write(imgBuffer.getData());
         } else {
-            ImageIO.write(img, "jpeg", bos);
+            ImageIO.write(img, format, bos);
         }
 
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray(), config);
@@ -58,18 +73,19 @@ public class ScreenMessage implements Message {
         final int driver = dis.readInt();
         final int x = dis.readInt(), y = dis.readInt();
         final int w = dis.readInt(), h = dis.readInt();
+        final int encodePolicy = dis.readInt();
 
         // decode the image
         final BufferedImage img;
-        if (driver == ScreenCapture.FFMPEG_DRIVER) {
+        if (encodePolicy == ScreenCapture.DATABUFFER_POLICY) {
             img = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
             img.setData(Raster.createRaster(img.getSampleModel(),
-                    new DataBufferByte(p.input, p.length - 20, 20), new Point()));
+                    new DataBufferByte(p.input, p.length - 24, 24), new Point()));
         } else {
             img = ImageIO.read(bis);
         }
 
-        return new ScreenMessage(driver, new Point(x, y), img);
+        return new ScreenMessage(driver, new Point(x, y), img, encodePolicy);
     }
 
 }

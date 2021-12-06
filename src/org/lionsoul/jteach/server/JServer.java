@@ -366,22 +366,22 @@ public class JServer implements Runnable {
 		final TaskConfig config = TaskConfig.createDefault();
 		for (int j = 0; j < args.length; j++) {
 			if ("--port".equals(args[j])) {
-				if (j+1 >= args.length) {
+				if (j + 1 >= args.length) {
 					System.out.println("missing value for --port option");
 					return;
 				}
 
-				int p = Integer.parseInt(args[j+1]);
+				int p = Integer.parseInt(args[j + 1]);
 				if (p >= 1024 && p <= 65525) {
 					PORT = p;
 				}
 			} else if ("--log-level".equals(args[j])) {
-				if (j+1 >= args.length) {
+				if (j + 1 >= args.length) {
 					System.out.println("missing value for --log-level option");
 					return;
 				}
 
-				final String str = args[j+1].toLowerCase();
+				final String str = args[j + 1].toLowerCase();
 				if (str.equals("debug")) {
 					Log.setLevel(Log.DEBUG);
 				} else if (str.equals("info")) {
@@ -395,29 +395,29 @@ public class JServer implements Runnable {
 					return;
 				}
 			} else if ("--display".equals(args[j])) {
-				if (j+1 >= args.length) {
+				if (j + 1 >= args.length) {
 					System.out.println("missing value for --display option");
 					return;
 				}
-				config.setDisplay(args[j+1]);
+				config.setDisplay(args[j + 1]);
 			} else if ("--compress-level".equals(args[j])) {
-				if (j+1 >= args.length) {
+				if (j + 1 >= args.length) {
 					System.out.println("missing value for --compress-level option");
 				}
 
-				int level = Integer.parseInt(args[j+1]);
+				int level = Integer.parseInt(args[j + 1]);
 				if (level < 1 || level > Deflater.BEST_COMPRESSION) {
-					System.out.printf("invalid compress level %s specified\n", args[j+1]);
+					System.out.printf("invalid compress level %s specified\n", args[j + 1]);
 					return;
 				}
 				config.setCompressLevel(level);
 			} else if ("--capture-driver".equals(args[j])) {
-				if (j+1 >= args.length) {
+				if (j + 1 >= args.length) {
 					System.out.println("missing value for --capture-driver option");
 					return;
 				}
 
-				final String str = args[j+1];
+				final String str = args[j + 1].toLowerCase();
 				if ("robot".equals(str)) {
 					config.setCaptureDriver(ScreenCapture.ROBOT_DRIVER);
 				} else if ("ffmpeg".equals(str)) {
@@ -426,6 +426,28 @@ public class JServer implements Runnable {
 					System.out.printf("invalid capture-driver specified %s\n", str);
 					return;
 				}
+			} else if ("--img-encode-policy".equals(args[j])) {
+				if (j + 1 >= args.length) {
+					System.out.println("missing value for --img-encode-policy option");
+					return;
+				}
+
+				final String str = args[j + 1].toLowerCase();
+				if ("imageio".equals(str)) {
+					config.setImgEncodePolicy(ScreenCapture.IMAGEIO_POLICY);
+				} else if ("databuffer".equals(str)) {
+					config.setImgEncodePolicy(ScreenCapture.DATABUFFER_POLICY);
+				} else {
+					System.out.printf("invalid img-encode-policy specified %s\n", str);
+					return;
+				}
+			} else if ("--img-format".equals(args[j])) {
+				if (j + 1 >= args.length) {
+					System.out.println("missing value for --img-format option");
+					return;
+				}
+
+				config.setImgFormat(args[j+1]);
 			}
 		}
 

@@ -60,7 +60,9 @@ public class SMSTask extends JCTaskBase {
 				/* encode the screen image */
 				final Packet p;
 				try {
-					p = new ScreenMessage(ScreenCapture.ROBOT_DRIVER, MouseInfo.getPointerInfo().getLocation(), img).encode();
+					p = new ScreenMessage(ScreenCapture.ROBOT_DRIVER,
+							MouseInfo.getPointerInfo().getLocation(),
+							img, ScreenCapture.IMAGEIO_POLICY).encode();
 				} catch (IOException e) {
 					log.error("failed to decode screen image");
 					continue;
