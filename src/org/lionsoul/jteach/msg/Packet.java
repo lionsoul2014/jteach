@@ -200,16 +200,15 @@ public class Packet {
         final byte[] buffer = new byte[8192];
         final ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length * 2);
         while (!inflater.finished()) {
-            final int count;
             try {
-                count = inflater.inflate(buffer);
+                final int count = inflater.inflate(buffer);
+                bos.write(buffer, 0, count);
             } catch (DataFormatException e) {
                 throw new IOException("data inflate: " + e.getMessage());
             }
-            bos.write(buffer, 0, count);
         }
 
-        return new Packet(symbol, cmd, data);
+        return new Packet(symbol, cmd, bos.toByteArray());
     }
 
 

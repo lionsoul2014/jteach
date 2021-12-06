@@ -16,7 +16,7 @@ public class FileInfoMessage implements Message {
 
     @Override
     public Packet encode() throws IOException {
-        return encode(null);
+        return encode(PacketConfig.Default);
     }
 
     @Override
@@ -28,7 +28,7 @@ public class FileInfoMessage implements Message {
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray(), config);
     }
 
-    public static final FileInfoMessage decode(final Packet p) throws IOException {
+    public static FileInfoMessage decode(final Packet p) throws IOException {
         final ByteArrayInputStream bis = new ByteArrayInputStream(p.input);
         final DataInputStream dis = new DataInputStream(bis);
         return new FileInfoMessage(dis.readLong(), dis.readUTF());
