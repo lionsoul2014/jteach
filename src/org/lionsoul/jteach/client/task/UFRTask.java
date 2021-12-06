@@ -137,7 +137,7 @@ public class UFRTask extends JCTaskBase {
 					continue;
 				}
 
-				bos.write(cp.data, 0, cp.length);
+				bos.write(cp.input, 0, cp.length);
 				readLen += cp.length;
 
 				//bos.flush();

@@ -8,6 +8,7 @@ import java.util.Iterator;
 import org.lionsoul.jteach.capture.Factory;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
+import org.lionsoul.jteach.msg.PacketConfig;
 import org.lionsoul.jteach.msg.ScreenMessage;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
@@ -24,12 +25,14 @@ public class SBTask extends JSTaskBase {
 	public static final Log log = Log.getLogger(SBTask.class);
 
 	private final ScreenCapture capture;
+	private final PacketConfig config;
 
 	public SBTask(JServer server) throws CaptureException {
 		super(server);
 		final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		this.capture = Factory.create(server.config.captureDriver,
 				new Rectangle(0, 0, screenSize.width, screenSize.height), server.config);
+		this.config = new PacketConfig(true, server.config.compressLevel);
 		log.debug("initialized with driver: %s, rect: %s", capture.getDriverName(), capture.getRect());
 	}
 
@@ -107,7 +110,7 @@ public class SBTask extends JSTaskBase {
 			start = System.currentTimeMillis();
 			final Packet p;
 			try {
-				p = new ScreenMessage(capture.getDriver(), MouseInfo.getPointerInfo().getLocation(), img).encode();
+				p = new ScreenMessage(capture.getDriver(), MouseInfo.getPointerInfo().getLocation(), img).encode(config);
 			} catch (IOException e) {
 				server.println(log.getError("failed to decode screen image"));
 				continue;
@@ -121,7 +124,6 @@ public class SBTask extends JSTaskBase {
 
 			/* send the image data to the clients */
 			start = System.currentTimeMillis();
-			p.setAutoCompress(true).setCompressLevel(server.config.compressLevel);
 			synchronized (beanList) {
 				final Iterator<JBean> it = beanList.iterator();
 				while (it.hasNext()) {

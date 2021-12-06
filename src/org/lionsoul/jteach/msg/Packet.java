@@ -33,21 +33,28 @@ public class Packet {
 
     public final int offset;
     public final int length;
-    public final byte[] data;
+    public final byte[] input;
 
-    /* compress settings */
-    private boolean autoCompress = true;
-    private int compressLevel = Deflater.DEFLATED;
-    private int minCompressBytes = 65536;   /* 64KiB */
+    /** final encode data for transfer, after encode */
+    public final PacketConfig config;
+    public volatile byte[] data;
 
-    public Packet(byte symbol, int cmd, byte[] data) {
-        this(symbol, cmd, data, 0, data == null ? 0 : data.length);
+    public Packet(byte symbol, int cmd, byte[] input) {
+        this(symbol, cmd, input, 0, input == null ? 0 : input.length, PacketConfig.Default);
     }
 
-    public Packet(byte symbol, int cmd, byte[] data, int offset, int length) {
+    public Packet(byte symbol, int cmd, byte[] input, PacketConfig config) {
+        this(symbol, cmd, input, 0, input == null ? 0 : input.length, config);
+    }
+
+    public Packet(byte symbol, int cmd, byte[] input, int offset, int length) {
+        this(symbol, cmd, input, offset, length, PacketConfig.Default);
+    }
+
+    public Packet(byte symbol, int cmd, byte[] input, int offset, int length, PacketConfig config) {
         this.symbol = symbol;
         this.cmd = cmd;
-        this.data = data;
+        this.input = input;
 
         // define the packet attribute byte
         byte attr = 0;
@@ -57,26 +64,17 @@ public class Packet {
 
         this.offset = offset;
         this.length = length;
-        if (data != null) {
+        if (input != null) {
             attr |= HAS_DATA;
+            // define the compress attribute
+            if (config.isAutoCompress() && length >= config.getMinCompressBytes()) {
+                attr |= HAS_COMPRESSED;
+            }
         }
 
         this.attr = attr;
-    }
-
-    public Packet setAutoCompress(boolean compress) {
-        this.autoCompress = compress;
-        return this;
-    }
-
-    public Packet setCompressLevel(int level) {
-        this.compressLevel = level;
-        return this;
-    }
-
-    public Packet setMinCompressBytes(int bytes) {
-        this.minCompressBytes = bytes;
-        return this;
+        this.config = config == null ? PacketConfig.Default : config;
+        this.data= encode();
     }
 
     public final boolean isSymbol(byte symbol) {
@@ -92,53 +90,61 @@ public class Packet {
         return false;
     }
 
-    public BytePacket encode() throws IOException {
+    /** encode the Packet to the final byte */
+    protected final byte[] encode() {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        final DataOutputStream dos = new DataOutputStream(bos);
-
-        /* check and define the compress bit mask */
-        if ((attr & HAS_DATA) != 0 && autoCompress
-                && length >= minCompressBytes) {
-            attr |= HAS_COMPRESSED;
-        }
 
         // write the symbol char
-        dos.writeByte(symbol);
-        dos.writeByte(attr);
+        bos.write(symbol);
+        bos.write(attr);
 
         // check and write the command
         if (cmd != CmdUtil.COMMAND_NULL) {
-            dos.writeInt(cmd);
+            bos.write((cmd >>> 24) & 0xFF);
+            bos.write((cmd >>> 16) & 0xFF);
+            bos.write((cmd >>>  8) & 0xFF);
+            bos.write((cmd >>>  0) & 0xFF);
         }
 
         // check and write the data
         if ((attr & HAS_DATA) == 0) {
-            return BytePacket.wrap(bos.toByteArray());
+            return bos.toByteArray();
         }
 
+        // check the compress bit mask
         if ((attr & HAS_COMPRESSED) == 0) {
-            dos.writeInt(length);
-            dos.write(data, offset, length);
-        } else {
-            /* compress the data */
-            final Deflater deflater = new Deflater();
-            deflater.setInput(data, offset, length);
-            deflater.setLevel(compressLevel);
-            deflater.finish();
-
-            final ByteArrayOutputStream tBos = new ByteArrayOutputStream(length - offset);
-            final byte[] buffer = new byte[8192];
-            while (!deflater.finished()) {
-                final int count = deflater.deflate(buffer);
-                tBos.write(buffer, 0, count);
-            }
-
-            final byte[] compressData = tBos.toByteArray();
-            dos.writeInt(compressData.length);
-            bos.write(compressData);
+            bos.write((length >>> 24) & 0xFF);
+            bos.write((length >>> 16) & 0xFF);
+            bos.write((length >>>  8) & 0xFF);
+            bos.write((length >>>  0) & 0xFF);
+            bos.write(input, offset, length);
+            return bos.toByteArray();
         }
 
-        return BytePacket.wrap(bos.toByteArray());
+
+        /* compress the data */
+        final Deflater deflater = new Deflater();
+        deflater.setInput(input, offset, length);
+        deflater.setLevel(config.getCompressLevel());
+        deflater.finish();
+        final ByteArrayOutputStream tBos = new ByteArrayOutputStream(length - offset);
+        final byte[] buffer = new byte[8192];
+        while (!deflater.finished()) {
+            final int count = deflater.deflate(buffer);
+            tBos.write(buffer, 0, count);
+        }
+
+        final byte[] compressData = tBos.toByteArray();
+        final int len = compressData.length;
+
+        // write the length
+        bos.write((len >>> 24) & 0xFF);
+        bos.write((len >>> 16) & 0xFF);
+        bos.write((len >>>  8) & 0xFF);
+        bos.write((len >>>  0) & 0xFF);
+        // write the compress data
+        bos.write(compressData, 0, len);
+        return bos.toByteArray();
     }
 
     /** decode the message from byte array input */
@@ -162,7 +168,6 @@ public class Packet {
         }
 
         // check and receive the data
-        final byte[] data;
         if ((attr & HAS_DATA) == 0) {
             return new Packet(symbol, cmd, null);
         }
@@ -172,7 +177,7 @@ public class Packet {
 
         /* read the byte data into the buffer
          * cause cannot read all the data by once when the data is large */
-        data = new byte[dLen];
+        final byte[] data = new byte[dLen];
         int rLen = 0;
         while (rLen < dLen) {
             final int size = input.read(data, rLen, dLen - rLen);
@@ -203,7 +208,7 @@ public class Packet {
             bos.write(buffer, 0, count);
         }
 
-        return new Packet(symbol, cmd, bos.toByteArray());
+        return new Packet(symbol, cmd, data);
     }
 
 
@@ -228,53 +233,8 @@ public class Packet {
         return new StringMessage(str).encode();
     }
 
-    public static final Packet valueOf(byte[] bytes) {
-        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bytes);
-    }
-
     public static final Packet valueOf(byte[] bytes, int off, int length) {
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bytes, off, length);
-    }
-
-    public static final Packet valueOf(String str, long length) throws IOException {
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        final DataOutputStream dos = new DataOutputStream(bos);
-        dos.writeUTF(str);
-        dos.writeLong(length);
-        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
-    }
-
-
-    /** return the symbol from a byte input packet */
-    public static byte getSymbol(byte[] input) {
-        return input[0];
-    }
-
-    /** return the attribute from the byte input packet */
-    public static byte getAttr(byte[] input) {
-        return input[1];
-    }
-
-    /** return the command from the byte input packet */
-    public static int getCommand(byte[] input) {
-        final byte attr = input[1];
-        return (attr & HAS_CMD) == 0 ? CmdUtil.COMMAND_NULL : input[2];
-    }
-
-    /** return the data length from the byte input packet */
-    public static int getDataLen(byte[] input) {
-        final byte attr = input[1];
-        if ((attr & HAS_DATA) == 0) {
-            return 0;
-        }
-
-        int i = 2;
-        if ((attr & HAS_CMD) != 0) {
-            i += 4;
-        }
-
-        return ((input[i] << 24) + (input[i+1] << 16)
-                + (input[i+2] << 8) + (input[i+3] << 0));
     }
 
 }

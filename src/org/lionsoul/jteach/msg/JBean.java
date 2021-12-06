@@ -34,7 +34,7 @@ public class JBean {
 	private long lastReadAt = 0;
 
 	/* message read/send blocking queue */
-	private final BlockingDeque<BytePacket> sendPool;
+	private final BlockingDeque<Packet> sendPool;
 	private final BlockingDeque<Packet> readPool;
 
 	public JBean(Socket s) throws IOException {
@@ -99,7 +99,7 @@ public class JBean {
 		}
 
 		synchronized (output) {
-			output.write(p.encode().data);
+			output.write(p.data);
 			output.flush();
 		}
 	}
@@ -111,8 +111,8 @@ public class JBean {
 		}
 
 		try {
-			sendPool.put(p.encode());
-		} catch (InterruptedException | IOException e) {
+			sendPool.put(p);
+		} catch (InterruptedException e) {
 			log.error("failed to put packet due to %s: %s", e.getClass().getName(), e.getMessage());
 		}
 	}
@@ -123,12 +123,7 @@ public class JBean {
 			throw new IllegalAccessException("socket closed exception");
 		}
 
-		try {
-			return sendPool.offer(p.encode());
-		} catch (IOException e) {
-			log.error("failed to offer packet due to %s: %s", e.getClass().getName(), e.getMessage());
-		}
-		return false;
+		return sendPool.offer(p);
 	}
 
 
@@ -227,7 +222,7 @@ public class JBean {
 				}
 
 				try {
-					final BytePacket p = sendPool.take();
+					final Packet p = sendPool.take();
 					if (p.isSymbol(CmdUtil.SYMBOL_SOCKET_CLOSED)) {
 						log.error("client %s socket closed", getName());
 						break;
@@ -235,7 +230,7 @@ public class JBean {
 
 					/* lock the socket and send the message data */
 					synchronized (output) {
-						output.write(p.data);
+						output.write(p.input);
 						output.flush();
 					}
 				} catch (InterruptedException e) {
@@ -267,7 +262,7 @@ public class JBean {
 
 				try {
 					synchronized (output) {
-						output.write(Packet.HEARTBEAT.encode().data);
+						output.write(Packet.HEARTBEAT.data);
 						output.flush();
 					}
 				} catch (IOException e) {
@@ -291,12 +286,8 @@ public class JBean {
 		sendPool.clear();
 
 		/* send the exit packet to notify the monitor */
-		try {
-			readPool.addFirst(Packet.SOCKET_CLOSED);
-			sendPool.addFirst(Packet.SOCKET_CLOSED.encode());
-		} catch (IOException e) {
-			log.error("failed to addFirst due to %s", e.getClass().getName());
-		}
+		readPool.addFirst(Packet.SOCKET_CLOSED);
+		sendPool.addFirst(Packet.SOCKET_CLOSED);
 	}
 
 	public int readPoolSize() {

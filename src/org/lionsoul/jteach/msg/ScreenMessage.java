@@ -28,6 +28,11 @@ public class ScreenMessage implements Message {
 
     @Override
     public Packet encode() throws IOException {
+        return encode(null);
+    }
+
+    @Override
+    public Packet encode(PacketConfig config) throws IOException {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
         dos.writeInt(driver);
@@ -44,11 +49,11 @@ public class ScreenMessage implements Message {
             ImageIO.write(img, "jpeg", bos);
         }
 
-        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
+        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray(), config);
     }
 
     public static final ScreenMessage decode(final Packet p) throws IOException {
-        final ByteArrayInputStream bis = new ByteArrayInputStream(p.data);
+        final ByteArrayInputStream bis = new ByteArrayInputStream(p.input);
         final DataInputStream dis = new DataInputStream(bis);
         final int driver = dis.readInt();
         final int x = dis.readInt(), y = dis.readInt();
@@ -59,7 +64,7 @@ public class ScreenMessage implements Message {
         if (driver == ScreenCapture.FFMPEG_DRIVER) {
             img = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
             img.setData(Raster.createRaster(img.getSampleModel(),
-                    new DataBufferByte(p.data, p.length - 20, 20), new Point()));
+                    new DataBufferByte(p.input, p.length - 20, 20), new Point()));
         } else {
             img = ImageIO.read(bis);
         }

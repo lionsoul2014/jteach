@@ -14,14 +14,19 @@ public class StringMessage implements Message {
 
     @Override
     public Packet encode() throws IOException {
+        return encode(null);
+    }
+
+    @Override
+    public Packet encode(PacketConfig config) throws IOException {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
         dos.writeUTF(str);
-        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray());
+        return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray(), config);
     }
 
     public static final StringMessage decode(final Packet p) throws IOException {
-        final ByteArrayInputStream bis = new ByteArrayInputStream(p.data);
+        final ByteArrayInputStream bis = new ByteArrayInputStream(p.input);
         final DataInputStream dis = new DataInputStream(bis);
         return new StringMessage(dis.readUTF());
     }
