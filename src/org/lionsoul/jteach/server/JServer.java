@@ -479,7 +479,7 @@ public class JServer implements Runnable {
 			}
 		}
 
-		log.debug("starting server with config: %s", config.toString());
+		log.info("starting server with config: %s", config.toString());
 		final JServer server = new JServer(config);
 		server.initServer();
 		server.startMonitorThread();
