@@ -7,6 +7,8 @@ import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+import javax.imageio.stream.MemoryCacheImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
@@ -87,7 +89,8 @@ public class ScreenMessage implements Message {
             final ImageWriteParam param = writer.getDefaultWriteParam();
             param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
             param.setCompressionQuality(quality);
-            writer.setOutput(bos);
+            // write to the stream
+            writer.setOutput(new MemoryCacheImageOutputStream(bos));
             writer.write(null, new IIOImage(img, null, null), param);
         }
 
