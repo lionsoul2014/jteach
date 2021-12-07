@@ -193,6 +193,10 @@ public class SMTask extends JSTaskBase {
 			try {
 				/* load symbol */
 				final Packet p = bean.poll(JBean.DEFAULT_POLL_TIMEOUT_SECS, TimeUnit.SECONDS);
+				if (p == null) {
+					server.println("client %s aborted due to poll timeout", bean.getHost());
+					break;
+				}
 
 				/* Check the symbol type */
 				if (p.symbol == CmdUtil.SYMBOL_SEND_CMD) {

@@ -1,7 +1,6 @@
 package org.lionsoul.jteach.server.task;
 
 import java.io.IOException;
-import java.sql.Time;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -131,8 +130,17 @@ public class RCTask extends JSTaskBase {
 				/* get and print the execution response */
 				final Packet p;
 				try {
-					bean.offer(d, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
+					boolean r = bean.offer(d, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
+					if (r == false) {
+						server.println("client %s aborted due to offer timeout");
+						break;
+					}
+
 					p = bean.poll(JBean.DEFAULT_POLL_TIMEOUT_SECS, TimeUnit.SECONDS);
+					if (p == null) {
+						server.println("client %s aborted due to poll timeout", bean.getHost());
+						break;
+					}
 				} catch (InterruptedException | IllegalAccessException e) {
 					server.println(log.getWarn("client %s aborted due to %s: %s",
 							bean.getName(), e.getClass().getName(), e.getMessage()));

@@ -5,9 +5,7 @@ import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.server.JServer;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -28,7 +26,7 @@ public abstract class JSTaskBase implements Runnable {
 
 	protected JSTaskBase(JServer server) {
 		this.server = server;
-		this.beanList = Collections.synchronizedList(server.copyBeanList());
+		this.beanList = Collections.synchronizedList(new ArrayList<>());
 	}
 
 	/** initialize worker */
@@ -51,7 +49,11 @@ public abstract class JSTaskBase implements Runnable {
 		while ( it.hasNext() ) {
 			final JBean bean = it.next();
 			try {
-				bean.offer(Packet.COMMAND_TASK_STOP, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
+				boolean r = bean.offer(Packet.COMMAND_TASK_STOP, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
+				if (r == false) {
+					log.error("client %s removed due to offer timeout", bean.getHost());
+					it.remove();
+				}
 			} catch (IllegalAccessException e) {
 				log.error(bean.getClosedError());
 				it.remove();

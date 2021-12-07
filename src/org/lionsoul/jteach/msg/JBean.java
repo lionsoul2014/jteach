@@ -52,8 +52,8 @@ public class JBean {
 		this.input  = new DataInputStream(socket.getInputStream());
 
 		/* create the message pool */
-		this.sendPool = new LinkedBlockingDeque(16);
-		this.readPool = new LinkedBlockingDeque(16);
+		this.sendPool = new LinkedBlockingDeque(10);
+		this.readPool = new LinkedBlockingDeque(10);
 	}
 
 	public void start() {
@@ -159,6 +159,10 @@ public class JBean {
 		}
 
 		final Packet p = readPool.poll();
+		if (p == null) {
+			return null;
+		}
+
 		if (p.isSymbol(CmdUtil.SYMBOL_SOCKET_CLOSED)) {
 			throw new IllegalAccessException("socket closed exception");
 		}
@@ -173,6 +177,10 @@ public class JBean {
 		}
 
 		final Packet p = readPool.poll(timeout, unit);
+		if (p == null) {
+			return null;
+		}
+
 		if (p.isSymbol(CmdUtil.SYMBOL_SOCKET_CLOSED)) {
 			throw new IllegalAccessException("socket closed exception");
 		}

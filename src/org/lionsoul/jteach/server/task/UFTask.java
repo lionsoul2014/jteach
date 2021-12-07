@@ -27,6 +27,9 @@ public class UFTask extends JSTaskBase {
 	public static final Log log = Log.getLogger(UFTask.class);
 	public static final int POINT_LENGTH = 60;
 
+	private File selectedFile;
+	private BufferedInputStream bis;
+
 	public UFTask(JServer server) {
 		super(server);
 	}
@@ -38,35 +41,30 @@ public class UFTask extends JSTaskBase {
 			return false;
 		}
 
-		return true;
-	}
-
-	@Override
-	public void _run() {
 		final JFileChooser chooser = new JFileChooser();
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(false);
 		final int _result = chooser.showOpenDialog(null);
 		if ( _result != JFileChooser.APPROVE_OPTION ) {
 			server.stopJSTask();
-			return;
+			return false;
 		}
 
 		// create the input stream
-		final File file = chooser.getSelectedFile();
-		final BufferedInputStream bis;
+		selectedFile = chooser.getSelectedFile();
 		try {
-			bis = new BufferedInputStream(new FileInputStream(file));
+			bis = new BufferedInputStream(new FileInputStream(selectedFile));
 		} catch (FileNotFoundException e) {
-			return;
+			return false;
 		}
 
 		final Packet p;
 		try {
-			p = new FileInfoMessage(file.length(), file.getName()).encode();
+			p = new FileInfoMessage(selectedFile.length(), selectedFile.getName()).encode();
 		} catch (IOException e) {
-			server.println(log.getError("failed to encode the file info message {%s, %d}", file.getName(), file.length()));
-			return;
+			server.println(log.getError("failed to encode the file info message {%s, %d}",
+					selectedFile.getName(), selectedFile.length()));
+			return false;
 		}
 
 		/* inform all the beans the information of the file name and size */
@@ -84,13 +82,17 @@ public class UFTask extends JSTaskBase {
 			}
 		}
 
-		try {
-			/* create a buffer InputStream */
-			server.println("File Information:");
-			server.println("-+---name: %s", file.getName());
-			server.println("-+---size: %dKiB - %d", file.length()/1024, file.length());
-			server.println("sending file %s ... ", file.getAbsolutePath());
+		return true;
+	}
 
+	@Override
+	public void _run() {
+		server.println("File Information:");
+		server.println("-+---name: %s", selectedFile.getName());
+		server.println("-+---size: %dKiB - %d", selectedFile.length()/1024, selectedFile.length());
+		server.println("sending file %s ... ", selectedFile.getAbsolutePath());
+
+		try {
 			/*
 			 * read b.length byte from the buffer InputStream
 			 * then send the byte[] to all the JBeans
@@ -112,7 +114,11 @@ public class UFTask extends JSTaskBase {
 					while (it.hasNext()) {
 						final JBean bean = it.next();
 						try {
-							bean.offer(dp, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
+							boolean r = bean.offer(dp, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
+							if (r == false) {
+								server.println("client %s removed due to offer timeout");
+								it.remove();
+							}
 						} catch (IllegalAccessException | InterruptedException e) {
 							checkSize = true;
 							server.println("client %s removed due to %s: %s",
@@ -131,9 +137,9 @@ public class UFTask extends JSTaskBase {
 
 				/* file transmission progress bar */
 				if ( counter % POINT_LENGTH == 0 ) {
-					server.println("%dKiB - %f%%", (int)(readLen/1024), readLen/file.length()*100);
+					server.println("%dKiB - %f%%", (int)(readLen/1024), readLen/selectedFile.length()*100);
 					counter = 0;
-				} else if ( readLen == file.length() ) {
+				} else if ( readLen == selectedFile.length() ) {
 					server.println("%dKiB - 100%%", (int)(readLen/1024));
 				} else {
 					server.print(".");
@@ -145,8 +151,6 @@ public class UFTask extends JSTaskBase {
 			}
 			server.println("file send completed");
 			bis.close();
-		} catch (FileNotFoundException e) {
-			server.println(log.getError("aborted due to %s", e.getClass().getName()));
 		} catch (IOException e) {
 			server.println(log.getError("aborted due to %s", e.getClass().getName()));
 		}
