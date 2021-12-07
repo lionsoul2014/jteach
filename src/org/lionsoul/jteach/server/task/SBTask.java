@@ -137,7 +137,7 @@ public class SBTask extends JSTaskBase {
 						// append the Message
 						// to the current bean
 						log.debug("put to bean %s with pool size=%d", bean.getHost(), bean.sendPoolSize());
-						bean.put(p);
+						bean.offer(p);
 					} catch (IllegalAccessException e) {
 						server.println(bean.getClosedError());
 						it.remove();
