@@ -17,6 +17,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -191,7 +192,7 @@ public class SMTask extends JSTaskBase {
 		while ( getStatus() == T_RUN ) {
 			try {
 				/* load symbol */
-				final Packet p = bean.take();
+				final Packet p = bean.poll(JBean.DEFAULT_POLL_TIMEOUT_SECS, TimeUnit.SECONDS);
 
 				/* Check the symbol type */
 				if (p.symbol == CmdUtil.SYMBOL_SEND_CMD) {
@@ -216,10 +217,9 @@ public class SMTask extends JSTaskBase {
 
 				/* repaint the Image JPanel */
 				repaintImageJPanel();
-			} catch (InterruptedException e) {
-				server.println(log.getWarn("client %s message take were interrupted", bean.getName()));
-			} catch (IllegalAccessException e) {
-				server.println(bean.getClosedError());
+			} catch (InterruptedException | IllegalAccessException e) {
+				server.println(log.getError("client %s aborted due to %s: %s",
+						bean.getName(), e.getClass().getName(), e.getMessage()));
 				break;
 			}
 		}

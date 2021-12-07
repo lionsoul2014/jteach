@@ -86,12 +86,14 @@ public class RCRTask extends JCTaskBase {
 
 					in.close();
 					br.close();
+					proc.destroy();
 				} catch (IOException e) {
 					log.error("failed to exec command %s due to %s\n", msg.str, e.getClass().getName());
-					continue;
+					counter = 1;
+					buff.append(log.getError("failed to exec command %s due to %s", msg.str, e.getClass().getName()));
+					// send the error message back if failed to exec the command
 				}
 
-				proc.destroy();
 				if (this.cmd == CmdUtil.COMMAND_RCMD_ALL_EXECUTION) {
 					continue;
 				}

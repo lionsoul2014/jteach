@@ -73,11 +73,6 @@ public class CmdUtil {
 		return false;
 	}
 
-
-
-	//public static final int HEART_BEAT_DATA = 0xff;
-	public static final int SO_TIMEOUT = 15000;
-	
 	/* screen monitor and remote control key */
 	public static final String MONITOR_AND_CONTROL = "MAC";
 	public static final String MONITOR_NOT_CONTROL = "MNC";

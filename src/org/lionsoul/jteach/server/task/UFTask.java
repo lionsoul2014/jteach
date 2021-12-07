@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFileChooser;
 
@@ -111,10 +112,11 @@ public class UFTask extends JSTaskBase {
 					while (it.hasNext()) {
 						final JBean bean = it.next();
 						try {
-							bean.offer(dp);
-						} catch (IllegalAccessException e) {
+							bean.offer(dp, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
+						} catch (IllegalAccessException | InterruptedException e) {
 							checkSize = true;
-							bean.reportClosedError();
+							server.println("client %s removed due to %s: %s",
+									bean.getHost(), e.getClass().getName(), e.getMessage());
 							it.remove();
 						}
 					}

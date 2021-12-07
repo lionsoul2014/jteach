@@ -8,10 +8,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.*;
 
 /**
  * Client Bean.
@@ -21,6 +18,10 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class JBean {
 
 	public static final ExecutorService threadPool = Executors.newCachedThreadPool();
+	public static final int DEFAULT_OFFER_TIMEOUT_SECS = 6;
+	public static final int DEFAULT_POLL_TIMEOUT_SECS = 20;
+	//public static final int HEART_BEAT_DATA = 0xff;
+	public static final int SO_TIMEOUT = 15000;	/* keep this less than the poll timeout */
 	private static final Log log = Log.getLogger(JBean.class);
 
 	private final Socket socket;
@@ -44,7 +45,7 @@ public class JBean {
 
 		this.socket = s;
 		// this.socket.setTcpNoDelay(true);
-		this.socket.setSoTimeout(CmdUtil.SO_TIMEOUT);
+		this.socket.setSoTimeout(SO_TIMEOUT);
 		this.name = socket.getInetAddress().getHostName();
 		this.host = socket.getInetAddress().getHostAddress();
 		this.output = new DataOutputStream(socket.getOutputStream());
@@ -126,6 +127,15 @@ public class JBean {
 		return sendPool.offer(p);
 	}
 
+	/** offer with timeout or throw an exception for the message */
+	public boolean offer(Packet p, long timeout, TimeUnit unit) throws IllegalAccessException, InterruptedException {
+		if (isClosed()) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
+		return sendPool.offer(p, timeout, unit);
+	}
+
 
 	/* read a packet */
 	private Packet _read() throws IOException, IllegalAccessException {
@@ -149,6 +159,20 @@ public class JBean {
 		}
 
 		final Packet p = readPool.poll();
+		if (p.isSymbol(CmdUtil.SYMBOL_SOCKET_CLOSED)) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
+		return p;
+	}
+
+	/** read the first packet with timeout */
+	public Packet poll(long timeout, TimeUnit unit) throws IllegalAccessException, InterruptedException {
+		if (isClosed()) {
+			throw new IllegalAccessException("socket closed exception");
+		}
+
+		final Packet p = readPool.poll(timeout, unit);
 		if (p.isSymbol(CmdUtil.SYMBOL_SOCKET_CLOSED)) {
 			throw new IllegalAccessException("socket closed exception");
 		}
@@ -255,7 +279,7 @@ public class JBean {
 				}
 
 				try {
-					Thread.sleep(CmdUtil.SO_TIMEOUT);
+					Thread.sleep(SO_TIMEOUT);
 				} catch (InterruptedException e) {
 					// Ignore the interrupted
 				}

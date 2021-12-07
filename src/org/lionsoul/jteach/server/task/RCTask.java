@@ -1,8 +1,10 @@
 package org.lionsoul.jteach.server.task;
 
 import java.io.IOException;
+import java.sql.Time;
 import java.util.Iterator;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
@@ -117,9 +119,10 @@ public class RCTask extends JSTaskBase {
 					while ( it.hasNext() ) {
 						final JBean bean = it.next();
 						try {
-							bean.offer(d);
-						} catch (IllegalAccessException e) {
-							bean.reportClosedError();
+							bean.offer(d, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
+						} catch (IllegalAccessException | InterruptedException e) {
+							server.println("client %s removed due to %s: %s",
+									bean.getHost(), e.getClass().getName(), e.getMessage());
 							it.remove();
 						}
 					}
@@ -128,13 +131,11 @@ public class RCTask extends JSTaskBase {
 				/* get and print the execution response */
 				final Packet p;
 				try {
-					bean.offer(d);
-					p = bean.take();
-				} catch (InterruptedException e) {
-					server.println(log.getWarn("client %s message offer/take was interrupted", bean.getName()));
-					continue;
-				} catch (IllegalAccessException e) {
-					server.println(bean.getClosedError());
+					bean.offer(d, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
+					p = bean.poll(JBean.DEFAULT_POLL_TIMEOUT_SECS, TimeUnit.SECONDS);
+				} catch (InterruptedException | IllegalAccessException e) {
+					server.println(log.getWarn("client %s aborted due to %s: %s",
+							bean.getName(), e.getClass().getName(), e.getMessage()));
 					break;
 				}
 

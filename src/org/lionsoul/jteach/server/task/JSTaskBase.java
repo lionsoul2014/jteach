@@ -1,5 +1,6 @@
 package org.lionsoul.jteach.server.task;
 
+import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.server.JServer;
@@ -7,6 +8,7 @@ import org.lionsoul.jteach.server.JServer;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Task Interface for JTeach Server
@@ -16,6 +18,7 @@ public abstract class JSTaskBase implements Runnable {
 	
 	public static final int T_RUN = 1;
 	public static final int T_STOP = 0;
+	private static final Log log = Log.getLogger(JSTaskBase.class);
 
 	protected volatile int status = T_RUN;
 	protected final JServer server;
@@ -48,9 +51,12 @@ public abstract class JSTaskBase implements Runnable {
 		while ( it.hasNext() ) {
 			final JBean bean = it.next();
 			try {
-				bean.put(Packet.COMMAND_TASK_STOP);
+				bean.offer(Packet.COMMAND_TASK_STOP, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
 			} catch (IllegalAccessException e) {
-				bean.reportClosedError();
+				log.error(bean.getClosedError());
+				it.remove();
+			} catch (InterruptedException e) {
+				log.warn("bean %s offer interrupted due to %s", bean.getHost(), e.getClass().getName());
 				it.remove();
 			}
 		}

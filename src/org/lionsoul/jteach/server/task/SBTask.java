@@ -66,7 +66,7 @@ public class SBTask extends JSTaskBase {
 			try {
 				bean.offer(Packet.COMMAND_BROADCAST_START);
 			} catch (IllegalAccessException e) {
-				bean.reportClosedError();
+				server.println(bean.getClosedError());
 				it.remove();
 			}
 		}
