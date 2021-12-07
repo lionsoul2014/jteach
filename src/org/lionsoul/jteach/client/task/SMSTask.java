@@ -11,6 +11,7 @@ import org.lionsoul.jteach.client.JClient;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
+import org.lionsoul.jteach.util.ImageUtil;
 
 
 /**
@@ -45,31 +46,32 @@ public class SMSTask extends JCTaskBase {
 
 	@Override
 	public void _run() {
-		// BufferedImage B_IMG = null;
+		BufferedImage B_IMG = null;
 		while ( getStatus() == T_RUN ) {
 			try {
 				/* get the screen image */
 				final BufferedImage img = robot.createScreenCapture(screenSize);
 
-				// if ( B_IMG == null ) {
-				// 	B_IMG = img;
-				// } else if (JTeachIcon.ImageEquals(B_IMG, img) ) {
-				// 	continue;
-				// }
+				if ( B_IMG == null ) {
+					B_IMG = img;
+				} else if (ImageUtil.ImageEquals(B_IMG, img) ) {
+					continue;
+				}
 
 				/* encode the screen image */
 				final Packet p;
 				try {
 					p = new ScreenMessage(ScreenCapture.ROBOT_DRIVER,
 							MouseInfo.getPointerInfo().getLocation(),
-							img, ScreenCapture.IMAGEIO_POLICY).encode();
+							img, ScreenCapture.IMAGEIO_POLICY, ScreenCapture.DEFAULT_FORMAT,
+							ScreenCapture.DEFAULT_COMPRESSION_QUALITY).encode();
 				} catch (IOException e) {
 					log.error("failed to decode screen image");
 					continue;
 				}
 
 				// reset the backup image
-				// I_BAK = S_IMG;
+				B_IMG = img;
 
 				/* send the image byte data to server */
 				bean.send(p);

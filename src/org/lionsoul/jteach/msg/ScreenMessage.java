@@ -3,7 +3,10 @@ package org.lionsoul.jteach.msg;
 import org.lionsoul.jteach.capture.ScreenCapture;
 import org.lionsoul.jteach.util.CmdUtil;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
@@ -17,19 +20,28 @@ public class ScreenMessage implements Message {
     public final int width;
     public final int height;
     public final BufferedImage img;
+
     public final int encodePolicy;
-
     private String format;
+    private float quality;
 
+    public ScreenMessage(int driver, final Point mouse, final BufferedImage img) {
+        this(driver, mouse, img, ScreenCapture.IMAGEIO_POLICY, ScreenCapture.DEFAULT_FORMAT, ScreenCapture.DEFAULT_COMPRESSION_QUALITY);
+    }
 
     public ScreenMessage(int driver, final Point mouse, final BufferedImage img, int encodePolicy) {
+        this(driver, mouse, img, encodePolicy, ScreenCapture.DEFAULT_FORMAT, ScreenCapture.DEFAULT_COMPRESSION_QUALITY);
+    }
+
+    public ScreenMessage(int driver, final Point mouse, final BufferedImage img, int encodePolicy, String format, float quality) {
         this.driver = driver;
         this.mouse = mouse;
         this.img = img;
         this.width = img.getWidth();
         this.height = img.getHeight();
         this.encodePolicy = encodePolicy;
-        this.format = "jpeg";
+        this.format = format;
+        this.quality = quality;
     }
 
     public String getFormat() {
@@ -38,6 +50,14 @@ public class ScreenMessage implements Message {
 
     public void setFormat(String str) {
         this.format = str;
+    }
+
+    public float getQuality() {
+        return quality;
+    }
+
+    public void setQuality(float quality) {
+        this.quality = quality;
     }
 
     @Override
@@ -61,7 +81,14 @@ public class ScreenMessage implements Message {
             final DataBufferByte imgBuffer = (DataBufferByte) img.getRaster().getDataBuffer();
             bos.write(imgBuffer.getData());
         } else {
-            ImageIO.write(img, format, bos);
+            // build a custom image writer
+            // to replace the default ImageIO.write(img, format, bos);
+            final ImageWriter writer = ImageIO.getImageWritersByFormatName(format).next();
+            final ImageWriteParam param = writer.getDefaultWriteParam();
+            param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            param.setCompressionQuality(quality);
+            writer.setOutput(bos);
+            writer.write(null, new IIOImage(img, null, null), param);
         }
 
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bos.toByteArray(), config);

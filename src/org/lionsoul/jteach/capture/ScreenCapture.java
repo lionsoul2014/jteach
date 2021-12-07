@@ -12,6 +12,9 @@ public abstract class ScreenCapture {
     public static final int IMAGEIO_POLICY = 1;
     public static final int DATABUFFER_POLICY = 2;
 
+    public static final String DEFAULT_FORMAT = "JPG";
+    public static final float DEFAULT_COMPRESSION_QUALITY = 0.86f;
+
     protected final Rectangle rect;
     protected final TaskConfig config;
 

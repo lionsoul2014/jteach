@@ -115,7 +115,8 @@ public class SBTask extends JSTaskBase {
 			try {
 				p = new ScreenMessage(capture.getDriver(),
 						MouseInfo.getPointerInfo().getLocation(),
-						img, server.config.imgEncodePolicy).encode(config);
+						img, server.config.imgEncodePolicy, server.config.imgFormat,
+						server.config.imgCompressionQuality).encode(config);
 			} catch (IOException e) {
 				server.println(log.getError("failed to decode screen image"));
 				continue;

@@ -448,6 +448,19 @@ public class JServer implements Runnable {
 				}
 
 				config.setImgFormat(args[j+1]);
+			} else if ("--img-compression-quality".equals(args[j])) {
+				if (j + 1 >= args.length) {
+					System.out.println("missing value for --img-compression-quality option");
+					return;
+				}
+
+				final float quality = Float.valueOf(args[j]);
+				if (quality >= 0f && quality <= 1.0f) {
+					config.setImgCompressionQuality(quality);
+				} else {
+					System.out.printf("invalid img-compression-quality specified %f\n", quality);
+					return;
+				}
 			} else if ("--filter-dup-img".equals(args[j])) {
 				if (j + 1 >= args.length) {
 					System.out.println("missing value for --filter-dup-img option");
