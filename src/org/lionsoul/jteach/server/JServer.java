@@ -9,11 +9,11 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.zip.Deflater;
 
+import org.lionsoul.jteach.cli.*;
 import org.lionsoul.jteach.config.TaskConfig;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
-import org.lionsoul.jteach.capture.ScreenCapture;
 import org.lionsoul.jteach.server.task.JSTaskBase;
 import org.lionsoul.jteach.util.CmdUtil;
 
@@ -360,131 +360,35 @@ public class JServer implements Runnable {
 
 		return list;
 	}
-	
+
 	public static void main(String[] args) {
-		Log.setLevel(Log.INFO);	// default log level to info
-		final TaskConfig config = TaskConfig.createDefault();
-		for (int j = 0; j < args.length; j++) {
-			if ("--port".equals(args[j])) {
-				if (j + 1 >= args.length) {
-					System.out.println("missing value for --port option");
-					return;
-				}
-
-				int p = Integer.parseInt(args[j + 1]);
-				if (p >= 1024 && p <= 65525) {
-					PORT = p;
-				}
-			} else if ("--log-level".equals(args[j])) {
-				if (j + 1 >= args.length) {
-					System.out.println("missing value for --log-level option");
-					return;
-				}
-
-				final String str = args[j + 1].toLowerCase();
-				if (str.equals("debug")) {
-					Log.setLevel(Log.DEBUG);
-				} else if (str.equals("info")) {
-					Log.setLevel(Log.INFO);
-				} else if (str.equals("warn")) {
-					Log.setLevel(Log.WARN);
-				} else if (str.equals("error")) {
-					Log.setLevel(Log.ERROR);
-				} else {
-					System.out.printf("invalid --log-level %s specified\n", str);
-					return;
-				}
-			} else if ("--display".equals(args[j])) {
-				if (j + 1 >= args.length) {
-					System.out.println("missing value for --display option");
-					return;
-				}
-				config.setDisplay(args[j + 1]);
-			} else if ("--compress-level".equals(args[j])) {
-				if (j + 1 >= args.length) {
-					System.out.println("missing value for --compress-level option");
-				}
-
-				int level = Integer.parseInt(args[j + 1]);
-				if (level < 1 || level > Deflater.BEST_COMPRESSION) {
-					System.out.printf("invalid compress level %s specified\n", args[j + 1]);
-					return;
-				}
-				config.setCompressLevel(level);
-			} else if ("--capture-driver".equals(args[j])) {
-				if (j + 1 >= args.length) {
-					System.out.println("missing value for --capture-driver option");
-					return;
-				}
-
-				final String str = args[j + 1].toLowerCase();
-				if ("robot".equals(str)) {
-					config.setCaptureDriver(ScreenCapture.ROBOT_DRIVER);
-				} else if ("ffmpeg".equals(str)) {
-					config.setCaptureDriver(ScreenCapture.FFMPEG_DRIVER);
-				} else {
-					System.out.printf("invalid capture-driver specified %s\n", str);
-					return;
-				}
-			} else if ("--img-encode-policy".equals(args[j])) {
-				if (j + 1 >= args.length) {
-					System.out.println("missing value for --img-encode-policy option");
-					return;
-				}
-
-				final String str = args[j + 1].toLowerCase();
-				if ("imageio".equals(str)) {
-					config.setImgEncodePolicy(ScreenCapture.IMAGEIO_POLICY);
-				} else if ("databuffer".equals(str)) {
-					config.setImgEncodePolicy(ScreenCapture.DATABUFFER_POLICY);
-				} else {
-					System.out.printf("invalid img-encode-policy specified %s\n", str);
-					return;
-				}
-			} else if ("--img-format".equals(args[j])) {
-				if (j + 1 >= args.length) {
-					System.out.println("missing value for --img-format option");
-					return;
-				}
-
-				config.setImgFormat(args[j+1]);
-			} else if ("--img-compression-quality".equals(args[j])) {
-				if (j + 1 >= args.length) {
-					System.out.println("missing value for --img-compression-quality option");
-					return;
-				}
-
-				final float quality = Float.valueOf(args[j]);
-				if (quality >= 0f && quality <= 1.0f) {
-					config.setImgCompressionQuality(quality);
-				} else {
-					System.out.printf("invalid img-compression-quality specified %f\n", quality);
-					return;
-				}
-			} else if ("--filter-dup-img".equals(args[j])) {
-				if (j + 1 >= args.length) {
-					System.out.println("missing value for --filter-dup-img option");
-					return;
-				}
-
-				final String str = args[j + 1].toLowerCase();
-				if (str.equals("true") || str.equals("1") || str.equals("yes")) {
-					config.setFilterDupImg(true);
-				} else if (str.equals("false") || str.equals("0") || str.equals("no")) {
-					config.setFilterDupImg(false);
-				} else {
-					System.out.printf("invalid detect-dup-img specified %s\n", str);
-					return;
-				}
-			}
-		}
-
-		log.info("starting server with config: %s", config.toString());
-		final JServer server = new JServer(config);
-		server.initServer();
-		server.startMonitorThread();
-		CmdUtil.showCmdMenu();
-		server.cmdLoader();
+		App.create(args, "jteach-server", "jteach-server", new Flag[] {
+			new IntFlag("port", "listening port", 55535),
+			new StringFlag("log-level", "log level set", "info", new String[]{"debug", "info", "warn", "error"}),
+			new StringFlag("display", "ffmpeg display device", ":1"),
+			new IntFlag("compression-level", "packet compression level", Deflater.BEST_COMPRESSION),
+			new StringFlag("capture-driver", "capture driver", "ffmpeg", new String[]{"robot", "ffmpeg"}),
+			new StringFlag("img-encode-policy", "screen image transfer encode policy", "imageio", new String[]{"imageio", "databuffer"}),
+			new StringFlag("img-format", "screen image encode format", "JPG", new String[]{"jpg", "jpeg", "png", "gif"}),
+			new FloatFlag("img-compression-quality", "image encode compression quality", 0.86f),
+			new BoolFlag("filter-dup-img", "filter the transfer of the duplication screen image", true)
+		}, (App app) -> {
+			Log.setLevel(app.stringVal("log-level"));	// default log level to info
+			final TaskConfig config = TaskConfig.createDefault();
+			config.setDisplay(app.stringVal("display"));
+			config.setCompressLevel(app.intVal("compression-level"));
+			config.setCaptureDriver(app.stringVal("capture-driver"));
+			config.setImgEncodePolicy(app.stringVal("img-encode-policy"));
+			config.setImgCompressionQuality(app.floatVal("img-compression-quality"));
+			config.setFilterDupImg(app.boolVal("filter-dup-img"));
+			config.setImgFormat(app.stringVal("img-format"));
+			final JServer server = new JServer(config);
+			server.println("starting server with config: %s", config.toString());
+			server.initServer();
+			server.startMonitorThread();
+			CmdUtil.showCmdMenu();
+			server.cmdLoader();
+		}).start();
 	}
 
 }

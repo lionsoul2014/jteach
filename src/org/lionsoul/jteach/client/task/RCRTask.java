@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 
 import org.lionsoul.jteach.client.JClient;
 import org.lionsoul.jteach.log.Log;
-import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.StringMessage;
 import org.lionsoul.jteach.util.CmdUtil;

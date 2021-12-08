@@ -131,7 +131,7 @@ public class RCTask extends JSTaskBase {
 				final Packet p;
 				try {
 					if (!bean.offer(d)) {
-						server.println("client %s aborted due to offer timeout");
+						server.println("client %s aborted due to offer failed");
 						break;
 					}
 					p = bean.take();

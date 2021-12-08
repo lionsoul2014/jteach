@@ -196,38 +196,38 @@ public class CmdUtil {
 		if ( str.length() == 0 ) return arguments; 
 		int cmdEnd = str.indexOf(' ', 0);
 		if ( cmdEnd == -1 ) cmdEnd = str.length(); 
-		/**command name*/
+		/* command name */
 		arguments.put(CMD_KEY, str.substring(0, cmdEnd));
 		
-		/**the string after the clear of command name - arugments part*/
+		/* the string after the clear of command name - arguments part */
 		str = str.substring(cmdEnd, str.length()).trim();
 		
-		/**
+		/*
 		 * search all the name and value arguments piar
 		 * and store them in HashMap arguments 
 		 */
 		for ( int j = 0; j < str.length(); j++ ) {
 			if ( str.charAt(j) == '-' ) {
-				/**get the next space and the argument key*/
+				/* get the next space and the argument key */
 				int nEnd = str.indexOf(' ', ++j);
 				if ( nEnd == -1 ) break; 
 				String _key = str.substring(j, nEnd).toLowerCase();
 				j = nEnd + 1;
 				if ( j >= str.length() ) break; 
 				
-				/**get the next non-space*/
+				/* get the next non-space */
 				while ( j < str.length() && str.charAt(j) == ' ' ) j++;
 				if ( j >= str.length() ) break; 
 				
-				/**get the next space*/
+				/* get the next space */
 				int vEnd = str.indexOf(' ', j);
 				if ( vEnd == -1 ) vEnd = str.length();
 				String _val = str.substring(j, vEnd).toLowerCase();
 				j = vEnd;
 
 				System.out.println("-+--key:"+_key+", value:"+_val+"--+-");
-				/**if the argument pair is not exist and them to the HashMap*/
-				if ( arguments.get(_key) == null ) arguments.put(_key, _val);
+				/* if the argument pair is not exist and them to the HashMap */
+				arguments.putIfAbsent(_key, _val);
 			}
 		}
 		return arguments;
@@ -241,12 +241,12 @@ public class CmdUtil {
 		Enumeration<NetworkInterface> netI;
 		try {
 			netI = NetworkInterface.getNetworkInterfaces();
-			while (netI.hasMoreElements()) {  
+			while (netI.hasMoreElements()) {
 	            NetworkInterface ni = netI.nextElement();   
 	            Enumeration<InetAddress> ipEnum = ni.getInetAddresses();  
 	            while (ipEnum.hasMoreElements()) {
 	            	String ip = ipEnum.nextElement().getHostAddress().trim();
-	            	if ( ip.matches("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$") == false ) continue; 
+	            	if (!ip.matches("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$")) continue;
 	            	//System.out.println(ip);
 	            	if ( ip.equals(LOCALHOST) ) {
 	            		if ( hosts.get(HOST_LOCAl_KEY) != null )  continue;
@@ -257,7 +257,7 @@ public class CmdUtil {
 	            	}
 	            }
 			}
-		} catch (SocketException e) {}  
+		} catch (SocketException e) {}
 		return hosts;
 	}
 	

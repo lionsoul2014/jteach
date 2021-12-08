@@ -95,4 +95,21 @@ public class Log {
         Log.level = level;
     }
 
+    public static void setLevel(String level) {
+        switch (level.toLowerCase()) {
+            case "debug":
+                Log.level = DEBUG;
+                break;
+            case "info":
+                Log.level = INFO;
+                break;
+            case "warn":
+                Log.level = WARN;
+                break;
+            case "error":
+                Log.level = ERROR;
+                break;
+        }
+    }
+
 }

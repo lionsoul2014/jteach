@@ -53,8 +53,26 @@ public class TaskConfig {
         this.captureDriver = captureDriver;
     }
 
+    public void setCaptureDriver(String driver) {
+        final String v = driver.toLowerCase();
+        if ("robot".equals(v)) {
+            this.captureDriver = ScreenCapture.ROBOT_DRIVER;
+        } else if ("ffmpeg".equals(v)) {
+            this.captureDriver = ScreenCapture.FFMPEG_DRIVER;
+        }
+    }
+
     public void setImgEncodePolicy(int policy) {
         this.imgEncodePolicy = policy;
+    }
+
+    public void setImgEncodePolicy(String policy) {
+        final String v = policy.toLowerCase();
+        if ("imageio".equals(v)) {
+            this.imgEncodePolicy = ScreenCapture.IMAGEIO_POLICY;
+        } else if ("databuffer".equals(v)) {
+            this.imgEncodePolicy = ScreenCapture.DATABUFFER_POLICY;
+        }
     }
 
     public void setImgFormat(String imgFormat) {
