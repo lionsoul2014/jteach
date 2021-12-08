@@ -192,7 +192,7 @@ public class SMTask extends JSTaskBase {
 		while ( getStatus() == T_RUN ) {
 			try {
 				/* load symbol */
-				final Packet p = bean.poll(JBean.DEFAULT_POLL_TIMEOUT_SECS, TimeUnit.SECONDS);
+				final Packet p = bean.take();
 				if (p == null) {
 					server.println("client %s aborted due to poll timeout", bean.getHost());
 					break;

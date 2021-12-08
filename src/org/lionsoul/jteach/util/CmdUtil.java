@@ -85,7 +85,6 @@ public class CmdUtil {
 	public static final String SERVER_RMCD_SINGLE = "o";
 	public static final String RCMD_NOREPLY_VAL = "NULL";
 	
-	public static final int FILE_UPLOAD_ONCE_SIZE  = 50; //unit k
 	public static final int _WIDTH = 54;
 	public static final String SB = "sb";
 	public static final String SM = "sm";

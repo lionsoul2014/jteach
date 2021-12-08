@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFileChooser;
 
@@ -27,7 +26,7 @@ public class UFTask extends JSTaskBase {
 	public static final Log log = Log.getLogger(UFTask.class);
 	public static final int POINT_LENGTH = 60;
 
-	private File selectedFile;
+	private File file;
 	private BufferedInputStream bis;
 
 	public UFTask(JServer server) {
@@ -51,19 +50,19 @@ public class UFTask extends JSTaskBase {
 		}
 
 		// create the input stream
-		selectedFile = chooser.getSelectedFile();
+		file = chooser.getSelectedFile();
 		try {
-			bis = new BufferedInputStream(new FileInputStream(selectedFile));
+			bis = new BufferedInputStream(new FileInputStream(file));
 		} catch (FileNotFoundException e) {
 			return false;
 		}
 
 		final Packet p;
 		try {
-			p = new FileInfoMessage(selectedFile.length(), selectedFile.getName()).encode();
+			p = new FileInfoMessage(file.length(), file.getName()).encode();
 		} catch (IOException e) {
 			server.println(log.getError("failed to encode the file info message {%s, %d}",
-					selectedFile.getName(), selectedFile.length()));
+					file.getName(), file.length()));
 			return false;
 		}
 
@@ -88,9 +87,9 @@ public class UFTask extends JSTaskBase {
 	@Override
 	public void _run() {
 		server.println("File Information:");
-		server.println("-+---name: %s", selectedFile.getName());
-		server.println("-+---size: %dKiB - %d", selectedFile.length()/1024, selectedFile.length());
-		server.println("sending file %s ... ", selectedFile.getAbsolutePath());
+		server.println("-+---name: %s", file.getName());
+		server.println("-+---size: %dKiB - %d", file.length()/1024, file.length());
+		server.println("sending file %s ... ", file.getAbsolutePath());
 
 		try {
 			/*
@@ -100,7 +99,7 @@ public class UFTask extends JSTaskBase {
 			 */
 			double readLen = 0;
 			int counter = 0, len = 0;
-			byte b[] = new byte[1024* CmdUtil.FILE_UPLOAD_ONCE_SIZE];
+			byte b[] = new byte[1024 * 64];
 			while ( (len = bis.read(b, 0, b.length)) > 0 ) {
 				readLen += len;
 				counter++;
@@ -114,12 +113,8 @@ public class UFTask extends JSTaskBase {
 					while (it.hasNext()) {
 						final JBean bean = it.next();
 						try {
-							boolean r = bean.offer(dp, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
-							if (r == false) {
-								server.println("client %s removed due to offer timeout");
-								it.remove();
-							}
-						} catch (IllegalAccessException | InterruptedException e) {
+							bean.offer(dp);
+						} catch (IllegalAccessException e) {
 							checkSize = true;
 							server.println("client %s removed due to %s: %s",
 									bean.getHost(), e.getClass().getName(), e.getMessage());
@@ -137,9 +132,9 @@ public class UFTask extends JSTaskBase {
 
 				/* file transmission progress bar */
 				if ( counter % POINT_LENGTH == 0 ) {
-					server.println("%dKiB - %f%%", (int)(readLen/1024), readLen/selectedFile.length()*100);
+					server.println("%dKiB - %f%%", (int)(readLen/1024), readLen/ file.length()*100);
 					counter = 0;
-				} else if ( readLen == selectedFile.length() ) {
+				} else if ( readLen == file.length() ) {
 					server.println("%dKiB - 100%%", (int)(readLen/1024));
 				} else {
 					server.print(".");

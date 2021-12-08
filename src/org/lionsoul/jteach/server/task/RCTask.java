@@ -118,8 +118,8 @@ public class RCTask extends JSTaskBase {
 					while ( it.hasNext() ) {
 						final JBean bean = it.next();
 						try {
-							bean.offer(d, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
-						} catch (IllegalAccessException | InterruptedException e) {
+							bean.offer(d);
+						} catch (IllegalAccessException e) {
 							server.println("client %s removed due to %s: %s",
 									bean.getHost(), e.getClass().getName(), e.getMessage());
 							it.remove();
@@ -130,17 +130,11 @@ public class RCTask extends JSTaskBase {
 				/* get and print the execution response */
 				final Packet p;
 				try {
-					boolean r = bean.offer(d, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
-					if (r == false) {
+					if (!bean.offer(d)) {
 						server.println("client %s aborted due to offer timeout");
 						break;
 					}
-
-					p = bean.poll(JBean.DEFAULT_POLL_TIMEOUT_SECS, TimeUnit.SECONDS);
-					if (p == null) {
-						server.println("client %s aborted due to poll timeout", bean.getHost());
-						break;
-					}
+					p = bean.take();
 				} catch (InterruptedException | IllegalAccessException e) {
 					server.println(log.getWarn("client %s aborted due to %s: %s",
 							bean.getName(), e.getClass().getName(), e.getMessage()));

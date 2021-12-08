@@ -7,6 +7,7 @@ import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -37,10 +38,13 @@ public class UFRTask extends JCTaskBase {
 	public static final String INFO_LABEL_TEXT = "JTeach> Load File Info From Server.";
 	public static final Dimension W_SIZE = new Dimension(450, 80);
 	private static final Log log = Log.getLogger(UFRTask.class);
-	
+
 	private final JFrame window;
 	private final JLabel infoLabel;
 	private final JProgressBar pBar;
+
+	private FileInfoMessage file;
+	private BufferedOutputStream bos;
 
 	public UFRTask(JClient client) {
 		super(client);
@@ -92,33 +96,46 @@ public class UFRTask extends JCTaskBase {
 
 	@Override
 	public boolean _before(String...args) {
+		final FileSystemView fsv = FileSystemView.getFileSystemView();
+		final Packet p;
+		try {
+			p = bean.take();
+		} catch (InterruptedException ex) {
+			log.warn("client %s take was interrupted", bean.getHost());
+			return false;
+		} catch (IllegalAccessException ex) {
+			log.error(bean.getClosedError());
+			return false;
+		}
+
+		try {
+			file = FileInfoMessage.decode(p);
+		} catch (IOException e) {
+			log.error("failed to decode the file info message");
+			return false;
+		}
+
+		setTipInfo("Receiving file " + file.name);
+		log.debug("file: %s, size: %dKiB", file.name, (file.length / 1024));
+		try {
+			bos = new BufferedOutputStream(new FileOutputStream(
+					fsv.getHomeDirectory() + "/" + file.name));
+		} catch (FileNotFoundException e) {
+			log.error("failed to create output %s: %s", e.getClass().getName(), e.getMessage());
+			return false;
+		}
+
 		SwingUtilities.invokeLater(() -> {
 			window.setVisible(true);
 			window.requestFocus();
 		});
+
 		return true;
 	}
 
 	@Override
 	public void _run() {
-		FileSystemView fsv = FileSystemView.getFileSystemView();
 		try {
-			final Packet p = bean.take();
-			final FileInfoMessage file;
-			try {
-				file = FileInfoMessage.decode(p);
-			} catch (IOException e) {
-				log.error("failed to decode the file info message");
-				stop();
-				return;
-			}
-
-			setTipInfo("Receiving file " + file.name);
-			log.debug("file: %s, size: %dKiB", file.name, (file.length / 1024));
-			final BufferedOutputStream bos = new BufferedOutputStream(
-					new FileOutputStream(fsv.getHomeDirectory() + "/" + file.name));
-
-			
 			/* byte array
 			 * get the byte from socket and store them in byte array b
 			 * then put them in bos BufferedOutputStream for to save them in file */
@@ -146,12 +163,12 @@ public class UFRTask extends JCTaskBase {
 
 			bos.flush();
 			bos.close();
-		} catch (IOException e) {
-			log.error("task is overed due to %s", e.getClass().getName());
 		} catch (IllegalAccessException e) {
 			log.error(bean.getClosedError());
 		} catch (InterruptedException e) {
-			log.warn("bean.take was interrupted");
+			log.warn("aborted due to interrupted: %s", e.getMessage());
+		} catch (IOException e) {
+			log.error("aborted due to %s: %s", e.getClass().getName(), e.getMessage());
 		}
 	}
 
