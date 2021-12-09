@@ -353,16 +353,11 @@ public class JServer implements Runnable {
 	 * @return List
 	 */
 	public List<JBean> copyBeanList() {
-		final List<JBean> list = new ArrayList<>();
-		synchronized (beanList) {
-			list.addAll(beanList);
-		}
-
-		return list;
+		return new ArrayList<>(beanList);
 	}
 
 	public static void main(String[] args) {
-		App.create(args, "jteach-server", "jteach-server", new Flag[] {
+		Command.create(args, "jteach-server", "jteach-server", new Flag[] {
 			new IntFlag("port", "listening port", 55535),
 			new StringFlag("log-level", "log level set", "info", new String[]{"debug", "info", "warn", "error"}),
 			new StringFlag("display", "ffmpeg display device", ":1"),
@@ -372,16 +367,16 @@ public class JServer implements Runnable {
 			new StringFlag("img-format", "screen image encode format", "JPG", new String[]{"jpg", "jpeg", "png", "gif"}),
 			new FloatFlag("img-compression-quality", "image encode compression quality", 0.86f),
 			new BoolFlag("filter-dup-img", "filter the transfer of the duplication screen image", true)
-		}, (App app) -> {
-			Log.setLevel(app.stringVal("log-level"));	// default log level to info
+		}, (Command ctx) -> {
+			Log.setLevel(ctx.stringVal("log-level"));
 			final TaskConfig config = TaskConfig.createDefault();
-			config.setDisplay(app.stringVal("display"));
-			config.setCompressLevel(app.intVal("compression-level"));
-			config.setCaptureDriver(app.stringVal("capture-driver"));
-			config.setImgEncodePolicy(app.stringVal("img-encode-policy"));
-			config.setImgCompressionQuality(app.floatVal("img-compression-quality"));
-			config.setFilterDupImg(app.boolVal("filter-dup-img"));
-			config.setImgFormat(app.stringVal("img-format"));
+			config.setDisplay(ctx.stringVal("display"));
+			config.setCompressLevel(ctx.intVal("compression-level"));
+			config.setCaptureDriver(ctx.stringVal("capture-driver"));
+			config.setImgEncodePolicy(ctx.stringVal("img-encode-policy"));
+			config.setImgCompressionQuality(ctx.floatVal("img-compression-quality"));
+			config.setFilterDupImg(ctx.boolVal("filter-dup-img"));
+			config.setImgFormat(ctx.stringVal("img-format"));
 			final JServer server = new JServer(config);
 			server.println("starting server with config: %s", config.toString());
 			server.initServer();

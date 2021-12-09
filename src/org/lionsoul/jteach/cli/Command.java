@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class App {
+public class Command {
 
     /** argument list from the main args */
     private final String[] args;
@@ -24,7 +24,7 @@ public class App {
     /** action object */
     private final Action action;
 
-    public App(String[] args, String name, String usage, Flag[] flags, Action action) {
+    public Command(String[] args, String name, String usage, Flag[] flags, Action action) {
         this.args = args;
         this.name = name;
         this.usage = usage;
@@ -168,8 +168,8 @@ public class App {
         return sb.toString();
     }
 
-    public static App create(String[] args, String name, String usage, Flag[] flags, Action action) {
-        return new App(args, name, usage, flags, action);
+    public static Command create(String[] args, String name, String usage, Flag[] flags, Action action) {
+        return new Command(args, name, usage, flags, action);
     }
 
 }
