@@ -175,7 +175,7 @@ public class Command {
 
             final String optional = flag.getOptions();
             if (optional != null) {
-                sb.append(" Optionals: [").append(optional).append("]");
+                sb.append(" Options: [").append(optional).append("]");
             }
             sb.append("\n");
         }
