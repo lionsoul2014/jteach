@@ -22,4 +22,8 @@ public class FloatFlag extends Flag {
         return String.valueOf(value);
     }
 
+    public static FloatFlag C(String name, String usage, float value) {
+        return new FloatFlag(name, usage, value);
+    }
+
 }

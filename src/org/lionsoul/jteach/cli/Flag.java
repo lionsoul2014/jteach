@@ -28,7 +28,7 @@ public abstract class Flag {
 
     public abstract Object getValue();
 
-    public String getOptionalValues() {
+    public String getOptions() {
         return null;
     }
 

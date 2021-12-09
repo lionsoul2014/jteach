@@ -22,4 +22,8 @@ public class IntFlag extends Flag {
         return String.valueOf(value);
     }
 
+    public static IntFlag C(String name, String usage, int value) {
+        return new IntFlag(name, usage, value);
+    }
+
 }

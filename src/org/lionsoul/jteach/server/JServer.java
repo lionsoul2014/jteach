@@ -115,7 +115,7 @@ public class JServer implements Runnable {
 	public void cmdLoader() {
 		String line, _input;
 		final Scanner reader = new Scanner(System.in);
-		do {
+		while (true) {
 			printInputAsk();
 			line = reader.nextLine().trim().toLowerCase();
 			arguments = CmdUtil.parseCMD(line);
@@ -126,35 +126,45 @@ public class JServer implements Runnable {
 
 			/*
 			 * JSTask Working thread
-			 * call the _runCommand to look for the class
+			 * call the _runJSTask to look for the class
 			 * then start the thread, and we have to run ST to stop
 			 * before another same thread could start. */
-			if ( _input.equals(CmdUtil.SB) || _input.equals(CmdUtil.UF)
-					|| _input.equals(CmdUtil.SM) || _input.equals(CmdUtil.RC)) {
+			switch (_input) {
+			case CmdUtil.SB:
+			case CmdUtil.UF:
+			case CmdUtil.SM:
+			case CmdUtil.RC:
 				_runJSTask(_input);
-			} else if ( _input.equals(CmdUtil.LS) ) {
+				break;
+			case CmdUtil.LS:
 				/* list all the online JBeans */
 				listBeans();
-			} else if ( _input.equals(CmdUtil.MENU) ) {
+				break;
+			case CmdUtil.MENU:
 				/* show the function menu of JTeach */
 				CmdUtil.showCmdMenu();
-			} else if ( _input.equals(CmdUtil.STOP) ) {
+				break;
+			case CmdUtil.STOP:
 				/* stop and reset the current working JSTask */
-				if ( JSTask == null ) {
+				if (JSTask == null) {
 					println("no active task, run menu for help");
 				} else {
 					JSTask.stop();
 					JSTask = null;
 				}
-			} else if ( _input.equals(CmdUtil.DELE) ) {
+				break;
+			case CmdUtil.DELE:
 				/* remove JBean */
 				delete();
-			} else if ( _input.equals(CmdUtil.EXIT) ) {
+				break;
+			case CmdUtil.EXIT:
 				exit();
-			} else {
+				break;
+			default:
 				println("invalid command %s", _input);
+				break;
 			}
-		} while ( true);
+		}
 	}
 	
 	/* Find And Load The Task Class */
@@ -359,16 +369,16 @@ public class JServer implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		Command.create(args, "jteach-server", "jteach-server", new Flag[] {
-			new IntFlag("port", "listening port", 55535),
-			new StringFlag("log-level", "log level set", "info", new String[]{"debug", "info", "warn", "error"}),
-			new StringFlag("display", "ffmpeg display device", ":1"),
-			new IntFlag("compression-level", "packet compression level", Deflater.BEST_COMPRESSION),
-			new StringFlag("capture-driver", "capture driver", "ffmpeg", new String[]{"robot", "ffmpeg"}),
-			new StringFlag("img-encode-policy", "screen image transfer encode policy", "imageio", new String[]{"imageio", "databuffer"}),
-			new StringFlag("img-format", "screen image encode format", "JPG", new String[]{"jpg", "jpeg", "png", "gif"}),
-			new FloatFlag("img-compression-quality", "image encode compression quality", 0.86f),
-			new BoolFlag("filter-dup-img", "filter the transfer of the duplication screen image", true)
+		Command.C("jteach-server", "jteach-server", new Flag[] {
+			IntFlag.C("port", "listening port", 55535),
+			StringFlag.C("log-level", "log level set", "info", new String[]{"debug", "info", "warn", "error"}),
+			StringFlag.C("display", "ffmpeg display device", ":1"),
+			IntFlag.C("compression-level", "packet compression level", Deflater.BEST_COMPRESSION),
+			StringFlag.C("capture-driver", "capture driver", "ffmpeg", new String[]{"robot", "ffmpeg"}),
+			StringFlag.C("img-encode-policy", "screen image transfer encode policy", "imageio", new String[]{"imageio", "databuffer"}),
+			StringFlag.C("img-format", "screen image encode format", "JPG", new String[]{"jpg", "jpeg", "png", "gif"}),
+			FloatFlag.C("img-compression-quality", "image encode compression quality", 0.86f),
+			BoolFlag.C("filter-dup-img", "filter the transfer of the duplication screen image", true)
 		}, (Command ctx) -> {
 			Log.setLevel(ctx.stringVal("log-level"));
 			final TaskConfig config = TaskConfig.createDefault();
@@ -384,7 +394,7 @@ public class JServer implements Runnable {
 			server.init().start();
 			CmdUtil.showCmdMenu();
 			server.cmdLoader();
-		}).start();
+		}).run(args);
 	}
 
 }

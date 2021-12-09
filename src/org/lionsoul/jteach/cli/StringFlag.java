@@ -5,26 +5,26 @@ import java.util.Objects;
 public class StringFlag extends Flag {
 
     private String value;
-    public final String[] optional;
+    public final String[] options;
 
     public StringFlag(String name, String usage, String value) {
         this(name, usage, value, null);
     }
 
-    public StringFlag(String name, String usage, String value, String[] optional) {
+    public StringFlag(String name, String usage, String value, String[] options) {
         super(name, usage);
         this.value = value;
-        this.optional = optional;
+        this.options = options;
     }
 
     @Override
     public boolean setValue(String str) {
-        if (optional == null) {
+        if (options == null) {
             value = str;
             return true;
         }
 
-        for (String v : optional) {
+        for (String v : options) {
             if (Objects.equals(str, v)) {
                 value = str;
                 return true;
@@ -38,13 +38,13 @@ public class StringFlag extends Flag {
         return value;
     }
 
-    @Override public String getOptionalValues() {
-        if (optional == null) {
+    @Override public String getOptions() {
+        if (options == null) {
             return null;
         }
 
         final StringBuilder sb = new StringBuilder();
-        for (String str : optional) {
+        for (String str : options) {
             if (sb.length() > 0) {
                 sb.append(',');
             }
@@ -56,6 +56,14 @@ public class StringFlag extends Flag {
 
     @Override public String toString() {
         return String.valueOf(value);
+    }
+
+    public static StringFlag C(String name, String usage, String value) {
+        return new StringFlag(name, usage, value);
+    }
+
+    public static StringFlag C(String name, String usage, String value, String[] options) {
+        return new StringFlag(name, usage, value, options);
     }
 
 }

@@ -6,9 +6,6 @@ import java.util.regex.Pattern;
 
 public class Command {
 
-    /** argument list from the main args */
-    private final String[] args;
-
     /** Application name */
     private final String name;
 
@@ -24,26 +21,33 @@ public class Command {
     /** action object */
     private final Action action;
 
-    public Command(String input, String name, String usage, Flag[] flags, Action action) {
-        this(input.split("\\s"), name, usage, flags, action);
+    /** sub command list */
+    private final List<Command> subCommandList;
+
+    public Command(String name, String usage, Flag[] flags, Action action) {
+        this(name, usage, flags, action, new Command[0]);
     }
 
-    public Command(String[] args, String name, String usage, Flag[] flags, Action action) {
-        this.args = args;
+    public Command(String name, String usage, Flag[] flags, Action action, Command[] subCommandList) {
         this.name = name;
         this.usage = usage;
-        this.flagList = new ArrayList<>();
+        this.flagList = new ArrayList<>(Arrays.asList(flags));
         this.action = action;
         this.flagMap = new HashMap<>();
+        this.subCommandList = new ArrayList<>(Arrays.asList(subCommandList));
 
         /* push the default help flag */
-        flagList.addAll(Arrays.asList(flags));
-        flagList.add(new StringFlag("help", "print this help menu", "true"));
+        flagList.add(new BoolFlag("help", "print this help menu", false));
 
         /* init the flag map */
         for (Flag flag : flagList) {
             flagMap.put(flag.name, flag);
         }
+    }
+
+    /** add a new flag */
+    public void addFlag(Flag flag) {
+        this.flagList.add(flag);
     }
 
     /** get the String value */
@@ -98,20 +102,30 @@ public class Command {
         return (boolean) flag.getValue();
     }
 
-    public void start() {
+    public void run(String input) {
+        run(input.split("\\s"));
+    }
+
+    public void run(String[] args) {
         /* parser the input args with --key=value */
         final Pattern p = Pattern.compile("--([^=]+)=?([^\\s]+)?");
         final Map<String, String> args_map = new HashMap<>();
         for (String str : args) {
             final Matcher m = p.matcher(str);
-            if (m.find()) {
-                final String args_name = m.group(1);
-                if (!flagMap.containsKey(args_name)) {
-                    System.out.printf("invalid flag %s, no such flag defined\n", args_name);
-                    return;
-                }
-                args_map.put(m.group(1), m.groupCount() > 2 ? "true" : m.group(2));
+            if (!m.find()) {
+                System.out.printf("invalid flag specified %s for command %s\n", str, name);
+                return;
             }
+
+            final String args_name = m.group(1);
+            if (!flagMap.containsKey(args_name)) {
+                System.out.printf("undefined flag %s for command %s\n", args_name, name);
+                return;
+            }
+
+            final String val = m.groupCount() > 2 ? m.group(2) : "true";
+            // System.out.printf("name: %s, value: %s\n", m.group(1), val);
+            args_map.put(m.group(1), val);
         }
 
         /* check and override the isSet and value */
@@ -124,7 +138,7 @@ public class Command {
             }
         }
 
-        if (args_map.containsKey("help")) {
+        if (boolVal("help")) {
             System.out.println(getHelpInfo());
         } else {
             action.run(this);
@@ -136,7 +150,7 @@ public class Command {
         sb.append("NAME: \n")
             .append("  ").append(name).append("\n\n");
         sb.append("USAGE: \n")
-            .append("  ").append(usage).append(" [option=value]\n\n");
+            .append("  ").append(usage).append(" [arguments]\n\n");
         sb.append("OPTIONS: \n");
 
         /* get the max name length */
@@ -150,8 +164,16 @@ public class Command {
         for (Flag flag : flagList) {
             sb.append("  ").append("--").append(flag.name)
                 .append(repeat(" ", maxLen - flag.name.length()))
-                .append("  ").append(flag.usage).append(" (Default: ").append(flag.getValue()).append(')');
-            final String optional = flag.getOptionalValues();
+                .append("  ").append(flag.usage);
+
+            if (!flag.isSet()) {
+                final String v = flag.getValue().toString();
+                if (v.length() > 0) {
+                    sb.append(" (Default: ").append(flag.getValue()).append(')');
+                }
+            }
+
+            final String optional = flag.getOptions();
             if (optional != null) {
                 sb.append(" Optionals: [").append(optional).append("]");
             }
@@ -172,12 +194,12 @@ public class Command {
         return sb.toString();
     }
 
-    public static Command create(String input, String name, String usage, Flag[] flags, Action action) {
-        return new Command(input, name, usage, flags, action);
+    public static Command C(String name, String usage, Flag[] flags, Action action) {
+        return new Command(name, usage, flags, action);
     }
 
-    public static Command create(String[] args, String name, String usage, Flag[] flags, Action action) {
-        return new Command(args, name, usage, flags, action);
+    public static Command C(String name, String usage, Flag[] flags, Action action, Command[] commands) {
+        return new Command(name, usage, flags, action, commands);
     }
 
 }

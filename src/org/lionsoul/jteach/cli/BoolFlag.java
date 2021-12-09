@@ -29,4 +29,8 @@ public class BoolFlag extends Flag {
         return String.valueOf(value);
     }
 
+    public static BoolFlag C(String name, String usage, boolean value) {
+        return new BoolFlag(name, usage, value);
+    }
+
 }
