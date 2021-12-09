@@ -43,7 +43,7 @@ public class StringFlag extends Flag {
             return null;
         }
 
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         for (String str : optional) {
             if (sb.length() > 0) {
                 sb.append(',');

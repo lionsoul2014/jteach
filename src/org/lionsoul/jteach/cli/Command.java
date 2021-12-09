@@ -132,7 +132,7 @@ public class Command {
     }
 
     protected String getHelpInfo() {
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         sb.append("NAME: \n")
             .append("  ").append(name).append("\n\n");
         sb.append("USAGE: \n")
@@ -158,6 +158,10 @@ public class Command {
             sb.append("\n");
         }
         return sb.toString();
+    }
+
+    @Override public String toString() {
+        return getHelpInfo();
     }
 
     public static String repeat(String str, int num) {

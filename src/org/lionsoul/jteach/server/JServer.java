@@ -46,7 +46,7 @@ public class JServer implements Runnable {
 	}
 	
 	/* Initialize the JTeach Server */
-	public void initServer() {
+	public JServer init() {
 		println("Initialize Server...");
 
 		try {
@@ -71,6 +71,8 @@ public class JServer implements Runnable {
 		} catch (UnknownHostException e) {
 			log.error("failed To get host information due to %s", e.getClass().getName());
 		}
+
+		return this;
 	}
 
 	public final void printInputAsk() {
@@ -194,7 +196,7 @@ public class JServer implements Runnable {
 	}
 
 	/** Start Listening Thread */
-	public void startMonitorThread() {
+	public void start() {
 		if (server != null) {
 			JBean.threadPool.execute(this);
 		}
@@ -378,9 +380,8 @@ public class JServer implements Runnable {
 			config.setFilterDupImg(ctx.boolVal("filter-dup-img"));
 			config.setImgFormat(ctx.stringVal("img-format"));
 			final JServer server = new JServer(config);
-			server.println("starting server with config: %s", config.toString());
-			server.initServer();
-			server.startMonitorThread();
+			server.println("config: %s", config.toString());
+			server.init().start();
 			CmdUtil.showCmdMenu();
 			server.cmdLoader();
 		}).start();
