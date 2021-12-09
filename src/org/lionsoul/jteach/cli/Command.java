@@ -24,6 +24,10 @@ public class Command {
     /** action object */
     private final Action action;
 
+    public Command(String input, String name, String usage, Flag[] flags, Action action) {
+        this(input.split("\\s"), name, usage, flags, action);
+    }
+
     public Command(String[] args, String name, String usage, Flag[] flags, Action action) {
         this.args = args;
         this.name = name;
@@ -162,6 +166,10 @@ public class Command {
             sb.append(str);
         }
         return sb.toString();
+    }
+
+    public static Command create(String input, String name, String usage, Flag[] flags, Action action) {
+        return new Command(input, name, usage, flags, action);
     }
 
     public static Command create(String[] args, String name, String usage, Flag[] flags, Action action) {
