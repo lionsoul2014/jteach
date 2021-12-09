@@ -49,11 +49,7 @@ public class Command {
             throw new NullPointerException("no such flag " + key);
         }
 
-        // if (!(flag instanceof StringFlag)) {
-        //     throw new ClassCastException("flag " + key + " not string");
-        // }
-
-        return flag.getValue().toString();
+        return flag.toString();
     }
 
     /** get the int value */
@@ -63,7 +59,7 @@ public class Command {
             throw new NullPointerException("no such flag " + key);
         }
 
-        if (!(flag instanceof IntFlag)) {
+        if (flag.getClass() != IntFlag.class) {
             throw new ClassCastException("flag " + key + " not int");
         }
 
@@ -77,7 +73,7 @@ public class Command {
             throw new NullPointerException("no such flag " + key);
         }
 
-        if (!(flag instanceof FloatFlag)) {
+        if (flag.getClass() != FloatFlag.class) {
             throw new ClassCastException("flag " + key + " not float");
         }
 
@@ -91,7 +87,7 @@ public class Command {
             throw new NullPointerException("no such flag " + key);
         }
 
-        if (!(flag instanceof BoolFlag)) {
+        if (flag.getClass() != BoolFlag.class) {
             throw new ClassCastException("flag " + key + " not bool");
         }
 
@@ -100,7 +96,7 @@ public class Command {
 
     public void start() {
         /* parser the input args with --key=value */
-        final Pattern p = Pattern.compile("--([^=]+)(=[^\\s]+)?");
+        final Pattern p = Pattern.compile("--([^=]+)=?([^\\s]+)?");
         final Map<String, String> args_map = new HashMap<>();
         for (String str : args) {
             final Matcher m = p.matcher(str);
