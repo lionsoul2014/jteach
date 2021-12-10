@@ -11,13 +11,7 @@ import java.awt.Insets;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
-import java.rmi.RMISecurityManager;
-import java.rmi.RemoteException;
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -25,10 +19,9 @@ import javax.swing.SwingUtilities;
 
 import org.lionsoul.jteach.capture.ScreenCapture;
 import org.lionsoul.jteach.log.Log;
+import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
 import org.lionsoul.jteach.msg.ScreenMessage;
-import org.lionsoul.jteach.rmi.RMIInterface;
-import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.server.JServer;
 import org.lionsoul.jteach.util.CmdUtil;
 import org.lionsoul.jteach.util.ImageUtil;
@@ -52,12 +45,6 @@ public class SMTask extends JSTaskBase {
 	private final Insets insetSize;
 	private volatile ScreenMessage screen = null;
 
-	private JBean bean = null;		// monitor machine
-
-	private RMIInterface RMIInstance = null;
-	private String control = null;
-	private String broadcast = null;
-	
 	public SMTask(JServer server) {
 		super(server);
 		this.window = new JFrame();
@@ -89,114 +76,21 @@ public class SMTask extends JSTaskBase {
 	private void repaintImageJPanel() {
 		SwingUtilities.invokeLater(() -> mapJPanel.repaint());
 	}
-	
-	private void _dispose() {
-		RMIInstance = null;
-		window.setVisible(false);
-		window.dispose();
-	}
-	
-	/**
-	 * create a quote to the RMIServer 
-	 * @throws NotBoundException 
-	 * @throws RemoteException 
-	 * @throws MalformedURLException 
-	 */
-	private void getRMIInstance(String host) throws MalformedURLException,
-		RemoteException, NotBoundException {
-		String path = System.getProperty("user.dir").replaceAll("\\\\", "/");
-		System.setProperty("java.security.policy", "file:///" + path + "/security.policy");
-		System.setSecurityManager(new RMISecurityManager());
-		String address = "rmi://" + host + ":" + CmdUtil.RMI_PORT + "/" + CmdUtil.RMI_OBJ;
-		RMIInstance = (RMIInterface) Naming.lookup(address);
-	}
 
-	@Override
-	public boolean _before() {
-		String str = server.getArguments().get(CmdUtil.SCREEN_MONITOR_KEY);
-		if ( str == null ) {
-			server.println("-+-i : Integer: Monitor the specifier client's screen");
-			return false;
-		}
-
-		if (!str.matches("^[0-9]{1,}$")) {
-			server.println("invalid client index %s", str);
-			return false;
-		}
-
-		int index = Integer.parseInt(str);
-		if (index < 0 || index >= beanList.size()) {
-			server.println("index %d out of bounds", index);
-			return false;
-		}
-		
-		bean = beanList.get(index);
-
-		// get the control arguments
-		control = server.getArguments().get(CmdUtil.REMOTE_CONTROL_KEY);
-		if ( control != null && control.equals(CmdUtil.REMOTE_CONTROL_VAL) ) {
-			try {
-				getRMIInstance(bean.getHost());
-			} catch (MalformedURLException | RemoteException | NotBoundException e) {
-				server.println("failed to load RMIServer instance due to %s", e.getClass().getName());
-				return false;
-			}
-		}
-
-		/* send start symbol and the image data receive thread */
-		try {
-			bean.offer(Packet.COMMAND_SCREEN_MONITOR);
-			JBean.threadPool.execute(this);
-			SwingUtilities.invokeLater(() -> {
-				window.setTitle(W_TITLE+"["+bean.getHost()+"]");
-				window.setVisible(true);
-			});
-		} catch (IllegalAccessException e) {
-			server.println(bean.getClosedError());
-			return false;
-		}
-
-		/* get monitor broadcast arguments */
-		broadcast = server.getArguments().get(CmdUtil.MONITOR_BROADCAST_KEY);
-		if (broadcast != null && broadcast.equals(CmdUtil.MONITOR_BROADCAST_VAL)) {
-			beanList.remove(index);
-			final Iterator<JBean> it = beanList.iterator();
-			while ( it.hasNext() ) {
-				final JBean b = it.next();
-				try {
-					b.offer(Packet.COMMAND_BROADCAST_START);
-				} catch (IllegalAccessException e) {
-					b.reportClosedError();
-					it.remove();
-				}
-			}
-		}
-
+	@Override public boolean _before(List<JBean> beans) {
+		SwingUtilities.invokeLater(() -> {
+			window.setVisible(true);
+			window.requestFocus();
+		});
 		return true;
 	}
-
-	@Override
-	public void stop() {
-		if (bean != null) {
-			try {
-				bean.offer(Packet.COMMAND_TASK_STOP);
-			} catch (IllegalAccessException e) {
-				server.println(bean.getClosedError());
-			}
-		}
-		super.stop();
-	}
-
+	
 	@Override
 	public void _run() {
 		while ( getStatus() == T_RUN ) {
 			try {
 				/* load symbol */
-				final Packet p = bean.take();
-				if (p == null) {
-					server.println("client %s aborted due to poll timeout", bean.getHost());
-					break;
-				}
+				final Packet p = beanList.get(0).take();
 
 				/* Check the symbol type */
 				if (p.symbol == CmdUtil.SYMBOL_SEND_CMD) {
@@ -223,28 +117,16 @@ public class SMTask extends JSTaskBase {
 				repaintImageJPanel();
 			} catch (InterruptedException | IllegalAccessException e) {
 				server.println(log.getError("client %s aborted due to %s: %s",
-						bean.getName(), e.getClass().getName(), e.getMessage()));
+						beanList.get(0).getName(), e.getClass().getName(), e.getMessage()));
 				break;
 			}
 		}
 	}
 
-	public void _exit() {
-		_dispose();
-		super._exit();
-	}
-
-
 	/** screen image show JPanel */
-	private class ImageJPanel extends JPanel implements
-			MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
-		private static final long serialVersionUID = 1L;
+	private class ImageJPanel extends JPanel {
 
 		public ImageJPanel() {
-			addMouseListener(this);
-			addMouseMotionListener(this);
-			addMouseWheelListener(this);
-			addKeyListener(this);
 			setFocusable(true);
 			setFocusTraversalKeysEnabled(false);
 		}
@@ -280,130 +162,14 @@ public class SMTask extends JSTaskBase {
 				g.drawImage(CURSOR, x, y, null);
 			}
 		}
+	}
 
-		/**
-		 * mouse listener area
-		 */
-		@Override
-		public void mouseClicked(MouseEvent e) {}
-		@Override
-		public void mouseEntered(MouseEvent e) {}
-		@Override
-		public void mouseExited(MouseEvent e) {}
-		@Override
-		public void keyTyped(KeyEvent e) {}
-
-		@Override
-		public void mousePressed(MouseEvent e) {
-			if ( RMIInstance == null ) {
-				return;
-			}
-
-			int button = -1;
-			switch ( e.getButton() ) {
-				/**Button 1*/
-				case MouseEvent.BUTTON1:
-					button = InputEvent.BUTTON1_MASK;
-					break;
-				case MouseEvent.BUTTON2:
-					button = InputEvent.BUTTON2_MASK;
-					break;
-				case MouseEvent.BUTTON3:
-					button = InputEvent.BUTTON3_MASK;
-					break;
-			}
-
-			try {
-				RMIInstance.mousePress(button);
-			} catch (RemoteException e1) {
-				e1.printStackTrace();
-				System.out.println("-+**Error: mouse press execute.");
-			}
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {
-			if ( RMIInstance == null ) {
-				return;
-			}
-
-			int button = -1;
-			switch ( e.getButton() ) {
-				/**Button 1*/
-				case MouseEvent.BUTTON1:
-					button = InputEvent.BUTTON1_MASK;
-					break;
-				case MouseEvent.BUTTON2:
-					button = InputEvent.BUTTON2_MASK;
-					break;
-				case MouseEvent.BUTTON3:
-					button = InputEvent.BUTTON3_MASK;
-					break;
-			}
-
-			try {
-				RMIInstance.mouseRelease(button);
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: mouse release execute.");
-			}
-		}
-
-
-		@Override
-		public void mouseMoved(MouseEvent e) {
-			if ( RMIInstance == null ) return;
-
-			try {
-				RMIInstance.mouseMove( e.getX(),  e.getY());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: mouse move execute.");
-			}
-		}
-
-		@Override
-		public void mouseDragged(MouseEvent e) {
-			if ( RMIInstance == null ) return;
-			try {
-				RMIInstance.mouseMove(e.getX(), e.getY());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: mouse drag execute.");
-			}
-		}
-
-
-		/**
-		 * mouse wheel listener area
-		 */
-		@Override
-		public void mouseWheelMoved(MouseWheelEvent e) {
-			if ( RMIInstance == null ) return;
-			try {
-				RMIInstance.mouseWheel(e.getWheelRotation());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: mouse wheel execute.");
-			}
-		}
-
-		@Override
-		public void keyPressed(KeyEvent e) {
-			if ( RMIInstance == null ) return;
-			try {
-				//System.out.println("after:"+e.getKeyCode());
-				RMIInstance.keyPress(e.getKeyCode());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: key press execute.");
-			}
-		}
-
-		@Override
-		public void keyReleased(KeyEvent e) {
-			if ( RMIInstance == null ) return;
-			try {
-				RMIInstance.keyRelease(e.getKeyCode());
-			} catch (RemoteException e1) {
-				System.out.println("-+**Error: key release execute.");
-			}
-		}
+	@Override public void _exit() {
+		SwingUtilities.invokeLater(() -> {
+			window.setVisible(false);
+			window.dispose();
+		});
+		super._exit();
 	}
 
 }

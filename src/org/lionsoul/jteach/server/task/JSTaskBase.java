@@ -21,6 +21,7 @@ public abstract class JSTaskBase implements Runnable {
 	protected volatile int status = T_RUN;
 	protected final JServer server;
 	protected final List<JBean> beanList;
+
 	protected final Object lock = new Object();
 	protected volatile boolean fromStop = false;
 
@@ -29,8 +30,8 @@ public abstract class JSTaskBase implements Runnable {
 		this.beanList = Collections.synchronizedList(new ArrayList<>());
 	}
 
-	/** initialize worker */
-	protected boolean _before() {
+	/** before prepare task */
+	protected boolean _before(List<JBean> beans) {
 		return true;
 	}
 
@@ -50,7 +51,7 @@ public abstract class JSTaskBase implements Runnable {
 			final JBean bean = it.next();
 			try {
 				boolean r = bean.offer(Packet.COMMAND_TASK_STOP, JBean.DEFAULT_OFFER_TIMEOUT_SECS, TimeUnit.SECONDS);
-				if (r == false) {
+				if (!r) {
 					log.error("client %s removed due to offer timeout", bean.getHost());
 					it.remove();
 				}
@@ -84,14 +85,41 @@ public abstract class JSTaskBase implements Runnable {
 	}
 
 	/** start the Task */
-	public boolean start() {
-		// run the before initialize worker
-		if (!_before()) {
-			server.resetJSTask();
+	public boolean start(List<JBean> beans, Packet startPacket) {
+		if (!_before(beans)) {
 			return false;
 		}
 
-		server.println(String.format("task %s is now running", this.getClass().getName()));
+		if (beans.size() == 0) {
+			server.println("empty task client list");
+			return false;
+		}
+
+		// send the start command to all the beans
+		if (startPacket == null) {
+			beanList.addAll(beans);
+		} else {
+			final Iterator<JBean> it = beans.iterator();
+			while (it.hasNext()) {
+				final JBean bean = it.next();
+				try {
+					if (bean.offer(startPacket)) {
+						log.debug("offer start packet to client %s succeed", bean.getHost());
+						beanList.add(bean);
+					}
+				} catch (IllegalAccessException e) {
+					log.error(bean.getClosedError());
+					it.remove();
+				}
+			}
+		}
+
+		if (beanList.size() == 0) {
+			server.println("empty global client list");
+			return false;
+		}
+
+		server.println("task %s is now running", this.getClass().getName());
 		JBean.threadPool.execute(this);
 		if (_wait()) {
 			synchronized (lock) {
@@ -102,6 +130,8 @@ public abstract class JSTaskBase implements Runnable {
 					return false;
 				}
 			}
+			/* notify the task has stopped */
+			return false;
 		}
 
 		return true;
@@ -124,6 +154,28 @@ public abstract class JSTaskBase implements Runnable {
 				server.println("stop lock.wait interrupted");
 			}
 		}
+	}
+
+	/** send a specified Packet to the bean list */
+	protected int send(Packet p) {
+		int count = 0;
+		synchronized (beanList) {
+			final Iterator<JBean> it = beanList.iterator();
+			while ( it.hasNext() ) {
+				final JBean bean = it.next();
+				try {
+					if (bean.offer(p)) {
+						count++;
+					}
+				} catch (IllegalAccessException e) {
+					server.println("client %s removed due to %s: %s",
+							bean.getHost(), e.getClass().getName(), e.getMessage());
+					it.remove();
+				}
+			}
+		}
+
+		return count;
 	}
 
 	public final void setStatus(int status) {

@@ -165,7 +165,22 @@ public class Command {
             throw new NullPointerException("no such flag " + key);
         }
 
-        return flag.toString();
+        return flag.toString().trim();
+    }
+
+    /** get the string list, separated by comma */
+    public String[] stringList(String key) {
+        return stringList(key, ",");
+    }
+
+    public String[] stringList(String key, String separator) {
+        final Flag flag = flagMap.get(key);
+        if (flag == null) {
+            throw new NullPointerException("no such flag " + key);
+        }
+
+        final String str = flag.toString().trim();
+        return str.length() == 0 ? new String[0] : str.split(separator);
     }
 
     /** get the int value */

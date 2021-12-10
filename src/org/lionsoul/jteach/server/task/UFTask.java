@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.JFileChooser;
 
@@ -26,25 +27,19 @@ public class UFTask extends JSTaskBase {
 	public static final int POINT_LENGTH = 60;
 
 	private File file;
+	private Packet p;
 	private BufferedInputStream bis;
 
 	public UFTask(JServer server) {
 		super(server);
 	}
 
-	@Override
-	public boolean _before() {
-		if (beanList.size() == 0) {
-			server.println("empty client list");
-			return false;
-		}
-
+	@Override public boolean _before(List<JBean> beans) {
 		final JFileChooser chooser = new JFileChooser();
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(false);
 		final int _result = chooser.showOpenDialog(null);
 		if ( _result != JFileChooser.APPROVE_OPTION ) {
-			server.stopJSTask();
 			return false;
 		}
 
@@ -53,10 +48,10 @@ public class UFTask extends JSTaskBase {
 		try {
 			bis = new BufferedInputStream(new FileInputStream(file));
 		} catch (FileNotFoundException e) {
+			server.println("task aborted due to %s: %s", e.getClass().getName(), e.getMessage());
 			return false;
 		}
 
-		final Packet p;
 		try {
 			p = new FileInfoMessage(file.length(), file.getName()).encode();
 		} catch (IOException e) {
@@ -65,26 +60,29 @@ public class UFTask extends JSTaskBase {
 			return false;
 		}
 
+		return true;
+	}
+
+	@Override public void _run() {
 		/* inform all the beans the information of the file name and size */
 		synchronized (beanList) {
 			final Iterator<JBean> it = beanList.iterator();
 			while (it.hasNext()) {
 				final JBean b = it.next();
 				try {
-					b.offer(Packet.COMMAND_UPLOAD_START);
-					b.offer(p);
+					/* if failed to offer the file info packet
+					* remove the bean from the global task bean list */
+					if (!b.offer(p)) {
+						it.remove();
+					}
 				} catch (IllegalAccessException e) {
-					b.reportClosedError();
+					server.println(b.getClosedError());
 					it.remove();
 				}
 			}
 		}
 
-		return true;
-	}
-
-	@Override
-	public void _run() {
+		/* start to send the file content */
 		server.println("File Information:");
 		server.println("-+---name: %s", file.getName());
 		server.println("-+---size: %dKiB - %d", file.length()/1024, file.length());
@@ -112,7 +110,7 @@ public class UFTask extends JSTaskBase {
 					while (it.hasNext()) {
 						final JBean bean = it.next();
 						try {
-							bean.offer(dp);
+							bean.put(dp);
 						} catch (IllegalAccessException e) {
 							checkSize = true;
 							server.println("client %s removed due to %s: %s",

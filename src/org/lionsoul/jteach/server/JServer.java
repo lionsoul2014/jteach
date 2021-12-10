@@ -2,10 +2,10 @@ package org.lionsoul.jteach.server;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.zip.Deflater;
 
@@ -14,7 +14,7 @@ import org.lionsoul.jteach.config.TaskConfig;
 import org.lionsoul.jteach.log.Log;
 import org.lionsoul.jteach.msg.JBean;
 import org.lionsoul.jteach.msg.Packet;
-import org.lionsoul.jteach.server.task.JSTaskBase;
+import org.lionsoul.jteach.server.task.*;
 import org.lionsoul.jteach.util.CmdUtil;
 
 /**
@@ -38,7 +38,34 @@ public class JServer implements Runnable {
 	
 	private volatile JSTaskBase JSTask = null;
 	private final List<JBean> beanList;
-	private HashMap<String, String> arguments = null;
+
+	/* command application */
+	private final Command app = Command.C("jteach-server", "jteach server", new Command[] {
+		Command.C("sb", "start the screen broadcast task", new Flag[] {
+			StringFlag.C("list", "client index list separated by commas", "")
+		}, ctx -> _runJSTask(SBTask.class, Packet.COMMAND_BROADCAST_START, ctx)),
+		Command.C("sm", "start the client screen monitor task", new Flag[] {
+			IntFlag.C("list", "client index, will only take the first one", 0)
+		}, ctx -> _runJSTask(SMTask.class, Packet.COMMAND_SCREEN_MONITOR, ctx)),
+		Command.C("uf", "start upload file to clients task", new Flag[] {
+			StringFlag.C("list", "client index list separated by commas","")
+		}, ctx -> _runJSTask(UFTask.class, Packet.COMMAND_UPLOAD_START, ctx)),
+		Command.C("rc", "start the remote command execution task", new Flag[] {
+			StringFlag.C("list", "client index list separated by commas","")
+		}, ctx -> {
+			final String[] list = ctx.stringList("list");
+			_runJSTask(RCTask.class, list.length == 1
+					? Packet.COMMAND_RCMD_SINGLE_EXECUTE : Packet.COMMAND_RCMD_ALL_EXECUTE, ctx);
+		}),
+		Command.C("ls", "list all the clients and clean up offline", Flag.EMPTY, this::listBeans),
+		Command.C("del", "delete the specified client and send exit command", new Flag[] {
+			StringFlag.C("list", "(Must) client index list separated by commas","")
+		}, this::delete),
+		Command.C("stop", "stop the current running task", Flag.EMPTY, ctx -> _stopJSTask()),
+		Command.C("exit", "shutdown and exit the program", new Flag[] {
+			BoolFlag.C("sync", "tell the clients to exit", false)
+		}, this::exit),
+	});
 
 	private JServer(TaskConfig config) {
 		this.config = config;
@@ -46,33 +73,209 @@ public class JServer implements Runnable {
 	}
 	
 	/* Initialize the JTeach Server */
-	public JServer init() {
+	public JServer init() throws IOException {
 		println("Initialize Server...");
+		server = new ServerSocket(PORT);
 
-		try {
-			server = new ServerSocket(PORT);
-			println("user.dir: "+System.getProperty("user.dir"));
-		} catch (IOException e) {
-			log.error("failed To initialize the server, make sure port %s is valid", PORT);
-			System.exit(1);
+		String host = InetAddress.getLocalHost().getHostAddress();
+		/* get the linux's remote host*/
+		if ( "LINUX".equals(JServer.OS) ) {
+			HashMap<String, String> ips = CmdUtil.getNetInterface();
+			String remote = ips.get(CmdUtil.HOST_REMOTE_KEY);
+			if ( remote != null ) {
+				host = remote;
+			}
+		}
+
+		println("JTeach  : Multimedia teaching platform");
+		println("@Author : Lion<chenxin619315@gmail.com>");
+		println("user.dir: %s", System.getProperty("user.dir"));
+		println("server  : {Host: %s, Port: %s}", host, PORT);
+		println("");
+		return this;
+	}
+
+	/** Start Listening Thread */
+	public void start() {
+		JBean.threadPool.execute(this);
+		app.run("help");
+		final Scanner reader = new Scanner(System.in);
+		while (true) {
+			printInputAsk();
+			app.run(reader.nextLine().trim().toLowerCase());
+		}
+	}
+
+	/* Listening task */
+	@Override
+	public void run() {
+		while ( getRunState() == M_RUN ) {
+			try {
+				final Socket s = server.accept();
+
+				/*
+				 * get a Socket from the Socket Queue
+				 * and create new JBean Object to manager it */
+				final JBean bean = new JBean(s);
+				beanList.add(bean);
+				bean.start();
+				lnPrintln("new client %s connected", bean.getName());
+				printInputAsk();
+
+				/* check and add the new client to the running task */
+				if (JSTask != null) {
+					JSTask.addClient(bean);
+				}
+			} catch (IOException e) {
+				lnPrintln("server monitor thread stopped due to %s", e.getClass());
+				break;
+			}
+		}
+	}
+
+	/* Find And Load The Task Class */
+	private void _runJSTask(Class<? extends JSTaskBase> _class, Packet startPacket, Command ctx) {
+		if ( JSTask != null ) {
+			println("task %s is running, run stop before continue", JSTask.getClass().getName());
+			return;
+		}
+
+		if ( beanList.size() == 0 ) {
+			println("empty client list");
+			return;
+		}
+
+		/* parser the list arguments and make the bean list for the current task */
+		final String[] list = ctx.stringList("list");
+		final List<JBean> taskBeans = new ArrayList<>();
+		if (list.length == 0) {
+			taskBeans.addAll(beanList);
+		} else {
+			/* check and parser the bean list (duplicated) */
+			for (String idx : list) {
+				final int i = Integer.parseInt(idx);
+				if (i < 0 || i >= beanList.size()) {
+					println("invalid index %s", idx);
+					return;
+				}
+				taskBeans.add(beanList.get(i));
+			}
+		}
+
+		if (_class == SMTask.class && taskBeans.size() > 1) {
+			final JBean first = taskBeans.get(0);
+			taskBeans.clear();
+			taskBeans.add(first);
+			println("WARN: use only the first client %s ", first.getHost());
 		}
 
 		try {
-			String host = InetAddress.getLocalHost().getHostAddress();
-			/* get the linux's remote host*/
-			if ( "LINUX".equals(JServer.OS) ) {
-				HashMap<String, String> ips = CmdUtil.getNetInterface();
-				String remote = ips.get(CmdUtil.HOST_REMOTE_KEY);
-				if ( remote != null ) {
-					host = remote;
+			println("try to start task %s", _class.getName());
+			final Constructor<?> con = _class.getConstructor(JServer.class);
+			final JSTaskBase task = (JSTaskBase) con.newInstance(this);
+			if (task.start(taskBeans, startPacket)) {
+				JSTask = task;
+			}
+		} catch (NoSuchMethodException | InvocationTargetException
+				| InstantiationException | IllegalAccessException e) {
+			println(log.getError("failed to start task %s due to %s", _class.getName(), e.getClass().getName()));
+		}
+	}
+
+	/** stop the current running JSTask */
+	public void _stopJSTask() {
+		if (JSTask == null) {
+			println("no running task to stop");
+			return;
+		}
+
+		JSTask.stop();
+		JSTask = null;
+	}
+
+	/** reset the JSTask */
+	public void resetJSTask() {
+		JSTask = null;
+	}
+
+	/** list all the JBeans in BeanDB */
+	public void listBeans(Command ctx) {
+		synchronized (beanList) {
+			int j = 0;
+			final Iterator<JBean> it = beanList.iterator();
+			while ( it.hasNext() ) {
+				final JBean b = it.next();
+
+				String num = CmdUtil.formatString(j+"", 2, '0');
+				j++;
+
+				// send the ARP to the client
+				try {
+					b.offer(Packet.ARP);
+					println("client {index: %s, host: %s}", num, b.getHost());
+				} catch (IllegalAccessException e) {
+					println("client {index: %s, host: %s} was removed", num, b.getHost());
+					it.remove();
 				}
 			}
-			println("Monitor - Host: %s, Port: %s", host, PORT);
-		} catch (UnknownHostException e) {
-			log.error("failed To get host information due to %s", e.getClass().getName());
+		}
+	}
+
+	/** remove the specified beans */
+	private void delete(Command ctx) {
+		final String[] list = ctx.stringList("list");
+		if (list.length == 0) {
+			app.run("del --help");
+		} else {
+			/* parser the index list */
+			List<Integer> idxList = new ArrayList<>();
+			for (String idx : list) {
+				final int i = Integer.parseInt(idx);
+				if (i < 0 || i >= beanList.size()) {
+					println("invalid index %s", idx);
+					return;
+				}
+				idxList.add(i);
+			}
+
+			for (int i : idxList) {
+				final JBean bean = beanList.get(i);
+				beanList.remove(i);
+				try {
+					bean.offer(Packet.COMMAND_EXIT);
+				} catch (IllegalAccessException e) {
+					println(bean.getClosedError());
+				}
+			}
+
+			println("clients on index [%s] removed", ctx.stringVal("list"));
+		}
+	}
+
+	/** exit the program */
+	public void exit(Command ctx) {
+		if (ctx.boolVal("sync")) {
+			synchronized (beanList) {
+				for (JBean b : beanList) {
+					try {
+						b.offer(Packet.COMMAND_EXIT);
+					} catch (IllegalAccessException e) {
+						println(b.getClosedError());
+					}
+				}
+			}
 		}
 
-		return this;
+		println("Thank you for using jteach, bye!");
+		System.exit(0);
+	}
+
+	public synchronized int getRunState() {
+		return STATE;
+	}
+	
+	public synchronized void setRunState(int s) {
+		STATE = s;
 	}
 
 	public final void printInputAsk() {
@@ -80,7 +283,7 @@ public class JServer implements Runnable {
 	}
 
 	public final String format(boolean newLine, String format, Object... args) {
-		final StringBuffer sb = new StringBuffer();
+		final StringBuilder sb = new StringBuilder();
 		if (newLine) {
 			sb.append("\n");
 		}
@@ -111,263 +314,6 @@ public class JServer implements Runnable {
 		System.out.flush();
 	}
 
-	/** run command */
-	public void cmdLoader() {
-		String line, _input;
-		final Scanner reader = new Scanner(System.in);
-		while (true) {
-			printInputAsk();
-			line = reader.nextLine().trim().toLowerCase();
-			arguments = CmdUtil.parseCMD(line);
-			_input = arguments.get(CmdUtil.CMD_KEY);
-			if (_input == null) {
-				continue;
-			}
-
-			/*
-			 * JSTask Working thread
-			 * call the _runJSTask to look for the class
-			 * then start the thread, and we have to run ST to stop
-			 * before another same thread could start. */
-			switch (_input) {
-			case CmdUtil.SB:
-			case CmdUtil.UF:
-			case CmdUtil.SM:
-			case CmdUtil.RC:
-				_runJSTask(_input);
-				break;
-			case CmdUtil.LS:
-				/* list all the online JBeans */
-				listBeans();
-				break;
-			case CmdUtil.MENU:
-				/* show the function menu of JTeach */
-				CmdUtil.showCmdMenu();
-				break;
-			case CmdUtil.STOP:
-				/* stop and reset the current working JSTask */
-				if (JSTask == null) {
-					println("no active task, run menu for help");
-				} else {
-					JSTask.stop();
-					JSTask = null;
-				}
-				break;
-			case CmdUtil.DELE:
-				/* remove JBean */
-				delete();
-				break;
-			case CmdUtil.EXIT:
-				exit();
-				break;
-			default:
-				println("invalid command %s", _input);
-				break;
-			}
-		}
-	}
-	
-	/* Find And Load The Task Class */
-	private void _runJSTask(String cmd) {
-		if ( JSTask != null ) {
-			println("task %s is running, run stop before continue command %s", JSTask.getClass().getName(), cmd);
-			return;
-		}
-
-		if ( beanList.size() == 0 ) {
-			println("empty client list");
-			return;
-		}
-
-		final String classname = "org.lionsoul.jteach.server.task."+cmd.toUpperCase()+"Task";
-		try {
-			println("try to start task %s", classname);
-			Class<?> _class = Class.forName(classname);
-			Constructor<?> con = _class.getConstructor(JServer.class);
-			JSTask = (JSTaskBase) con.newInstance(this);
-			JSTask.start();
-		} catch (Exception e) {
-			e.printStackTrace();
-			println(log.getError("failed to start task %s due to %s", classname, e.getClass().getName()));
-		}
-	}
-
-	/** stop the current running JSTask */
-	public void stopJSTask() {
-		if (JSTask != null) {
-			JSTask.stop();
-			JSTask = null;
-		}
-	}
-
-	/** reset the JSTask */
-	public void resetJSTask() {
-		JSTask = null;
-	}
-
-	/** Start Listening Thread */
-	public void start() {
-		if (server != null) {
-			JBean.threadPool.execute(this);
-		}
-	}
-	
-	/* Listening task */
-	@Override
-	public void run() {
-		while ( getRunState() == M_RUN ) {
-			try {
-				final Socket s = server.accept();
-
-				/*
-				 * get a Socket from the Socket Queue
-				 * and create new JBean Object to manager it */
-				final JBean bean = new JBean(s);
-				beanList.add(bean);
-				bean.start();
-				lnPrintln("new client %s connected", bean.getName());
-				printInputAsk();
-
-				/* check and add the new client to the running task */
-				if (JSTask != null) {
-					JSTask.addClient(bean);
-				}
-			} catch (IOException e) {
-				lnPrintln("server monitor thread stopped due to %s", e.getClass());
-				break;
-			}
-		}
-	}
-
-	/**
-	 * exit the program 
-	 * if EXIT_CLOSE_KEY is pass.
-	 * A symbol will send to all the JBeans to
-	 * order them to stop the client program.
-	 */
-	public void exit() {
-		if ( arguments != null 
-				&& arguments.get(CmdUtil.EXIT_CLOSE_KEY) != null
-				&& arguments.get(CmdUtil.EXIT_CLOSE_KEY).equals(CmdUtil.EXIT_CLOSE_VAL) ) {
-			synchronized (beanList) {
-				for (JBean b : beanList) {
-					try {
-						b.offer(Packet.COMMAND_EXIT);
-					} catch (IllegalAccessException e) {
-						b.reportClosedError();
-					}
-				}
-			}
-		}
-
-		println("Thank you for using jteach, bye!");
-		System.exit(0);
-	}
-	
-	/** remove all/ JBean */
-	private void delete() {
-		if ( JSTask != null ) {
-			println("JSTask %s is running, run stop first\n", JSTask.getClass().getName());
-			return;
-		}
-
-		if ( arguments == null ) {
-			return;
-		}
-
-		String v = arguments.get(CmdUtil.DELETE_KEY);
-		if ( v == null ) {
-			println("-+-i : a/Integer: Remove The All/ith client");
-			return;
-		}
-
-		/* remove all the JBean */
-		if ( v.equals(CmdUtil.DELETE_ALL_VAL) ) {
-			synchronized (beanList) {
-				final Iterator<JBean> it = beanList.iterator();
-				while (it.hasNext()) {
-					final JBean b = it.next();
-					try {
-						b.offer(Packet.COMMAND_EXIT);
-					} catch (IllegalAccessException e) {
-						println(b.getClosedError());
-						it.remove();
-					}
-				}
-			}
-			beanList.clear();
-			println("all clients cleared");
-		} else {
-			/* remove the Specified JBean */
-			if ( !v.matches("^[0-9]{1,}$") ) {
-				println("invalid client index specified %s", v);
-				return;
-			}
-
-			int index = Integer.parseInt(v);
-			if ( index < 0 || index >= beanList.size() ) {
-				println("Index out of bounds %d", index);
-			} else {
-				final JBean bean = beanList.get(index);
-				try {
-					bean.offer(Packet.COMMAND_EXIT);
-				} catch (IllegalAccessException e) {
-					println(bean.getClosedError());
-				}
-				beanList.remove(index);
-				println("client on index %d removed", index);
-			}
-		}
-	}
-	
-	public HashMap<String, String> getArguments() {
-		return arguments;
-	}
-	
-	public synchronized int getRunState() {
-		return STATE;
-	}
-	
-	public synchronized void setRunState(int s) {
-		STATE = s;
-	}
-	
-	/** list all the JBeans in BeanDB */
-	public void listBeans() {
-		synchronized (beanList) {
-			int j = 0;
-			final Iterator<JBean> it = beanList.iterator();
-			while ( it.hasNext() ) {
-				final JBean b = it.next();
-
-				String num = CmdUtil.formatString(j+"", 2, '0');
-				j++;
-
-				// send the ARP to the client
-				try {
-					b.offer(Packet.ARP);
-					println("client {index: %s, host: %s}", num, b.getHost());
-				} catch (IllegalAccessException e) {
-					println("client {index: %s, host: %s} was removed", num, b.getHost());
-					it.remove();
-				}
-			}
-		}
-	}
-
-	/* return the bean size */
-	public int beanCount() {
-		return beanList.size();
-	}
-
-	/**
-	 * make a copy for an array
-	 * @return List
-	 */
-	public List<JBean> copyBeanList() {
-		return new ArrayList<>(beanList);
-	}
-
 	public static void main(String[] args) {
 		Command.C("jteach-server", "jteach-server", new Flag[] {
 			IntFlag.C("port", "listening port", 55535),
@@ -391,9 +337,11 @@ public class JServer implements Runnable {
 			config.setImgFormat(ctx.stringVal("img-format"));
 			final JServer server = new JServer(config);
 			server.println("config: %s", config.toString());
-			server.init().start();
-			CmdUtil.showCmdMenu();
-			server.cmdLoader();
+			try {
+				server.init().start();
+			} catch (IOException e) {
+				server.println("failed to start jteach server %s: %s", e.getClass().getName(), e.getMessage());
+			}
 		}).run(args);
 	}
 
