@@ -178,7 +178,8 @@ public class JServer implements Runnable {
 			}
 		} catch (NoSuchMethodException | InvocationTargetException
 				| InstantiationException | IllegalAccessException e) {
-			println(log.getError("failed to start task %s due to %s", _class.getName(), e.getClass().getName()));
+			println(log.getError("failed to start task %s due to %s: %s",
+					_class.getName(), e.getClass().getName(), e.getMessage()));
 		}
 	}
 
