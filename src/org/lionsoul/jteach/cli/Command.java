@@ -32,21 +32,21 @@ public class Command {
 
 
     public Command(String name, String usage, Flag[] flags, Action action) {
-        this(name, usage, flags, action, Command.EMPTY);
+        this(name, usage, flags, Command.EMPTY, action);
     }
 
     public Command(String name, String usage, Command[] commands) {
-        this(name, usage, Flag.EMPTY, null, commands);
+        this(name, usage, Flag.EMPTY, commands, null);
     }
 
-    public Command(String name, String usage, Flag[] flags, Action action, Command[] commands) {
+    public Command(String name, String usage, Flag[] flags, Command[] commands, Action action) {
         this.name = name;
         this.usage = usage;
         this.flagList = new ArrayList<>(Arrays.asList(flags));
         this.flagMap = new HashMap<>();
-        this.action = action == null ? ctx -> {} : action;
         this.subCommandList = new ArrayList<>(Arrays.asList(commands));
         this.subCommandMap = new HashMap<>();
+        this.action = action == null ? ctx -> {} : action;
 
         /* push the default help flag and init the flag map */
         flagList.add(BoolFlag.C("help", "print this help menu", false));
@@ -77,7 +77,7 @@ public class Command {
 
     public void run(String input, int i) {
         final String str = input.trim();
-        run(str.length() == 0 ? new String[0] : str.split("\\s"), i);
+        run(str.length() == 0 ? new String[0] : str.split("\\s+"), i);
     }
 
     public void run(String[] args) {
@@ -331,8 +331,8 @@ public class Command {
         return new Command(name, usage, flags, action);
     }
 
-    public static Command C(String name, String usage, Flag[] flags, Action action, Command[] commands) {
-        return new Command(name, usage, flags, action, commands);
+    public static Command C(String name, String usage, Flag[] flags, Command[] commands, Action action) {
+        return new Command(name, usage, flags, commands, action);
     }
 
 }
