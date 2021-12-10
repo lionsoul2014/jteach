@@ -2,6 +2,8 @@ package org.lionsoul.jteach.cli;
 
 public abstract class Flag {
 
+    public static final Flag[] EMPTY = new Flag[0];
+
     /** flag name */
     public final String name;
 
