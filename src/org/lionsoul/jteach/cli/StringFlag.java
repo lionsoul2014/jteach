@@ -4,16 +4,17 @@ import java.util.Objects;
 
 public class StringFlag extends Flag {
 
+    private String _default;
     private String value;
     public final String[] options;
 
-    public StringFlag(String name, String usage, String value) {
-        this(name, usage, value, null);
+    public StringFlag(String name, String usage, String _default) {
+        this(name, usage, _default, null);
     }
 
-    public StringFlag(String name, String usage, String value, String[] options) {
+    public StringFlag(String name, String usage, String _default, String[] options) {
         super(name, usage);
-        this.value = value;
+        this._default = _default;
         this.options = options;
     }
 
@@ -21,12 +22,14 @@ public class StringFlag extends Flag {
     public boolean setValue(String str) {
         if (options == null) {
             value = str;
+            isSet = true;
             return true;
         }
 
         for (String v : options) {
             if (Objects.equals(str, v)) {
                 value = str;
+                isSet = true;
                 return true;
             }
         }
@@ -35,7 +38,12 @@ public class StringFlag extends Flag {
     }
 
     @Override public Object getValue() {
-        return value;
+        return isSet ? value : _default;
+    }
+
+    @Override
+    public Object getDefaultValue() {
+        return _default;
     }
 
     @Override public String getOptions() {
@@ -54,16 +62,12 @@ public class StringFlag extends Flag {
         return sb.toString();
     }
 
-    @Override public String toString() {
-        return String.valueOf(value);
+    public static StringFlag C(String name, String usage, String _default) {
+        return new StringFlag(name, usage, _default);
     }
 
-    public static StringFlag C(String name, String usage, String value) {
-        return new StringFlag(name, usage, value);
-    }
-
-    public static StringFlag C(String name, String usage, String value, String[] options) {
-        return new StringFlag(name, usage, value, options);
+    public static StringFlag C(String name, String usage, String _default, String[] options) {
+        return new StringFlag(name, usage, _default, options);
     }
 
 }

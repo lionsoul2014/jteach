@@ -2,28 +2,31 @@ package org.lionsoul.jteach.cli;
 
 public class IntFlag extends Flag {
 
+    private int _default;
     private int value;
 
-    public IntFlag(String name, String usage, int value) {
+    public IntFlag(String name, String usage, int _default) {
         super(name, usage);
-        this.value = value;
+        this._default = _default;
     }
 
     @Override public boolean setValue(String str) {
         value = Integer.parseInt(str);
+        isSet = true;
         return true;
     }
 
     @Override public Object getValue() {
-        return value;
+        return isSet ? value : _default;
     }
 
-    @Override public String toString() {
-        return String.valueOf(value);
+    @Override
+    public Object getDefaultValue() {
+        return _default;
     }
 
-    public static IntFlag C(String name, String usage, int value) {
-        return new IntFlag(name, usage, value);
+    public static IntFlag C(String name, String usage, int _default) {
+        return new IntFlag(name, usage, _default);
     }
 
 }

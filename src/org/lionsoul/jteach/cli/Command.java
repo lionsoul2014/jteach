@@ -137,13 +137,10 @@ public class Command {
             args_map.put(args_name, val);
         }
 
-        /* check and override the isSet and value */
+        /* check and set the value */
         for (Flag flag : cmd.flagList) {
             if (args_map.containsKey(flag.name)) {
-                flag.setIsSet(true);
                 flag.setValue(args_map.get(flag.name));
-            } else {
-                flag.setIsSet(false);
             }
         }
 
@@ -155,6 +152,11 @@ public class Command {
             cmd.action.run(cmd);
         } else {
             cmd.run(args, i);
+        }
+
+        /* check and close all the isSet to restore the default value */
+        for (Flag flag : cmd.flagList) {
+            flag.setIsSet(false);
         }
     }
 
@@ -280,11 +282,9 @@ public class Command {
                         .append(repeat(" ", maxLen - flag.name.length()))
                         .append("  ").append(flag.usage);
 
-                if (!flag.isSet()) {
-                    final String v = flag.getValue().toString();
-                    if (v.length() > 0) {
-                        sb.append(" (Default: ").append(flag.getValue()).append(')');
-                    }
+                final String v = flag.getDefaultValue().toString();
+                if (v.length() > 0) {
+                    sb.append(" (Default: ").append(v).append(')');
                 }
 
                 final String optional = flag.getOptions();

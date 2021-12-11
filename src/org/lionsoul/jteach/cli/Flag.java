@@ -30,8 +30,14 @@ public abstract class Flag {
 
     public abstract Object getValue();
 
+    public abstract Object getDefaultValue();
+
     public String getOptions() {
         return null;
+    }
+
+    @Override public String toString() {
+        return String.valueOf(getValue());
     }
 
 }
