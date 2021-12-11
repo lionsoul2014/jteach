@@ -45,7 +45,7 @@ public class JServer implements Runnable {
 			StringFlag.C("list", "client index list separated by commas", "")
 		}, ctx -> _runJSTask(SBTask.class, Packet.COMMAND_BROADCAST_START, ctx)),
 		Command.C("sm", "start the client screen monitor task", new Flag[] {
-			IntFlag.C("list", "client index, will only take the first one", 0)
+			StringFlag.C("list", "client index, will only take the first one", "")
 		}, ctx -> _runJSTask(SMTask.class, Packet.COMMAND_SCREEN_MONITOR, ctx)),
 		Command.C("uf", "start upload file to clients task", new Flag[] {
 			StringFlag.C("list", "client index list separated by commas","")
