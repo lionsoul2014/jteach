@@ -2,7 +2,7 @@ package org.lionsoul.jteach.cli;
 
 public class IntFlag extends Flag {
 
-    private int _default;
+    private final int _default;
     private int value;
 
     public IntFlag(String name, String usage, int _default) {

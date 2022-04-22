@@ -3,7 +3,7 @@ package org.lionsoul.jteach.cli;
 public class BoolFlag extends Flag {
 
     private boolean value;
-    private boolean _default;
+    private final boolean _default;
 
     public BoolFlag(String name, String usage, boolean _default) {
         super(name, usage);

@@ -120,7 +120,7 @@ public class CmdUtil {
 	            	}
 	            }
 			}
-		} catch (SocketException e) {}
+		} catch (SocketException ignored) {}
 		return hosts;
 	}
 	

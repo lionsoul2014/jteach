@@ -28,8 +28,8 @@ public class SBRTask extends JCTaskBase {
 
 	/* Lang package */
 	public static final String title = "JTeach - Remote Window";
-	public static final String EMTPY_INFO = "Loading Image Resource From Server";
-	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
+	public static final String EmptyInfo = "Loading Image Resource From Server";
+	public static final Font IFont = new Font("Arial", Font.BOLD, 18);
 	public static Image CURSOR = ImageUtil.Create("cursor_01.png").getImage();
 	public static final Log log = Log.getLogger(SBRTask.class);
 
@@ -97,9 +97,9 @@ public class SBRTask extends JCTaskBase {
 			/* draw the waiting typo */
 			if (msg == null) {
 				g.setColor(Color.WHITE);
-				g.setFont(IFONT);
-				FontMetrics m = getFontMetrics(IFONT);
-				g.drawString(EMTPY_INFO, (getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
+				g.setFont(IFont);
+				FontMetrics m = getFontMetrics(IFont);
+				g.drawString(EmptyInfo, (getWidth() - m.stringWidth(EmptyInfo))/2, getHeight()/2);
 				return;
 			}
 			
@@ -119,7 +119,7 @@ public class SBRTask extends JCTaskBase {
 	}
 	
 	private void repaintImageJPanel() {
-		SwingUtilities.invokeLater(() -> imgJPanel.repaint());
+		SwingUtilities.invokeLater(imgJPanel::repaint);
 	}
 
 	@Override

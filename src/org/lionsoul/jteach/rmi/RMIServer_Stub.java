@@ -3,31 +3,33 @@
 
 package org.lionsoul.jteach.rmi;
 
+import java.rmi.RemoteException;
+
 public final class RMIServer_Stub
     extends java.rmi.server.RemoteStub
     implements RMIInterface, java.rmi.Remote
 {
     private static final long serialVersionUID = 2;
     
-    private static java.lang.reflect.Method $method_createScreenCapture_0;
-    private static java.lang.reflect.Method $method_getPixelColor_1;
-    private static java.lang.reflect.Method $method_keyPress_2;
-    private static java.lang.reflect.Method $method_keyRelease_3;
-    private static java.lang.reflect.Method $method_mouseMove_4;
-    private static java.lang.reflect.Method $method_mousePress_5;
-    private static java.lang.reflect.Method $method_mouseRelease_6;
-    private static java.lang.reflect.Method $method_mouseWheel_7;
+    private static final java.lang.reflect.Method $method_createScreenCapture_0;
+    private static final java.lang.reflect.Method $method_getPixelColor_1;
+    private static final java.lang.reflect.Method $method_keyPress_2;
+    private static final java.lang.reflect.Method $method_keyRelease_3;
+    private static final java.lang.reflect.Method $method_mouseMove_4;
+    private static final java.lang.reflect.Method $method_mousePress_5;
+    private static final java.lang.reflect.Method $method_mouseRelease_6;
+    private static final java.lang.reflect.Method $method_mouseWheel_7;
     
     static {
 	try {
-	    $method_createScreenCapture_0 = RMIInterface.class.getMethod("createScreenCapture", new java.lang.Class[] {java.awt.Rectangle.class});
-	    $method_getPixelColor_1 = RMIInterface.class.getMethod("getPixelColor", new java.lang.Class[] {int.class, int.class});
-	    $method_keyPress_2 = RMIInterface.class.getMethod("keyPress", new java.lang.Class[] {int.class});
-	    $method_keyRelease_3 = RMIInterface.class.getMethod("keyRelease", new java.lang.Class[] {int.class});
-	    $method_mouseMove_4 = RMIInterface.class.getMethod("mouseMove", new java.lang.Class[] {int.class, int.class});
-	    $method_mousePress_5 = RMIInterface.class.getMethod("mousePress", new java.lang.Class[] {int.class});
-	    $method_mouseRelease_6 = RMIInterface.class.getMethod("mouseRelease", new java.lang.Class[] {int.class});
-	    $method_mouseWheel_7 = RMIInterface.class.getMethod("mouseWheel", new java.lang.Class[] {int.class});
+	    $method_createScreenCapture_0 = RMIInterface.class.getMethod("createScreenCapture", java.awt.Rectangle.class);
+	    $method_getPixelColor_1 = RMIInterface.class.getMethod("getPixelColor", int.class, int.class);
+	    $method_keyPress_2 = RMIInterface.class.getMethod("keyPress", int.class);
+	    $method_keyRelease_3 = RMIInterface.class.getMethod("keyRelease", int.class);
+	    $method_mouseMove_4 = RMIInterface.class.getMethod("mouseMove", int.class, int.class);
+	    $method_mousePress_5 = RMIInterface.class.getMethod("mousePress", int.class);
+	    $method_mouseRelease_6 = RMIInterface.class.getMethod("mouseRelease", int.class);
+	    $method_mouseWheel_7 = RMIInterface.class.getMethod("mouseWheel", int.class);
 	} catch (java.lang.NoSuchMethodException e) {
 	    throw new java.lang.NoSuchMethodError(
 		"stub class initialization failed");
@@ -48,9 +50,7 @@ public final class RMIServer_Stub
 	try {
 	    Object $result = ref.invoke(this, $method_createScreenCapture_0, new java.lang.Object[] {$param_Rectangle_1}, 6281975838450875529L);
 	    return ((java.awt.image.BufferedImage) $result);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
+	} catch (RuntimeException | RemoteException e) {
 	    throw e;
 	} catch (java.lang.Exception e) {
 	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
@@ -64,9 +64,7 @@ public final class RMIServer_Stub
 	try {
 	    Object $result = ref.invoke(this, $method_getPixelColor_1, new java.lang.Object[] {new java.lang.Integer($param_int_1), new java.lang.Integer($param_int_2)}, 7165456604077450508L);
 	    return ((java.awt.Color) $result);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
+	} catch (RuntimeException | RemoteException e) {
 	    throw e;
 	} catch (java.lang.Exception e) {
 	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
@@ -78,10 +76,8 @@ public final class RMIServer_Stub
 	throws java.rmi.RemoteException
     {
 	try {
-	    ref.invoke(this, $method_keyPress_2, new java.lang.Object[] {new java.lang.Integer($param_int_1)}, -8254537988820955790L);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
+	    ref.invoke(this, $method_keyPress_2, new java.lang.Object[] {$param_int_1}, -8254537988820955790L);
+	} catch (RuntimeException | RemoteException e) {
 	    throw e;
 	} catch (java.lang.Exception e) {
 	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
@@ -93,10 +89,8 @@ public final class RMIServer_Stub
 	throws java.rmi.RemoteException
     {
 	try {
-	    ref.invoke(this, $method_keyRelease_3, new java.lang.Object[] {new java.lang.Integer($param_int_1)}, 8996486833513651929L);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
+	    ref.invoke(this, $method_keyRelease_3, new java.lang.Object[] {$param_int_1}, 8996486833513651929L);
+	} catch (RuntimeException | RemoteException e) {
 	    throw e;
 	} catch (java.lang.Exception e) {
 	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
@@ -108,10 +102,8 @@ public final class RMIServer_Stub
 	throws java.rmi.RemoteException
     {
 	try {
-	    ref.invoke(this, $method_mouseMove_4, new java.lang.Object[] {new java.lang.Integer($param_int_1), new java.lang.Integer($param_int_2)}, -1155066086246352809L);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
+	    ref.invoke(this, $method_mouseMove_4, new java.lang.Object[] {$param_int_1, $param_int_2}, -1155066086246352809L);
+	} catch (RuntimeException | RemoteException e) {
 	    throw e;
 	} catch (java.lang.Exception e) {
 	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
@@ -123,10 +115,8 @@ public final class RMIServer_Stub
 	throws java.rmi.RemoteException
     {
 	try {
-	    ref.invoke(this, $method_mousePress_5, new java.lang.Object[] {new java.lang.Integer($param_int_1)}, 6667620611792150092L);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
+	    ref.invoke(this, $method_mousePress_5, new java.lang.Object[] {$param_int_1}, 6667620611792150092L);
+	} catch (RuntimeException | RemoteException e) {
 	    throw e;
 	} catch (java.lang.Exception e) {
 	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
@@ -138,10 +128,8 @@ public final class RMIServer_Stub
 	throws java.rmi.RemoteException
     {
 	try {
-	    ref.invoke(this, $method_mouseRelease_6, new java.lang.Object[] {new java.lang.Integer($param_int_1)}, -7168091285499131198L);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
+	    ref.invoke(this, $method_mouseRelease_6, new java.lang.Object[] {$param_int_1}, -7168091285499131198L);
+	} catch (RuntimeException | RemoteException e) {
 	    throw e;
 	} catch (java.lang.Exception e) {
 	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
@@ -153,10 +141,8 @@ public final class RMIServer_Stub
 	throws java.rmi.RemoteException
     {
 	try {
-	    ref.invoke(this, $method_mouseWheel_7, new java.lang.Object[] {new java.lang.Integer($param_int_1)}, -9148870574967525953L);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
+	    ref.invoke(this, $method_mouseWheel_7, new java.lang.Object[] {$param_int_1}, -9148870574967525953L);
+	} catch (RuntimeException | RemoteException e) {
 	    throw e;
 	} catch (java.lang.Exception e) {
 	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);

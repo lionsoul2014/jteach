@@ -7,7 +7,7 @@ import java.awt.*;
 
 public class Factory {
 
-    public static final ScreenCapture create(int driver, Rectangle rect, TaskConfig config) throws CaptureException {
+    public static ScreenCapture create(int driver, Rectangle rect, TaskConfig config) throws CaptureException {
         if (driver == ScreenCapture.ROBOT_DRIVER) {
             try {
                 return new RobotScreenCapture(rect, config);

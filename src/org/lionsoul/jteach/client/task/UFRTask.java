@@ -34,9 +34,9 @@ import org.lionsoul.jteach.util.CmdUtil;
  */
 public class UFRTask extends JCTaskBase {
 	
-	public static final String W_TILTE = "JTeach - FileUpload";
-	public static final String INFO_LABEL_TEXT = "JTeach> Load File Info From Server.";
-	public static final Dimension W_SIZE = new Dimension(450, 80);
+	public static final String WTitle = "JTeach - FileUpload";
+	public static final String InfoLabelText = "JTeach> Load File Info From Server.";
+	public static final Dimension WSize = new Dimension(450, 80);
 	private static final Log log = Log.getLogger(UFRTask.class);
 
 	private final JFrame window;
@@ -49,18 +49,18 @@ public class UFRTask extends JCTaskBase {
 	public UFRTask(JClient client) {
 		super(client);
 		this.window = new JFrame();
-		this.infoLabel = new JLabel(INFO_LABEL_TEXT);
+		this.infoLabel = new JLabel(InfoLabelText);
 		this.pBar = new JProgressBar(0, 100);
 		initGUI();
 	}
 	
 	/** initialize the GUI */
 	private void initGUI() {
-		window.setTitle(W_TILTE);
+		window.setTitle(WTitle);
 		window.setAlwaysOnTop(true);
 		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		window.setResizable(false);
-		window.setSize(W_SIZE);
+		window.setSize(WSize);
 		window.setLocationRelativeTo(null);
 		window.addWindowListener(new WindowAdapter(){
 			@Override
@@ -71,7 +71,7 @@ public class UFRTask extends JCTaskBase {
 
 		window.setLayout(new BorderLayout());
 		final Container c = window.getContentPane();
-		infoLabel.setSize(W_SIZE);
+		infoLabel.setSize(WSize);
 		infoLabel.setOpaque(true);
 		infoLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		infoLabel.setBounds(0, 5, window.getWidth(), 30);

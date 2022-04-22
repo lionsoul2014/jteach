@@ -44,7 +44,7 @@ public class JClient extends JFrame implements Runnable {
 	public static final int T_OVER = -1;
 	public static final int T_STOP = 0;
 	public static final int T_RUN = 1;
-	public static Object Lock = new Object();
+	public static final Object Lock = new Object();
 	public static final String OS = System.getProperty("os.name").toUpperCase();
 	public static final Log log = Log.getLogger(JClient.class);
 
@@ -94,11 +94,11 @@ public class JClient extends JFrame implements Runnable {
 		c.add(tipLabel);
 		
 		// server ip
-		JLabel serverLable = new JLabel(JClientCfg.SERVER_LABLE_TEXT);
-		serverLable.setBounds(15, 55, 80, 24);
-		serverLable.setFont(JClientCfg.LABLE_FONT);
-		serverLable.setForeground(JClientCfg.LABEL_FRONT_COLOR);
-		c.add(serverLable);
+		JLabel serverLabel = new JLabel(JClientCfg.SERVER_LABLE_TEXT);
+		serverLabel.setBounds(15, 55, 80, 24);
+		serverLabel.setFont(JClientCfg.LABLE_FONT);
+		serverLabel.setForeground(JClientCfg.LABEL_FRONT_COLOR);
+		c.add(serverLabel);
 		
 		serverTextField = new JTextField();
 		serverTextField.setBounds(100, 55, 200, 24);
@@ -120,7 +120,7 @@ public class JClient extends JFrame implements Runnable {
 		connectButton = new JButton(JClientCfg.CONNECT_BUTTON_TEXT);
 		connectButton.setBounds(30, 125, 100, 24);
 		c.add(connectButton);
-		connectButton.addActionListener(e -> JBean.threadPool.execute(new Thread(() -> connect())));
+		connectButton.addActionListener(e -> JBean.threadPool.execute(new Thread(this::connect)));
 		
 		JButton aboutButton = new JButton(JClientCfg.ABOUT_BUTTON_TEXT);
 		aboutButton.setBounds(200, 125, 100, 24);
@@ -134,23 +134,23 @@ public class JClient extends JFrame implements Runnable {
 	}
 
 	/* check and reconnect to the server */
-	public boolean connect() {
+	public void connect() {
 		if (bean != null && !bean.isClosed()) {
 			log.debug("client %s connected to server", bean.getHost());
-			return true;
+			return;
 		}
 
 		String ip = serverTextField.getText().trim();
 		if (ip.equals("")) {
 			JOptionPane.showMessageDialog(null, "Ask The Boss For Server IP First.");
-			return false;
+			return;
 		}
 
 		try {
 			InetAddress.getByName(ip);
 		} catch (UnknownHostException e2) {
 			JOptionPane.showMessageDialog(null, "Invalid Server IP.");
-			return false;
+			return;
 		}
 
 		String port = portTextField.getText().trim();
@@ -204,19 +204,14 @@ public class JClient extends JFrame implements Runnable {
 		// check and display the timeout message
 		if (timeOut) {
 			JOptionPane.showMessageDialog(null, "fail To Create Socket");
-			return false;
 		} else if (counter > 0) {
 			log.debug("%dth try: successfully connected to the server by %s:%d", counter, ip, PORT);
 		}
 
-		return true;
 	}
 
 	/**
 	 * registry RMI instance
-	 * @throws RemoteException
-	 * @throws MalformedURLException
-	 * @throws UnknownHostException 
 	 */
 	private void regRMI() throws RemoteException, MalformedURLException, UnknownHostException {
 		/* get the linux's remote host */
@@ -247,7 +242,7 @@ public class JClient extends JFrame implements Runnable {
 	
 	/** call when use try to exit the program */
 	public void close() {
-		if (bean != null && bean.isClosed() == false ) {
+		if (bean != null && !bean.isClosed()) {
 			/*
 			 * if the socket is not null
 			 * show a confirm dialog and exit the program only when the

@@ -56,7 +56,7 @@ public class BytePacket {
         final int ch2 = data[i+1];
         final int ch3 = data[i+2];
         final int ch4 = data[i+3];
-        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4));
     }
 
     /** return if the data packet is compressed */

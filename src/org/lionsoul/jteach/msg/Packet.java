@@ -23,7 +23,7 @@ import java.util.zip.Inflater;
 public class Packet {
 
     /** packet attribute bit mask */
-    public static final int HAS_CMD  = 0x01 << 0;
+    public static final int HAS_CMD  = 0x01;
     public static final int HAS_DATA = 0x01 << 1;
     public static final int HAS_COMPRESSED = 0x01 << 2;
 
@@ -104,7 +104,7 @@ public class Packet {
             bos.write((cmd >>> 24) & 0xFF);
             bos.write((cmd >>> 16) & 0xFF);
             bos.write((cmd >>>  8) & 0xFF);
-            bos.write((cmd >>>  0) & 0xFF);
+            bos.write((cmd) & 0xFF);
         }
 
         // check and write the data
@@ -117,7 +117,7 @@ public class Packet {
             bos.write((length >>> 24) & 0xFF);
             bos.write((length >>> 16) & 0xFF);
             bos.write((length >>>  8) & 0xFF);
-            bos.write((length >>>  0) & 0xFF);
+            bos.write((length) & 0xFF);
             bos.write(input, offset, length);
             return bos.toByteArray();
         }
@@ -142,7 +142,7 @@ public class Packet {
         bos.write((len >>> 24) & 0xFF);
         bos.write((len >>> 16) & 0xFF);
         bos.write((len >>>  8) & 0xFF);
-        bos.write((len >>>  0) & 0xFF);
+        bos.write((len) & 0xFF);
         // write the compress data
         bos.write(compressData, 0, len);
         return bos.toByteArray();
@@ -229,11 +229,11 @@ public class Packet {
     public static final Packet COMMAND_RCMD_ALL_EXECUTE = new Packet(CmdUtil.SYMBOL_SEND_CMD, CmdUtil.COMMAND_RCMD_ALL_EXECUTION, null);
 
     /* create data packet from basic type */
-    public static final Packet valueOf(String str) throws IOException {
+    public static Packet valueOf(String str) throws IOException {
         return new StringMessage(str).encode();
     }
 
-    public static final Packet valueOf(byte[] bytes, int off, int length) {
+    public static Packet valueOf(byte[] bytes, int off, int length) {
         return new Packet(CmdUtil.SYMBOL_SEND_DATA, CmdUtil.COMMAND_NULL, bytes, off, length);
     }
 

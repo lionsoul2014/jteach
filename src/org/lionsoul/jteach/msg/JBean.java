@@ -29,14 +29,14 @@ public class JBean {
 	private final DataOutputStream output;
 	private final DataInputStream input;
 
-	private String name;
-	private String host;
+	private final String name;
+	private final String host;
 
 	private long lastReadAt = 0;
 
 	/* message read/send blocking queue */
-	private final BlockingDeque<Packet> sendPool;
-	private final BlockingDeque<Packet> readPool;
+	private final LinkedBlockingDeque<Packet> sendPool;
+	private final LinkedBlockingDeque<Packet> readPool;
 
 	public JBean(Socket s) throws IOException {
 		if (s == null) {
@@ -52,8 +52,8 @@ public class JBean {
 		this.input  = new DataInputStream(socket.getInputStream());
 
 		/* create the message pool */
-		this.sendPool = new LinkedBlockingDeque(10);
-		this.readPool = new LinkedBlockingDeque(10);
+		this.sendPool = new LinkedBlockingDeque<>(10);
+		this.readPool = new LinkedBlockingDeque<>(10);
 	}
 
 	public void start() {

@@ -318,11 +318,7 @@ public class Command {
         char ch0 = str.charAt(0);
         char ch1 = str.charAt(1);
         char ch2 = str.charAt(2);
-        if (ch0 == '-' && ch1 == '-' && ch2 != '=') {
-            return true;
-        }
-
-        return false;
+        return ch0 == '-' && ch1 == '-' && ch2 != '=';
     }
 
     public static boolean isCommand(String str) {

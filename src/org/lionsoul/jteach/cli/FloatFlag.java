@@ -2,7 +2,7 @@ package org.lionsoul.jteach.cli;
 
 public class FloatFlag extends Flag {
 
-    private float _default;
+    private final float _default;
     private float value;
 
     public FloatFlag(String name, String usage, float _default) {

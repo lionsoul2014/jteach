@@ -5,6 +5,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
+import java.util.Objects;
 
 import javax.swing.ImageIcon;
 
@@ -17,8 +18,7 @@ public class ImageUtil {
 	
 	/** create an icon image */
 	public static ImageIcon Create(String filename) {
-		ImageIcon icon = new ImageIcon(ImageUtil.class.getResource("/res/images/"+filename));
-		return icon;
+		return new ImageIcon(Objects.requireNonNull(ImageUtil.class.getResource("/res/images/" + filename)));
 	}
 	
 	/** resize the BufferedImage */

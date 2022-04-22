@@ -4,7 +4,7 @@ import java.util.Objects;
 
 public class StringFlag extends Flag {
 
-    private String _default;
+    private final String _default;
     private String value;
     public final String[] options;
 

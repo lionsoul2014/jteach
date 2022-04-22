@@ -29,14 +29,14 @@ public class Log {
         this.baseClass = baseClass;
     }
 
-    public static final Log getLogger(Class<?> baseClass) {
+    public static Log getLogger(Class<?> baseClass) {
         return new Log(baseClass);
     }
 
     public String format(int level, String format, Object... args) {
         // append the datetime
-        final StringBuffer sb = new StringBuffer();
-        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss");
+        final StringBuilder sb = new StringBuilder();
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         sb.append(String.format("%s %-5s ", sdf.format(new Date()), level_string[level]));
 
         // append the class name

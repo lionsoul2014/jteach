@@ -69,7 +69,7 @@ public class RCRTask extends JCTaskBase {
 				}
 
 				int counter = 0;
-				final StringBuffer buff = new StringBuffer();
+				final StringBuilder buff = new StringBuilder();
 				final Process proc;
 				try {
 					log.debug("try to execute command '%s'", msg.str);
@@ -79,7 +79,7 @@ public class RCRTask extends JCTaskBase {
 
 					String line;
 					while ( (line = br.readLine()) != null ) {
-						buff.append(line+"\n");
+						buff.append(line).append("\n");
 						counter++;
 					}
 

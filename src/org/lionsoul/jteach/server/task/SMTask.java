@@ -33,9 +33,9 @@ import org.lionsoul.jteach.util.ImageUtil;
  */
 public class SMTask extends JSTaskBase {
 
-	public static final String W_TITLE = "JTeach - Remote Window";
-	public static final String EMTPY_INFO = "Loading Image Resource From JBean";
-	public static final Font IFONT = new Font("Arial", Font.BOLD, 18);
+	public static final String WTitle = "JTeach - Remote Window";
+	public static final String EmptyInfo = "Loading Image Resource From JBean";
+	public static final Font IFont = new Font("Arial", Font.BOLD, 18);
 	public static final Image CURSOR = ImageUtil.Create("cursor_02.png").getImage();
 	public static final Log log = Log.getLogger(UFTask.class);
 
@@ -55,7 +55,7 @@ public class SMTask extends JSTaskBase {
 	}
 
 	private void initGUI() {
-		window.setTitle(W_TITLE);
+		window.setTitle(WTitle);
 		window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		window.setSize(screenSize);
 		window.setUndecorated(true);
@@ -143,9 +143,9 @@ public class SMTask extends JSTaskBase {
 			g.fillRect(0, 0, getWidth(), getHeight());
 			if (msg == null) {
 				g.setColor(Color.WHITE);
-				g.setFont(IFONT);
-				final FontMetrics m = getFontMetrics(IFONT);
-				g.drawString(EMTPY_INFO, (getWidth() - m.stringWidth(EMTPY_INFO))/2, getHeight()/2);
+				g.setFont(IFont);
+				final FontMetrics m = getFontMetrics(IFont);
+				g.drawString(EmptyInfo, (getWidth() - m.stringWidth(EmptyInfo))/2, getHeight()/2);
 				return;
 			}
 

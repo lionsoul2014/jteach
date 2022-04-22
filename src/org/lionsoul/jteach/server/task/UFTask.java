@@ -151,7 +151,7 @@ public class UFTask extends JSTaskBase {
 		if ( bis != null ) {
 			try {
 				bis.close();
-			} catch (IOException e) {
+			} catch (IOException ignored) {
 			}
 		}
 	}
