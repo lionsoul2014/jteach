@@ -186,7 +186,7 @@
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright [yyyy] [name of copyright owner]
+   Copyright [Lion] [Lion Chan]
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -203,7 +203,7 @@
 ==========================================================================
 The following license applies to the JQuery JavaScript library
 --------------------------------------------------------------------------
-Copyright (c) 2010 John Resig, http://jquery.com/
+Copyright (c) 2021 John Resig, http://lionsoul.org/
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
